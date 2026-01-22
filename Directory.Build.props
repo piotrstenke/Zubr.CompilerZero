@@ -1,0 +1,37 @@
+<Project>
+
+  <PropertyGroup>
+
+    <OutputType>Library</OutputType>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>true</AppendRuntimeIdentifierToOutputPath>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <PreferredUILang>en-US</PreferredUILang>
+    <NeutralLanguage>en</NeutralLanguage>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <OutputPath>..\..\bin\$(Configuration)\$(MSBuildProjectName)\</OutputPath>
+    <BaseIntermediateOutputPath>..\..\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <MSBuildProjectExtensionsPath>..\..\obj\$(MSBuildProjectName)\</MSBuildProjectExtensionsPath>
+  
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(MSBuildProjectDirectoryNoRoot.Contains('src'))">
+    
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <DocumentationFile>$(BaseIntermediateOutputPath)$(MSBuildProjectName).xml</DocumentationFile>
+    <Authors>Piotr Stenke</Authors>
+    <Company></Company>
+    <PackageId>$(MSBuildProjectName)</PackageId>
+    <Product>$(MSBuildProjectName)</Product>
+    <Copyright>Copyright (c) Piotr Stenke - 2026</Copyright>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <DebugType>portable</DebugType>
+    <Deterministic>true</Deterministic>
+
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="Directory.Build.props" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Zubr.Compiler.CSharp/Zubr.Compiler.CSharp.csproj" Id="33d0fcf0-25ba-420d-b2a7-39d4122417b1" />
+    <Project Path="src/Zubr.Compiler/Zubr.Compiler.csproj" />
+    <Project Path="src/Zubr.Console/Zubr.Console.csproj" Id="11ad5bfa-ac5c-42d3-8008-71d4a0531fc5" />
+  </Folder>
+</Solution>
