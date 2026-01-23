@@ -1,6 +1,7 @@
 ﻿using Zubr.Compiler;
 using Zubr.Compiler.CSharp;
 using Zubr.Compiler.Diagnostics;
+
 using Zubr.Compiler.Parser;
 
 Console.WriteLine("Zubr programming language exaple.");
@@ -14,8 +15,6 @@ use System;
 use System.Collections.Generic;
 use System.Collections.Generic.Console as console;
 
-module Hello;
-
 // This is a comment
 
 **
@@ -23,14 +22,31 @@ module Hello;
 This is also a comment
 
 **
-pub void print(message: string)
+
+pub void print(string message = "")
 {
-	Console.Write(message);
+	//Console.Write(message);
 }
 
-pub void println(message: string)
+module top;
+
+void println(mut string message, int a)
 {
-	Console.WriteLine(message);
+	//Console.WriteLine(message);
+}
+
+module Hello;
+
+scoped open class Program
+{
+	int main()
+	{
+		//return 1;
+	}
+}
+
+priv struct Test
+{
 }
 
 """

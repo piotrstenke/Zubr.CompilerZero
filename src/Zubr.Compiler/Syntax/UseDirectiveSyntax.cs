@@ -24,7 +24,7 @@ public sealed class UseDirectiveSyntax : SyntaxNode
 		Alias = alias;
 		SemicolonToken = semicolonToken;
 
-		name.Parent = this;
-		alias?.Parent = this;
+		SetParent(name);
+		SetParentIfNotNull(alias);
 	}
 }

@@ -6,5 +6,11 @@ internal enum ErrorCode
 
 	ERR_UnexpectedCharacter,
 
+	ERR_UnexpectedToken,
+
 	ERR_SyntaxError,
+
+	ERR_InvalidModifier,
+
+	ERR_UnexpectedEndOfFile,
 }

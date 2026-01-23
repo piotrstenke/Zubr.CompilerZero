@@ -18,7 +18,7 @@ public sealed class QualifiedNameSyntax : NameSyntax
 		DotToken = dotToken;
 		Right = right;
 
-		left.Parent = this;
-		right.Parent = this;
+		SetParent(left);
+		SetParent(right);
 	}
 }

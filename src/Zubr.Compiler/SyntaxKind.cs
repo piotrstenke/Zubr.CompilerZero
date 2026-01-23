@@ -95,7 +95,7 @@ public enum SyntaxKind : uint
 	OpenParenToken,
 
 	// )
-	CloseParentToken,
+	CloseParenToken,
 
 	// [
 	OpenBracketToken,
@@ -138,13 +138,13 @@ public enum SyntaxKind : uint
 	// -----------------------------
 
 	// "some text"
-	StringLiteral,
+	StringLiteralToken,
 
 	// 1, 2L, 3u etc. 1.2f, 0.42e2 etc.
-	NumericLiteral,
+	NumericLiteralToken,
 
 	// 'a'
-	CharLiteral,
+	CharLiteralToken,
 
 	// -----------------------------
 	// Keywords
@@ -189,11 +189,68 @@ public enum SyntaxKind : uint
 	// else
 	ElseKeyword,
 
+	// match
+	MatchKeyword,
+
+	// for
+	ForKeyword,
+
+	// do
+	DoKeyword,
+
+	// while
+	WhileKeyword,
+
+	// break
+	BreakKeyword,
+
+	// next
+	NextKeyword,
+
+	// return
+	ReturnKeyword,
+
 	// pub
 	PubKeyword,
 
+	// prot
+	ProtKeyword,
+
+	// scoped
+	ScopedKeyword,
+
+	// priv
+	PrivKeyword,
+
+	// open
+	OpenKeyword,
+
 	// void
 	VoidKeyword,
+
+	// mut
+	MutKeyword,
+
+	// const
+	ConstKeyword,
+
+	// let
+	LetKeyword,
+
+	// bool
+	BoolKeyword,
+
+	// true
+	TrueKeyword,
+
+	// false
+	FalseKeyword,
+
+	// int
+	IntKeyword,
+
+	// string
+	StringKeyword,
 
 	// -----------------------------
 	// Declarations
@@ -203,15 +260,50 @@ public enum SyntaxKind : uint
 
 	ClassDeclaration,
 
+	StructDeclaration,
+
+	FunctionDeclaration,
+
+	ParameterList,
+
+	Parameter,
+
+	TypeParameterList,
+
+	TypeParameter,
+
 	// -----------------------------
 	// Expressions
 	// -----------------------------
+
+	// "some text"
+	StringLiteralExpression,
+
+	// 1, 2L, 3u etc. 1.2f, 0.42e2 etc.
+	NumericLiteralExpression,
+
+	// 'a'
+	CharLiteralExpression,
+
+	// true
+	TrueLiteralExpression,
+
+	// false
+	FalseLiteralExpression,
 
 	// -----------------------------
 	// Statements & Directives
 	// -----------------------------
 
+	Block,
+
 	UseDirective,
+
+	// -----------------------------
+	// Clauses
+	// -----------------------------
+
+	EqualsValue,
 
 	// -----------------------------
 	// Names
@@ -222,6 +314,8 @@ public enum SyntaxKind : uint
 	QualifiedName,
 
 	GenericName,
+
+	PredefinedType,
 
 	// -----------------------------
 	// Errors

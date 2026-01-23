@@ -1,5 +1,5 @@
 ﻿namespace Zubr.Compiler.Syntax.Abstractions;
 
-public abstract class NameSyntax : TypeSyntax
+public abstract class ExpressionSyntax : SyntaxNode
 {
 }

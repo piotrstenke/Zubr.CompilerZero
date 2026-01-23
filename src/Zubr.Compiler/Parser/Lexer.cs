@@ -172,7 +172,7 @@ internal sealed partial class Lexer
 
 			case ')':
 				_reader.Move();
-				return new(SyntaxKind.CloseParentToken, ")", _tokenStartPos);
+				return new(SyntaxKind.CloseParenToken, ")", _tokenStartPos);
 
 			case '[':
 				_reader.Move();
@@ -241,7 +241,7 @@ internal sealed partial class Lexer
 			case '.':
 				if (SyntaxFacts.IsDigit(_reader.Peek(1)))
 				{
-					return new(SyntaxKind.NumericLiteral, ReadNumericLiteral(), _tokenStartPos);
+					return new(SyntaxKind.NumericLiteralToken, ReadNumericLiteral(), _tokenStartPos);
 				}
 
 				_reader.Move();
@@ -255,13 +255,13 @@ internal sealed partial class Lexer
 				return new(SyntaxKind.DotToken, ".", _tokenStartPos);
 
 			case '\"':
-				return new(SyntaxKind.StringLiteral, ReadStringLiteral(), _tokenStartPos);
+				return new(SyntaxKind.StringLiteralToken, ReadStringLiteral(), _tokenStartPos);
 
 			case '\'':
-				return new(SyntaxKind.CharLiteral, ReadCharLiteral(), _tokenStartPos);
+				return new(SyntaxKind.CharLiteralToken, ReadCharLiteral(), _tokenStartPos);
 
 			case >= '0' and <= '9':
-				return new(SyntaxKind.NumericLiteral, ReadNumericLiteral(), _tokenStartPos);
+				return new(SyntaxKind.NumericLiteralToken, ReadNumericLiteral(), _tokenStartPos);
 
 			case '_':
 			case (>= 'a' and <= 'z') or (>= 'A' and <= 'Z'):

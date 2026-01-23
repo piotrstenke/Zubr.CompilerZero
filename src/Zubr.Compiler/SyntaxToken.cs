@@ -23,6 +23,6 @@ public readonly struct SyntaxToken
 
 	public override string ToString()
 	{
-		return Text;
+		return Text ?? string.Empty;
 	}
 }

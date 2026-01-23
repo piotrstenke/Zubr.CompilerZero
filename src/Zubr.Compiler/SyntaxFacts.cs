@@ -23,6 +23,72 @@ public static class SyntaxFacts
 		return IsBetween(value, KEYWORDS_START, KEYWORDS_END);
 	}
 
+	public static bool IsLiteralExpression(this SyntaxToken token)
+	{
+		return IsLiteralExpression(token.Kind);
+	}
+
+	public static bool IsLiteralExpression(SyntaxKind value)
+	{
+		return
+			value == SyntaxKind.TrueKeyword ||
+			value == SyntaxKind.FalseKeyword ||
+			value == SyntaxKind.StringLiteralToken ||
+			value == SyntaxKind.CharLiteralToken ||
+			value == SyntaxKind.NumericLiteralExpression;
+	}
+
+	public static bool IsPredefinedTypeKeyword(this SyntaxToken token)
+	{
+		return IsPredefinedTypeKeyword(token.Kind);
+	}
+
+	public static bool IsPredefinedTypeKeyword(SyntaxKind value)
+	{
+		return 
+			value == SyntaxKind.BoolKeyword ||
+			value == SyntaxKind.VoidKeyword ||
+			value == SyntaxKind.IntKeyword ||
+			value == SyntaxKind.StringKeyword;
+	}
+
+	public static bool IsTypeDeclarationKeyword(this SyntaxToken token)
+	{
+		return IsTypeDeclarationKeyword(token.Kind);
+	}
+
+	public static bool IsTypeDeclarationKeyword(SyntaxKind value)
+	{
+		return
+			value == SyntaxKind.ClassKeyword ||
+			value == SyntaxKind.StructKeyword ||
+			value == SyntaxKind.EnumKeyword;
+	}
+
+	public static bool IsAccessModifier(this SyntaxToken token)
+	{
+		return IsAccessModifier(token.Kind);
+	}
+
+	public static bool IsAccessModifier(SyntaxKind value)
+	{
+		return
+			value == SyntaxKind.PubKeyword ||
+			value == SyntaxKind.ProtKeyword ||
+			value == SyntaxKind.PrivKeyword ||
+			value == SyntaxKind.ScopedKeyword;
+	}
+
+	public static bool IsModifier(this SyntaxToken token)
+	{
+		return IsModifier(token.Kind);
+	}
+
+	public static bool IsModifier(SyntaxKind value)
+	{
+		return IsAccessModifier(value) || value == SyntaxKind.OpenKeyword;
+	}
+
 	public static bool IsValid(this SyntaxToken token)
 	{
 		return IsValid(token.Kind);
@@ -48,6 +114,10 @@ public static class SyntaxFacts
 		return value switch
 		{
 			"pub" => SyntaxKind.PubKeyword,
+			"prot" => SyntaxKind.ProtKeyword,
+			"scoped" => SyntaxKind.ScopedKeyword,
+			"priv" => SyntaxKind.PrivKeyword,
+			"open" => SyntaxKind.OpenKeyword,
 			"use" => SyntaxKind.UseKeyword,
 			"as" => SyntaxKind.AsKeyword,
 			"from" => SyntaxKind.FromKeyword,
@@ -61,6 +131,22 @@ public static class SyntaxFacts
 			"class" => SyntaxKind.ClassKeyword,
 			"struct" => SyntaxKind.StructKeyword,
 			"enum" => SyntaxKind.EnumKeyword,
+			"mut" => SyntaxKind.MutKeyword,
+			"self" => SyntaxKind.SelfKeyword,
+			"match" => SyntaxKind.MatchKeyword,
+			"for" => SyntaxKind.ForKeyword,
+			"do" => SyntaxKind.DoKeyword,
+			"while" => SyntaxKind.WhileKeyword,
+			"break" => SyntaxKind.BreakKeyword,
+			"next" => SyntaxKind.NextKeyword,
+			"return" => SyntaxKind.ReturnKeyword,
+			"const" => SyntaxKind.ConstKeyword,
+			"let" => SyntaxKind.LetKeyword,
+			"bool" => SyntaxKind.BoolKeyword,
+			"true" => SyntaxKind.TrueKeyword,
+			"false" => SyntaxKind.FalseKeyword,
+			"int" => SyntaxKind.IntKeyword,
+			"string" => SyntaxKind.StringKeyword,
 			_ => SyntaxKind.None
 		};
 	}

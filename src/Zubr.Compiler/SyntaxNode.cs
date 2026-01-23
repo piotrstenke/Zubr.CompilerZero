@@ -10,7 +10,20 @@ public abstract class SyntaxNode
 
 	public abstract SyntaxKind Kind { get; }
 
+	public bool IsKind(SyntaxKind kind)
+	{
+		return Kind == kind;
+	}
+
 	private protected void SetParent<TNode>(SyntaxList<TNode> list) where TNode : SyntaxNode
+	{
+		foreach (TNode node in list)
+		{
+			node.Parent = this;
+		}
+	}
+
+	private protected void SetParent<TNode>(SeparatedSyntaxList<TNode> list) where TNode : SyntaxNode
 	{
 		foreach (TNode node in list)
 		{
