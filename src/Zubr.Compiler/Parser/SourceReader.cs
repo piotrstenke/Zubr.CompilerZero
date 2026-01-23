@@ -57,14 +57,7 @@ internal sealed class SourceReader
 			return InvalidChar;
 		}
 
-		_pos++;
-
-		if(IsEnd())
-		{
-			return InvalidChar;
-		}
-
-		return Source[_pos];
+		return Source[_pos++];
 	}
 
 	public void Move()

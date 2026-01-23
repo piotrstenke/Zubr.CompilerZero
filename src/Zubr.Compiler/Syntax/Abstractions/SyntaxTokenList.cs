@@ -2,11 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Xml.Linq;
 
 namespace Zubr.Compiler.Syntax.Abstractions;
 
-[DebuggerDisplay("Count = {Count,nq}")]
+[DebuggerDisplay("Count = {CountWithCheck,nq}")]
 [DebuggerTypeProxy(typeof(DebuggerProxy))]
 public readonly struct SyntaxTokenList : IReadOnlyCollection<SyntaxToken>
 {
@@ -17,6 +16,10 @@ public readonly struct SyntaxTokenList : IReadOnlyCollection<SyntaxToken>
 	public bool IsEmpty => _tokens.Length == 0;
 
 	public bool IsDefault => _tokens is null;
+
+	public bool IsDefaultOrEmpty => _tokens is null || _tokens.Length == 0;
+
+	private int CountWithCheck => _tokens is null ? 0 : _tokens.Length;
 
 	public SyntaxToken this[int index] => _tokens[index];
 

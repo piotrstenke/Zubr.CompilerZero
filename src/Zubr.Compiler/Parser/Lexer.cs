@@ -1,4 +1,7 @@
-﻿using System.Text;
+﻿using System;
+using System.Diagnostics;
+using System.Globalization;
+using System.Text;
 using Zubr.Compiler.Diagnostics;
 
 namespace Zubr.Compiler.Parser;
@@ -241,7 +244,7 @@ internal sealed partial class Lexer
 			case '.':
 				if (SyntaxFacts.IsDigit(_reader.Peek(1)))
 				{
-					return new(SyntaxKind.NumericLiteralToken, ReadNumericLiteral(), _tokenStartPos);
+					return new(SyntaxKind.NumericLiteralToken, ReadNumericLiteral(out object? decimalValue), _tokenStartPos, decimalValue);
 				}
 
 				_reader.Move();
@@ -255,13 +258,13 @@ internal sealed partial class Lexer
 				return new(SyntaxKind.DotToken, ".", _tokenStartPos);
 
 			case '\"':
-				return new(SyntaxKind.StringLiteralToken, ReadStringLiteral(), _tokenStartPos);
+				return new(SyntaxKind.StringLiteralToken, ReadStringLiteral(out string? stringValue), _tokenStartPos, stringValue);
 
 			case '\'':
-				return new(SyntaxKind.CharLiteralToken, ReadCharLiteral(), _tokenStartPos);
+				return new(SyntaxKind.CharLiteralToken, ReadCharLiteral(out char charValue), _tokenStartPos, charValue);
 
 			case >= '0' and <= '9':
-				return new(SyntaxKind.NumericLiteralToken, ReadNumericLiteral(), _tokenStartPos);
+				return new(SyntaxKind.NumericLiteralToken, ReadNumericLiteral(out object? numericValue), _tokenStartPos, numericValue);
 
 			case '_':
 			case (>= 'a' and <= 'z') or (>= 'A' and <= 'Z'):
@@ -315,55 +318,106 @@ internal sealed partial class Lexer
 		return ToStringAndClear();
 	}
 
-	private string ReadNumericLiteral()
+	private string ReadNumericLiteral(out object? value)
 	{
 		bool hasPoint = false;
 		bool allowUnderscore = false;
 
-		char c;
+		NumberType type = NumberType.Int;
 
-		while ((c = _reader.Peek()) != SourceReader.InvalidChar)
+		while (true)
 		{
-			if(SyntaxFacts.IsDigit(c))
+			char c = _reader.Peek();
+
+			// Eof
+			if (c == SourceReader.InvalidChar)
+			{
+				break;
+			}
+
+			if (SyntaxFacts.IsDigit(c))
 			{
 				allowUnderscore = true;
 				AppendAndMove(c);
+				continue;
 			}
-			else if (c == '.')
+
+			if (c == '.')
 			{
 				if (hasPoint)
 				{
 					// Ill-formed literal
-					break;
+					AddError(ErrorCode.ERR_SyntaxError);
+					value = null;
+					return ToStringAndClear();
 				}
 
 				allowUnderscore = false;
 				hasPoint = true;
 				AppendAndMove(c);
+				type = NumberType.Double;
+				continue;
 			}
-			else if (c == '_')
+
+			if (c == '_')
 			{
-				if (!allowUnderscore || !SyntaxFacts.IsDigit(_reader.Peek(1)))
+				if (!allowUnderscore)
 				{
 					// Ill-formed literal.
+					AddError(ErrorCode.ERR_SyntaxError);
+					value = null;
+					return ToStringAndClear();
+				}
+
+				char next = _reader.Peek(1);
+
+				if (next == SourceReader.InvalidChar)
+				{
 					break;
 				}
 
-				AppendAndMove(c); ;
+				if (!SyntaxFacts.IsDigit(next))
+				{
+					// Ill-formed literal.
+					AddError(ErrorCode.ERR_SyntaxError);
+					value = null;
+					return ToStringAndClear();
+				}
+
+				AppendAndMove(c);
+				AppendAndMove(next);
+
+				continue;
 			}
-			else if (c == 'f' || c == 'F')
+
+			if (c == 'f' || c == 'F')
 			{
 				AppendAndMove(c);
+				type = NumberType.Float;
+
+				// End of the literal.
+				break;
 			}
-			else if (c == 'd' || c == 'D')
+
+			if (c == 'd' || c == 'D')
 			{
 				AppendAndMove(c);
+				type = NumberType.Double;
+
+				// End of the literal.
+				break;
 			}
-			else if (c == 'm' || c == 'M')
+
+			if (c == 'm' || c == 'M')
 			{
 				AppendAndMove(c);
+				type = NumberType.Decimal;
+
+				// End of the literal.
+				break;
 			}
-			else if (!hasPoint)
+
+			if (!hasPoint)
 			{
 				if (c == 'l' || c == 'L')
 				{
@@ -374,7 +428,15 @@ internal sealed partial class Lexer
 					if (c == 'u' || c == 'U')
 					{
 						AppendAndMove(c);
+						type = NumberType.ULong;
 					}
+					else
+					{
+						type = NumberType.Long;
+					}
+
+					// End of the literal.
+					break;
 				}
 				else if (c == 'u' || c == 'U')
 				{
@@ -382,131 +444,352 @@ internal sealed partial class Lexer
 
 					c = _reader.Peek();
 
-					if(c == 'l' || c == 'L')
+					if (c == 'l' || c == 'L')
 					{
 						AppendAndMove(c);
+						type = NumberType.Long;
 					}
+					else
+					{
+						type = NumberType.UInt;
+					}
+
+					// End of the literal.
+					break;
 				}
 			}
-		}
-
-		return ToStringAndClear();
-	}
-
-	private string ReadStringLiteral()
-	{
-		char quote = _reader.Read();
-		_builder.Append(quote);
-
-		char c;
-
-		while ((c = _reader.Peek()) != SourceReader.InvalidChar)
-		{
-			_reader.Move();
 
 			// End of the literal.
-			if (c == '"')
+			break;
+		}
+
+		string literal = ToStringAndClear();
+		TryParsePrimitiveValue(literal, type, out value);
+
+		return literal;
+	}
+
+	private bool TryParsePrimitiveValue(string literal, NumberType type, out object? value)
+	{
+		switch (type)
+		{
+			case NumberType.Int:
+				if (!int.TryParse(literal, NumberStyles.None, CultureInfo.InvariantCulture, out int intValue))
+				{
+					AddError(ErrorCode.ERR_SyntaxError);
+					value = null;
+					return false;
+				}
+
+				value = intValue;
+				return true;
+
+			case NumberType.Long:
+				if (!long.TryParse(literal, NumberStyles.None, CultureInfo.InvariantCulture, out long longValue))
+				{
+					AddError(ErrorCode.ERR_SyntaxError);
+					value = null;
+					return false;
+				}
+
+				value = longValue;
+				return true;
+
+			case NumberType.Short:
+				if (!short.TryParse(literal, NumberStyles.None, CultureInfo.InvariantCulture, out short shortValue))
+				{
+					AddError(ErrorCode.ERR_SyntaxError);
+					value = null;
+					return false;
+				}
+
+				value = shortValue;
+				return true;
+
+			case NumberType.Byte:
+				if (!byte.TryParse(literal, NumberStyles.None, CultureInfo.InvariantCulture, out byte byteValue))
+				{
+					AddError(ErrorCode.ERR_SyntaxError);
+					value = null;
+					return false;
+				}
+
+				value = byteValue;
+				return true;
+
+			case NumberType.UInt:
+				if (!uint.TryParse(literal, NumberStyles.None, CultureInfo.InvariantCulture, out uint uintValue))
+				{
+					AddError(ErrorCode.ERR_SyntaxError);
+					value = null;
+					return false;
+				}
+
+				value = uintValue;
+				return true;
+
+			case NumberType.ULong:
+				if (!ulong.TryParse(literal, NumberStyles.None, CultureInfo.InvariantCulture, out ulong ulongValue))
+				{
+					AddError(ErrorCode.ERR_SyntaxError);
+					value = null;
+					return false;
+				}
+
+				value = ulongValue;
+				return true;
+
+			case NumberType.UShort:
+				if (!ushort.TryParse(literal, NumberStyles.None, CultureInfo.InvariantCulture, out ushort ushortValue))
+				{
+					AddError(ErrorCode.ERR_SyntaxError);
+					value = null;
+					return false;
+				}
+
+				value = ushortValue;
+				return true;
+
+			case NumberType.SByte:
+				if (!sbyte.TryParse(literal, NumberStyles.None, CultureInfo.InvariantCulture, out sbyte sbyteValue))
+				{
+					AddError(ErrorCode.ERR_SyntaxError);
+					value = null;
+					return false;
+				}
+
+				value = sbyteValue;
+				return true;
+
+			case NumberType.Float:
+				if (!float.TryParse(literal, NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent, CultureInfo.InvariantCulture, out float floatValue))
+				{
+					AddError(ErrorCode.ERR_SyntaxError);
+					value = null;
+					return false;
+				}
+
+				value = floatValue;
+				return true;
+
+			case NumberType.Double:
+				if (!double.TryParse(literal, NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent, CultureInfo.InvariantCulture, out double doubleValue))
+				{
+					AddError(ErrorCode.ERR_SyntaxError);
+					value = null;
+					return false;
+				}
+
+				value = doubleValue;
+				return true;
+
+			case NumberType.Decimal:
+				if (!decimal.TryParse(literal, NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent, CultureInfo.InvariantCulture, out decimal decimalValue))
+				{
+					AddError(ErrorCode.ERR_SyntaxError);
+					value = null;
+					return false;
+				}
+
+				value = decimalValue;
+				return true;
+
+			default:
+				throw new UnreachableException();
+		}
+	}
+
+	private string ReadStringLiteral(out string? value)
+	{
+		string literal = ReadCharOrStringLiteral();
+		ReadOnlySpan<char> span = literal.AsSpan();
+
+		// Ill-formed literal.
+		if (span.Length == 0 || span.Length == 1 || span[^1] != '\"')
+		{
+			value = default;
+			return literal;
+		}
+
+		// Empty string.
+		if (span.Length == 2)
+		{
+			value = string.Empty;
+			return literal;
+		}
+
+		// Skip start and end quotes.
+		span = span[1..^1];
+
+		for (int i = 0; i < span.Length; i++)
+		{
+			// New line character in string, invalid.
+			if (SyntaxFacts.IsNewLine(span[i]))
 			{
-				_builder.Append(c);
-				break;
+				AddError(ErrorCode.ERR_SyntaxError);
+				_builder.Clear();
+				value = null;
+				return literal;
 			}
 
-			if (SyntaxFacts.IsNewLine(c))
+			if (span[i] == '\\')
 			{
-				// Ill-formed literal.
-				break;
-			}
+				int next = i + 1;
 
-			// Escaped character.
-			if (c == '\\')
-			{
-				_reader.Move();
+				// Empty escape character, invalid.
+				if(next > span.Length - 1)
+				{
+					AddError(ErrorCode.ERR_SyntaxError);
+					_builder.Clear();
+					value = null;
+					return literal;
+				}
 
-				char escaped = GetEscapedChar();
+				char escaped = GetEscapedChar(span[next]);
 
 				if (escaped == SourceReader.InvalidChar)
 				{
-					break;
+					// Invalid escape character.
+					AddError(ErrorCode.ERR_SyntaxError);
+					_builder.Clear();
+					value = null;
+					return literal;
 				}
 
 				_builder.Append(escaped);
+
+				continue;
 			}
+
+			_builder.Append(span[i]);
 		}
 
-		return ToStringAndClear();
+		value = ToStringAndClear();
+		return literal;
 	}
 
-	private string ReadCharLiteral()
+	private string ReadCharLiteral(out char value)
 	{
-		// Append the quote.
-		_builder.Append(_reader.Read());
+		string literal = ReadCharOrStringLiteral();
+		ReadOnlySpan<char> span = literal.AsSpan();
 
-		char c = _reader.Read();
-
-		if (c == '\'')
+		// Ill-formed literal.
+		if (span.Length == 0 || span.Length == 1 || span[^1] != '\'')
 		{
-			// Empty char, invalid.
-			_builder.Append(c);
-			return ToStringAndClear();
+			value = default;
+			return literal;
 		}
 
-		if(c == '\\')
+		// Empty char, invalid.
+		if (span.Length == 2)
 		{
-			char escaped = GetEscapedChar();
-
-			if (escaped == SourceReader.InvalidChar)
-			{
-				return ToStringAndClear();
-			}
-
-			_builder.Append(escaped);
-
-			c = _reader.Read();
-
-			if(c != '\'')
-			{
-				return ToStringAndClear();
-			}
-
-			_builder.Append(c);
+			AddError(ErrorCode.ERR_SyntaxError);
+			value = default;
+			return literal;
 		}
-		else if(SyntaxFacts.IsNewLine(c))
+
+		// Skip start and end quotes.
+		span = span[1..^1];
+
+		if (span.Length == 1)
 		{
-			// Ill-formed literal.
-			return ToStringAndClear();
+			// Unescaped slash, invalid.
+			if (span[0] == '\\')
+			{
+				AddError(ErrorCode.ERR_SyntaxError);
+				value = default;
+				return literal;
+			}
+
+			if (SyntaxFacts.IsNewLine(span[0]) || !char.IsAscii(span[0]))
+			{
+				AddError(ErrorCode.ERR_SyntaxError);
+				value = default;
+				return literal;
+			}
+
+			value = span[0];
+		}
+		else if (span.Length == 2)
+		{
+			if (span[0] == '\\')
+			{
+				char escaped = GetEscapedChar(span[1]);
+
+				if (escaped == SourceReader.InvalidChar)
+				{
+					// Invalid escape character.
+					AddError(ErrorCode.ERR_SyntaxError);
+					value = default;
+					return literal;
+				}
+
+				value = escaped;
+			}
+			else
+			{
+				AddError(ErrorCode.ERR_SyntaxError);
+				value = default;
+			}
 		}
 		else
 		{
+			AddError(ErrorCode.ERR_SyntaxError);
+			value = default;
+		}
+
+		return literal;
+	}
+
+	private string ReadCharOrStringLiteral()
+	{
+		char qoute = _reader.Read();
+
+		// Append the quote.
+		_builder.Append(qoute);
+
+		while (true)
+		{
+			char c = _reader.Peek();
+
+			// Eof
+			if (c == SourceReader.InvalidChar)
+			{
+				AddError(ErrorCode.ERR_UnexpectedEndOfFile);
+				break;
+			}
+
+			_reader.Move();
+
 			_builder.Append(c);
+
+			// Escaped quote, so don't end the literal.
+			if (c == '\\' && _reader.Peek() == qoute)
+			{
+				_builder.Append(_reader.Read());
+				continue;
+			}
+
+			// End of the literal.
+			if (c == qoute)
+			{
+				break;
+			}
 		}
 
 		return ToStringAndClear();
 	}
 
-	private char GetEscapedChar()
+	private static char GetEscapedChar(char c)
 	{
-		char c = _reader.Read();
-
-		switch(c)
+		return c switch
 		{
-			case '\\':
-			case '"':
-			case '\'':
-				return c;
-
-			case '\r':
-				return '\u000d';
-
-			case '\n':
-				return '\u000a';
-
-			case '\t':
-				return '\u0009';
-
-			default:
-				// Unknown escape character
-				return SourceReader.InvalidChar;
-		}
+			'\\' or '"' or '\'' => c,
+			'r' => '\u000d',
+			'n' => '\u000a',
+			't' => '\u0009',
+			_ => SourceReader.InvalidChar, // Unknown escape character
+		};
 	}
 
 	private string ToStringAndClear()
@@ -614,5 +897,30 @@ internal sealed partial class Lexer
 				return;
 			}
 		}
+	}
+
+	private enum NumberType : byte
+	{
+		Int,
+
+		Long,
+
+		Short,
+
+		Byte,
+
+		UInt,
+
+		ULong,
+
+		UShort,
+
+		SByte,
+
+		Float,
+
+		Double,
+
+		Decimal
 	}
 }

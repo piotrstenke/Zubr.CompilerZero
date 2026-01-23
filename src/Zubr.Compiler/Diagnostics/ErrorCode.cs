@@ -12,5 +12,7 @@ internal enum ErrorCode
 
 	ERR_InvalidModifier,
 
+	ERR_ElseIfNotSupported,
+
 	ERR_UnexpectedEndOfFile,
 }

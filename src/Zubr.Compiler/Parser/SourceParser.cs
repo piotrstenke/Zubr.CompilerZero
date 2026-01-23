@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq.Expressions;
-using System.Xml.Linq;
 using Zubr.Compiler.Diagnostics;
 using Zubr.Compiler.Syntax;
 using Zubr.Compiler.Syntax.Abstractions;
@@ -162,20 +160,169 @@ internal sealed class SourceParser
 
 		SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
 
+		TypeParameterListSyntax? typeParameterList = TryParseTypeParameterList();
 		ParameterListSyntax parameterList = ParseParameterList();
+		TypeParameterConstraintListSyntax? constraintList = TryParseConstraintList();
 
-		SyntaxToken openBrace = EatToken(SyntaxKind.OpenBraceToken);
-		SyntaxToken closeBrace = EatToken(SyntaxKind.CloseBraceToken);
+		BlockSyntax body = ParseBlock();
 
-		BlockSyntax body = new(openBrace, default, closeBrace)
-		{
-			Position = openBrace.Position
-		};
-
-		return new(modifiers, returnType, identifier, parameterList, body)
+		return new(modifiers, returnType, identifier, typeParameterList, parameterList, constraintList, body)
 		{
 			Position = returnType.Position
 		};
+	}
+
+	private TypeParameterListSyntax? TryParseTypeParameterList()
+	{
+		SyntaxToken lessThanToken = Peek();
+
+		if(!lessThanToken.IsKind(SyntaxKind.LessThanToken))
+		{
+			return null;
+		}
+
+		EatToken();
+
+		List<(TypeParameterSyntax, SyntaxToken)> parameters = new();
+
+		while(true)
+		{
+			SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
+
+			SyntaxToken token = Peek();
+
+			TypeParameterSyntax typeParameter = new(identifier)
+			{
+				Position = identifier.Position
+			};
+
+			if (token.IsKind(SyntaxKind.GreaterThanToken))
+			{
+				parameters.Add((typeParameter, default));
+				break;
+			}
+
+			EatToken(SyntaxKind.CommaToken);
+
+			parameters.Add((typeParameter, token));
+		}
+
+		SyntaxToken greaterThanToken = EatToken();
+
+		return new(lessThanToken, List(parameters), greaterThanToken);
+	}
+
+	private TypeParameterConstraintListSyntax? TryParseConstraintList()
+	{
+		SyntaxToken whereKeyword = Peek();
+
+		if(!whereKeyword.IsKind(SyntaxKind.WhereKeyword))
+		{
+			return null;
+		}
+
+		EatToken();
+
+		List<(TypeParameterConstraintClauseSyntax, SyntaxToken)> clauses = new();
+
+		while (true)
+		{
+			SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
+			SyntaxToken colonToken = EatToken(SyntaxKind.ColonToken);
+
+			List<(TypeParameterConstraintSyntax, SyntaxToken)> constraints = new();
+			
+			// Comma token must be default-initialized, because the child constraint clause might not have a comma.
+			SyntaxToken commaToken = default;
+
+			while (true)
+			{
+				if(TryParseConstraint(Peek()) is not TypeParameterConstraintSyntax constraint)
+				{
+					break;
+				}
+
+				// This is the last constraint, so comma is not required.
+				if(!Peek().IsKind(SyntaxKind.CommaToken))
+				{
+					constraints.Add((constraint, default));
+					break;
+				}
+
+				commaToken = EatToken();
+
+				// If the next token is an identifier, it could mean either:
+				//
+				// 1. Another type constraint for the current constraint clause.
+				// 2. Identifier of type parameter in the next constraint clause.
+				if(!Peek().IsKind(SyntaxKind.IdentifierToken))
+				{
+					// Not an identifier, so we can go directly to the next constraint.
+					constraints.Add((constraint, commaToken));
+					continue;
+				}
+
+				// Scenario 1, so add the constraint with comma and go to the next constraint.
+				if(!Peek(1).IsKind(SyntaxKind.ColonToken))
+				{
+					constraints.Add((constraint, commaToken));
+					continue;
+				}
+
+				// Scenario 2, the comma belongs to the parent constraint clause, not the constraint itself.
+				constraints.Add((constraint, default));
+				break;
+			}
+
+			TypeParameterConstraintClauseSyntax clause = new(identifier, colonToken, List(constraints))
+			{
+				Position = identifier.Position
+			};
+
+			clauses.Add((clause, commaToken));
+
+			// End of the constraint clause list.
+			if(!Peek().IsKind(SyntaxKind.IdentifierToken))
+			{
+				break;
+			}
+		}
+
+		return new(whereKeyword, List(clauses))
+		{
+			Position = whereKeyword.Position,
+		};
+	}
+
+	private TypeParameterConstraintSyntax? TryParseConstraint(SyntaxToken token)
+	{
+		switch(token.Kind)
+		{
+			case SyntaxKind.ClassKeyword:
+				EatToken();
+
+				return new ClassConstraintSyntax(token)
+				{
+					Position = token.Position
+				};
+
+			case SyntaxKind.StructKeyword:
+				EatToken();
+
+				return new StructConstraintSyntax(token)
+				{
+					Position = token.Position
+				};
+
+			case SyntaxKind.IdentifierToken:
+				return new TypeConstraintSyntax(ParseName())
+				{
+					Position = token.Position
+				};
+
+			default:
+				return null;
+		}
 	}
 
 	private ParameterListSyntax ParseParameterList()
@@ -279,6 +426,9 @@ internal sealed class SourceParser
 
 		SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
 
+		TypeParameterListSyntax? typeParameterList = TryParseTypeParameterList();
+		TypeParameterConstraintListSyntax? constraints = TryParseConstraintList();
+
 		SyntaxToken openBrace = EatToken(SyntaxKind.OpenBraceToken);
 
 		List<MemberDeclarationSyntax> members = new();
@@ -297,12 +447,12 @@ internal sealed class SourceParser
 
 		return kind switch
 		{
-			SyntaxKind.ClassDeclaration => new ClassDeclarationSyntax(modifiers, keyword, identifier, openBrace, List(members), closeBrace)
+			SyntaxKind.ClassDeclaration => new ClassDeclarationSyntax(modifiers, keyword, identifier, typeParameterList, constraints, openBrace, List(members), closeBrace)
 			{
 				Position = keyword.Position
 			},
 
-			SyntaxKind.StructDeclaration => new StructDeclarationSyntax(modifiers, keyword, identifier, openBrace, List(members), closeBrace)
+			SyntaxKind.StructDeclaration => new StructDeclarationSyntax(modifiers, keyword, identifier, typeParameterList, constraints, openBrace, List(members), closeBrace)
 			{
 				Position = keyword.Position
 			},
@@ -327,54 +477,338 @@ internal sealed class SourceParser
 		return List(modifiers);
 	}
 
-	private ExpressionSyntax ParseExpression()
+	private BlockSyntax ParseBlock()
 	{
-		SyntaxToken token = EatToken();
+		SyntaxToken openBrace = EatToken(SyntaxKind.OpenBraceToken);
+
+		List<StatementSyntax> statements = new();
+
+		while(true)
+		{
+			SyntaxToken token = Peek();
+
+			if(token.IsKind(SyntaxKind.EOF) || token.IsKind(SyntaxKind.CloseBraceToken))
+			{
+				break;
+			}
+
+			statements.Add(ParseStatement());
+		}
+
+		SyntaxToken closeBrace = EatToken(SyntaxKind.CloseBraceToken);
+
+		return new(openBrace, List(statements), closeBrace)
+		{
+			Position = openBrace.Position
+		};
+	}
+
+	private StatementSyntax ParseStatement()
+	{
+		SyntaxToken token = Peek();
 
 		switch(token.Kind)
 		{
+			case SyntaxKind.OpenBraceToken:
+				return ParseBlock();
+
+			case SyntaxKind.IfKeyword:
+				return ParseIfStatement();
+
+			case SyntaxKind.WhileKeyword:
+				return ParseWhileStatement();
+
+			case SyntaxKind.DoKeyword:
+				return ParseDoStatement();
+
+			case SyntaxKind.ForKeyword:
+				return ParseForStatement();
+
+			case SyntaxKind.IdentifierToken:
+				return ParseLocalDeclaration();
+
+			case SyntaxKind.ReturnKeyword:
+				return ParseReturnStatement();
+
+			case SyntaxKind.NextKeyword:
+				return ParseNextStatement();
+
+			case SyntaxKind.StopKeyword:
+				return ParseStopStatement();
+
+			default:
+				return ParseLocalDeclaration();
+		}
+	}
+
+	private ReturnStatementSyntax ParseReturnStatement()
+	{
+		SyntaxToken returnKeyword = EatToken(SyntaxKind.ReturnKeyword);
+
+		ExpressionSyntax? expression = null;
+
+		if (!PeekKind(SyntaxKind.SemicolonToken))
+		{
+			expression = ParseExpression();
+		}
+
+		SyntaxToken semicolon = EatToken(SyntaxKind.SemicolonToken);
+
+		return new(returnKeyword, expression, semicolon)
+		{
+			Position = returnKeyword.Position,
+		};
+	}
+
+	private NextStatementSyntax ParseNextStatement()
+	{
+		SyntaxToken nextKeyword = EatToken(SyntaxKind.NextKeyword);
+		SyntaxToken semicolon = EatToken(SyntaxKind.SemicolonToken);
+
+		return new(nextKeyword, semicolon)
+		{
+			Position = nextKeyword.Position,
+		};
+	}
+
+	private StopStatementSyntax ParseStopStatement()
+	{
+		SyntaxToken stopKeyword = EatToken(SyntaxKind.StopKeyword);
+		SyntaxToken semicolon = EatToken(SyntaxKind.SemicolonToken);
+
+		return new(stopKeyword, semicolon)
+		{
+			Position = stopKeyword.Position,
+		};
+	}
+
+	private LocalDeclarationStatementSyntax ParseLocalDeclaration()
+	{
+		TypeSyntax type = ParseType();
+
+		SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
+
+		SyntaxToken equalsToken = EatToken(SyntaxKind.EqualsToken);
+
+		ExpressionSyntax expression = ParseExpression();
+
+		EqualsValueClauseSyntax clause = new(equalsToken, expression)
+		{
+			Position = equalsToken.Position
+		};
+
+		VariableDeclaratorSyntax declarator = new(identifier, clause)
+		{
+			Position = identifier.Position
+		};
+
+		VariableDeclarationSyntax variable = new(type, declarator)
+		{
+			Position = type.Position
+		};
+
+		SyntaxToken semicolon = EatToken(SyntaxKind.SemicolonToken);
+
+		if (type is PredefinedTypeSyntax p && p.Keyword.IsKind(SyntaxKind.VoidKeyword))
+		{
+			AddError(ErrorCode.ERR_SyntaxError);
+		}
+
+		return new(default, variable, semicolon)
+		{
+			Position = type.Position
+		};
+	}
+
+	private WhileStatementSyntax ParseWhileStatement()
+	{
+		SyntaxToken whileKeyword = EatToken(SyntaxKind.WhileKeyword);
+		SyntaxToken openParen = EatToken(SyntaxKind.OpenParenToken);
+
+		ExpressionSyntax condition = ParseExpression();
+
+		SyntaxToken closeParen = EatToken(SyntaxKind.CloseParenToken);
+
+		StatementSyntax statement = ParseStatement();
+
+		return new(whileKeyword, openParen, condition, closeParen, statement)
+		{
+			Position = whileKeyword.Position
+		};
+	}
+
+	private DoStatementSyntax ParseDoStatement()
+	{
+		SyntaxToken doKeyword = EatToken(SyntaxKind.DoKeyword);
+
+		StatementSyntax statement = ParseStatement();
+
+		SyntaxToken whileKeyword = EatToken(SyntaxKind.WhileKeyword);
+		SyntaxToken openParen = EatToken(SyntaxKind.OpenParenToken);
+
+		ExpressionSyntax condition = ParseExpression();
+
+		SyntaxToken closeParen = EatToken(SyntaxKind.CloseParenToken);
+		SyntaxToken semicolon = EatToken(SyntaxKind.SemicolonToken);
+
+		return new(doKeyword, statement, whileKeyword, openParen, condition, closeParen, semicolon)
+		{
+			Position = doKeyword.Position
+		};
+	}
+
+	private ForStatementSyntax ParseForStatement()
+	{
+		SyntaxToken forKeyword = EatToken(SyntaxKind.ForKeyword);
+
+		SyntaxToken openParen = EatToken(SyntaxKind.OpenParenToken);
+
+		TypeSyntax type = ParseType();
+		SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
+
+		VariableExpressionSyntax variable = new(type, identifier)
+		{
+			Position = type.Position
+		};
+
+		SyntaxToken colon = EatToken(SyntaxKind.ColonToken);
+
+		ExpressionSyntax expression = ParseExpression();
+
+		SyntaxToken closeParen = EatToken(SyntaxKind.CloseParenToken);
+
+		StatementSyntax statement = ParseStatement();
+
+		return new(forKeyword, openParen, variable, colon, expression, closeParen, statement);
+	}
+
+	private IfStatementSyntax ParseIfStatement()
+	{
+		SyntaxToken ifKeyword = EatToken(SyntaxKind.IfKeyword);
+		SyntaxToken openParen = EatToken(SyntaxKind.OpenParenToken);
+
+		ExpressionSyntax condition = ParseExpression();
+
+		SyntaxToken closeParen = EatToken(SyntaxKind.CloseParenToken);
+
+		StatementSyntax statement = ParseStatement();
+
+		List<ElifClauseSyntax>? elifs = null;
+		ElseClauseSyntax? @else = null;
+
+		if(PeekKind(SyntaxKind.ElifKeyword))
+		{
+			elifs = new()
+			{
+				ParseElifClause()
+			};
+
+			while (PeekKind(SyntaxKind.ElifKeyword))
+			{
+				elifs.Add(ParseElifClause());
+			}
+		}
+
+		if(PeekKind(SyntaxKind.ElseKeyword))
+		{
+			SyntaxToken elseKeyword = EatToken();
+
+			StatementSyntax elseStatement = ParseStatement();
+
+			if (elseStatement.IsKind(SyntaxKind.IfStatement))
+			{
+				AddError(ErrorCode.ERR_ElseIfNotSupported, statement.Position);
+			}
+
+			@else = new(elseKeyword, elseStatement)
+			{
+				Position = elseKeyword.Position
+			};
+		}
+
+		return new(ifKeyword, openParen, condition, closeParen, statement, ListIfNotNull(elifs), @else)
+		{
+			Position = ifKeyword.Position
+		};
+	}
+
+	private ElifClauseSyntax ParseElifClause()
+	{
+		SyntaxToken elifKeyword = EatToken(SyntaxKind.ElifKeyword);
+		SyntaxToken openParen = EatToken(SyntaxKind.OpenParenToken);
+
+		ExpressionSyntax condition = ParseExpression();
+
+		SyntaxToken closeParen = EatToken(SyntaxKind.CloseParenToken);
+
+		StatementSyntax statement = ParseStatement();
+
+		return new(elifKeyword, openParen, condition, closeParen, statement);
+	}
+
+	private ExpressionSyntax ParseExpression()
+	{
+		SyntaxToken token = Peek();
+
+		switch(token.Kind)
+		{
+			case SyntaxKind.IdentifierToken:
+				return ParseIdentifierName();
+
 			case SyntaxKind.StringLiteralToken:
+				EatToken();
+
 				return new LiteralExpressionSyntax(SyntaxKind.StringLiteralExpression, token)
 				{
 					Position = token.Position
 				};
 
 			case SyntaxKind.CharLiteralToken:
+				EatToken();
+
 				return new LiteralExpressionSyntax(SyntaxKind.CharLiteralExpression, token)
 				{
 					Position = token.Position
 				};
 
 			case SyntaxKind.NumericLiteralToken:
+				EatToken();
+
 				return new LiteralExpressionSyntax(SyntaxKind.NumericLiteralExpression, token)
 				{
 					Position = token.Position
 				};
 
 			case SyntaxKind.TrueKeyword:
+				EatToken();
+
 				return new LiteralExpressionSyntax(SyntaxKind.TrueLiteralExpression, token)
 				{
 					Position = token.Position
 				};
 
 			case SyntaxKind.FalseKeyword:
+				EatToken();
+
 				return new LiteralExpressionSyntax(SyntaxKind.FalseLiteralExpression, token)
 				{
 					Position = token.Position
 				};
 
 			case SyntaxKind.EOF:
+				EatToken();
 				AddError(ErrorCode.ERR_UnexpectedEndOfFile, token.Position);
 
-				return new LiteralExpressionSyntax(SyntaxKind.BadToken, UnexpectedToken())
+				return new LiteralExpressionSyntax(SyntaxKind.BadToken, UnexpectedToken(token))
 				{
 					Position = token.Position
 				};
 
 			default:
-				AddError(ErrorCode.ERR_UnexpectedCharacter, token.Position);
+				EatToken();
+				AddError(ErrorCode.ERR_SyntaxError, token.Position);
 
-				return new LiteralExpressionSyntax(SyntaxKind.BadToken, UnexpectedToken())
+				return new LiteralExpressionSyntax(SyntaxKind.BadToken, UnexpectedToken(token))
 				{
 					Position = token.Position
 				};
@@ -387,11 +821,11 @@ internal sealed class SourceParser
 
 		if(token.IsPredefinedTypeKeyword())
 		{
-			SyntaxToken predefinedType = EatToken();
+			EatToken();
 
-			return new PredefinedTypeSyntax(predefinedType)
+			return new PredefinedTypeSyntax(token)
 			{
-				Position = predefinedType.Position
+				Position = token.Position
 			};
 		}
 		else
@@ -433,6 +867,16 @@ internal sealed class SourceParser
 		return new(nodes.ToArray());
 	}
 
+	private static SyntaxList<TNode> ListIfNotNull<TNode>(List<TNode>? nodes) where TNode : SyntaxNode
+	{
+		if(nodes is null)
+		{
+			return default;
+		}
+
+		return List(nodes);
+	}
+
 	private static SyntaxList<TNode> List<TNode>(TNode[] nodes) where TNode : SyntaxNode
 	{
 		return new(nodes);
@@ -450,13 +894,23 @@ internal sealed class SourceParser
 
 	private SyntaxToken EatToken(SyntaxKind kind)
 	{
-		ref readonly SyntaxToken current = ref EatToken();
+		ref readonly SyntaxToken current = ref Peek();
 
 		if(current.Kind != kind)
 		{
-			AddError(ErrorCode.ERR_SyntaxError);
+			if (current.Kind == SyntaxKind.EOF)
+			{
+				AddError(ErrorCode.ERR_UnexpectedEndOfFile);
+			}
+			else
+			{
+				AddError(ErrorCode.ERR_SyntaxError);
+			}
+
 			return MissingToken(current);
 		}
+
+		EatToken();
 
 		return current;
 	}
@@ -469,6 +923,19 @@ internal sealed class SourceParser
 	private ref readonly SyntaxToken Peek()
 	{
 		return ref _tokens[_current];
+	}
+
+	private ref readonly SyntaxToken Peek(int pos)
+	{
+		int next = _current + pos;
+
+		// Return EOF if pos is too big.
+		if(next > _tokens.Length - 1)
+		{
+			return ref _tokens[^1];
+		}
+
+		return ref _tokens[_current + pos];
 	}
 
 	private bool PeekKind(SyntaxKind kind)
@@ -485,8 +952,12 @@ internal sealed class SourceParser
 	private SyntaxToken UnexpectedToken()
 	{
 		ref readonly SyntaxToken current = ref EatToken();
+		return UnexpectedToken(in current);
+	}
 
-		return new(SyntaxKind.BadToken, current.Text, current.Position);
+	private static SyntaxToken UnexpectedToken(in SyntaxToken token)
+	{
+		return new(SyntaxKind.BadToken, token.Text, token.Position);
 	}
 
 	private void AddError(ErrorCode code)

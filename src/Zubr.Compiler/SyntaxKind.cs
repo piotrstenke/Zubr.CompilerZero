@@ -133,10 +133,6 @@ public enum SyntaxKind : uint
 	// Name of a type, method etc.
 	IdentifierToken,
 
-	// -----------------------------
-	// Literals
-	// -----------------------------
-
 	// "some text"
 	StringLiteralToken,
 
@@ -173,6 +169,9 @@ public enum SyntaxKind : uint
 
 	// struct
 	StructKeyword,
+
+	// trait
+	TraitKeyword,
 	
 	// self
 	SelfKeyword,
@@ -204,11 +203,26 @@ public enum SyntaxKind : uint
 	// break
 	BreakKeyword,
 
+	// stop
+	StopKeyword,
+
 	// next
 	NextKeyword,
 
 	// return
 	ReturnKeyword,
+
+	// give
+	GiveKeyword,
+
+	// to
+	ToKeyword,
+
+	// type
+	TypeKeyword,
+
+	// where
+	WhereKeyword,
 
 	// pub
 	PubKeyword,
@@ -237,6 +251,9 @@ public enum SyntaxKind : uint
 	// let
 	LetKeyword,
 
+	// extern
+	ExternKeyword,
+
 	// bool
 	BoolKeyword,
 
@@ -253,15 +270,25 @@ public enum SyntaxKind : uint
 	StringKeyword,
 
 	// -----------------------------
+	// Directives
+	// -----------------------------
+
+	UseDirective,
+
+	// -----------------------------
 	// Declarations
 	// -----------------------------
 
+	// module Test;
 	ModuleDeclaration,
 
+	// class Test { }
 	ClassDeclaration,
 
+	// struct Test { }
 	StructDeclaration,
 
+	// void Main() { }
 	FunctionDeclaration,
 
 	ParameterList,
@@ -271,6 +298,16 @@ public enum SyntaxKind : uint
 	TypeParameterList,
 
 	TypeParameter,
+
+	TypeParameterConstraintList,
+
+	TypeParameterConstraintClause,
+
+	ClassConstraint,
+
+	StructConstraint,
+
+	TypeConstraint,
 
 	// -----------------------------
 	// Expressions
@@ -291,31 +328,77 @@ public enum SyntaxKind : uint
 	// false
 	FalseLiteralExpression,
 
-	// -----------------------------
-	// Statements & Directives
-	// -----------------------------
-
-	Block,
-
-	UseDirective,
-
-	// -----------------------------
-	// Clauses
-	// -----------------------------
-
-	EqualsValue,
+	// int a
+	VariableExpression,
 
 	// -----------------------------
 	// Names
 	// -----------------------------
 
+	// Test
 	IdentifierName,
 
+	// Module.Test
 	QualifiedName,
 
+	// Test<T>
 	GenericName,
 
+	// int, string, bool etc.
 	PredefinedType,
+
+	// -----------------------------
+	// Statements
+	// -----------------------------
+
+	// { }
+	Block,
+
+	// ;
+	EmptyStatement,
+
+	// return x;
+	ReturnStatement,
+
+	// stop;
+	StopStatement,
+
+	// next;
+	NextStatement,
+
+	/// int x = 1;
+	LocalDeclarationStatement,
+
+	// do { } while (condition);
+	DoStatement,
+
+	// while(condition) { }
+	WhileStatement,
+
+	// for (index, x : collection) { }
+	ForStatement,
+
+	// if (x == y) { }
+	IfStatement,
+
+	// elif (x == y) { }
+	ElifClause,
+
+	// else { }
+	ElseClause,
+
+	// int x = 1;
+	VariableDeclaration,
+
+	// x = 1;
+	VariableDeclarator,
+
+	// -----------------------------
+	// Clauses
+	// -----------------------------
+
+	// = value
+	EqualsValue,
 
 	// -----------------------------
 	// Errors
@@ -329,5 +412,6 @@ public enum SyntaxKind : uint
 	// Other
 	// -----------------------------
 
+	// End of file
 	EOF = 9999
 }

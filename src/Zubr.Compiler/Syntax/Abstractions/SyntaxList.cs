@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace Zubr.Compiler.Syntax.Abstractions;
 
-[DebuggerDisplay("Count = {Count,nq}")]
+[DebuggerDisplay("Count = {CountWithCheck,nq}")]
 [DebuggerTypeProxy(typeof(SyntaxList<>.DebuggerProxy))]
 public readonly struct SyntaxList<TNode> : IReadOnlyList<TNode> where TNode : SyntaxNode
 {
@@ -16,6 +16,10 @@ public readonly struct SyntaxList<TNode> : IReadOnlyList<TNode> where TNode : Sy
 	public bool IsEmpty => _nodes.Length == 0;
 
 	public bool IsDefault => _nodes is null;
+
+	public bool IsDefaultOrEmpty => _nodes is null || _nodes.Length == 0;
+
+	private int CountWithCheck => _nodes is null ? 0 : _nodes.Length;
 
 	public TNode this[int index] => _nodes[index];
 

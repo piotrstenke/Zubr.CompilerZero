@@ -4,7 +4,7 @@ using Zubr.Compiler.Diagnostics;
 
 using Zubr.Compiler.Parser;
 
-Console.WriteLine("Zubr programming language exaple.");
+Console.WriteLine("Zubr programming language example.");
 Console.WriteLine();
 Console.WriteLine("Tokens:");
 Console.WriteLine();
@@ -30,7 +30,8 @@ pub void print(string message = "")
 
 module top;
 
-void println(mut string message, int a)
+void println<T>(mut T message, int a) where
+	T : struct
 {
 	//Console.WriteLine(message);
 }
@@ -41,13 +42,60 @@ scoped open class Program
 {
 	int main()
 	{
-		//return 1;
+		bool flag = true;
+
+		if(flag)
+		{
+			//println("Hello");
+		}
+		elif(true)
+		{
+		}
+		elif(false)
+		{
+		}
+		else
+		{
+		}
+
+		while(true)
+		{
+			int a = 2;
+		}
+
+		do
+		{
+			string b = "hello \tthere";
+			char c = '5';
+		}
+		while(true);
+
+		for (int a : collection)
+		{
+		}
+
+		return 1;
 	}
 }
 
-priv struct Test
+priv struct Test<T, U> where
+	T : Clone, U,
+	U : Clone, class,
 {
 }
+
+//pub trait Clone
+//{
+//	self clone();
+//}
+
+//give Clone to Program
+//{
+//	Program clone()
+//	{
+//		return self;
+//	}
+//}
 
 """
 );
@@ -58,7 +106,7 @@ SyntaxToken token;
 
 int count = 0;
 
-while((token = lexer.Lex()).Kind != SyntaxKind.EOF)
+while ((token = lexer.Lex()).Kind != SyntaxKind.EOF)
 {
 	if(token.Kind == SyntaxKind.None)
 	{

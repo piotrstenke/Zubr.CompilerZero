@@ -12,20 +12,28 @@ public sealed class FunctionDeclarationSyntax : MemberDeclarationSyntax
 
 	public SyntaxToken Identifier { get; }
 
+	public TypeParameterListSyntax? TypeParameterList { get; }
+
 	public ParameterListSyntax ParameterList { get; }
+
+	public TypeParameterConstraintListSyntax? ConstraintList { get; }
 
 	public BlockSyntax Body { get; }
 
-	internal FunctionDeclarationSyntax(SyntaxTokenList modifiers, TypeSyntax returnType, SyntaxToken identifier, ParameterListSyntax parameterList, BlockSyntax body)
+	internal FunctionDeclarationSyntax(SyntaxTokenList modifiers, TypeSyntax returnType, SyntaxToken identifier, TypeParameterListSyntax? typeParameterList, ParameterListSyntax parameterList, TypeParameterConstraintListSyntax? constraintList, BlockSyntax body)
 	{
 		Modifiers = modifiers;
 		ReturnType = returnType;
 		Identifier = identifier;
 		ParameterList = parameterList;
+		TypeParameterList = typeParameterList;
+		ConstraintList = constraintList;
 		Body = body;
 
 		SetParent(returnType);
 		SetParent(parameterList);
+		SetParentIfNotNull(typeParameterList);
+		SetParentIfNotNull(constraintList);
 		SetParent(body);
 	}
 }

@@ -1,7 +1,12 @@
-﻿namespace Zubr.Compiler;
+﻿using System.Diagnostics;
 
+namespace Zubr.Compiler;
+
+[DebuggerDisplay("{Text ?? string.Empty,nq}")]
 public readonly struct SyntaxToken
 {
+	public object? Value { get; }
+
 	public string Text { get; }
 
 	public int Position { get; }
@@ -16,6 +21,14 @@ public readonly struct SyntaxToken
 
 	internal SyntaxToken(SyntaxKind kind, string text, int position)
 	{
+		Kind = kind;
+		Text = text;
+		Position = position;
+	}
+
+	internal SyntaxToken(SyntaxKind kind, string text, int position, object? value)
+	{
+		Value = value;
 		Kind = kind;
 		Text = text;
 		Position = position;

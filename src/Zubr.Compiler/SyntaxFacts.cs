@@ -1,4 +1,6 @@
-﻿namespace Zubr.Compiler;
+﻿using System.Runtime.InteropServices;
+
+namespace Zubr.Compiler;
 
 public static class SyntaxFacts
 {
@@ -6,7 +8,7 @@ public static class SyntaxFacts
 	private const SyntaxKind END_KIND = SyntaxKind.EOF;
 
 	private const SyntaxKind KEYWORDS_START = SyntaxKind.UseKeyword;
-	private const SyntaxKind KEYWORDS_END = SyntaxKind.VoidKeyword;
+	private const SyntaxKind KEYWORDS_END = SyntaxKind.StringKeyword;
 
 	public static bool IsKeyword(string value)
 	{
@@ -62,7 +64,8 @@ public static class SyntaxFacts
 		return
 			value == SyntaxKind.ClassKeyword ||
 			value == SyntaxKind.StructKeyword ||
-			value == SyntaxKind.EnumKeyword;
+			value == SyntaxKind.EnumKeyword ||
+			value == SyntaxKind.TraitKeyword;
 	}
 
 	public static bool IsAccessModifier(this SyntaxToken token)
@@ -131,6 +134,7 @@ public static class SyntaxFacts
 			"class" => SyntaxKind.ClassKeyword,
 			"struct" => SyntaxKind.StructKeyword,
 			"enum" => SyntaxKind.EnumKeyword,
+			"trait" => SyntaxKind.TraitKeyword,
 			"mut" => SyntaxKind.MutKeyword,
 			"self" => SyntaxKind.SelfKeyword,
 			"match" => SyntaxKind.MatchKeyword,
@@ -147,6 +151,9 @@ public static class SyntaxFacts
 			"false" => SyntaxKind.FalseKeyword,
 			"int" => SyntaxKind.IntKeyword,
 			"string" => SyntaxKind.StringKeyword,
+			"give" => SyntaxKind.GiveKeyword,
+			"to" => SyntaxKind.ToKeyword,
+			"where" => SyntaxKind.WhereKeyword,
 			_ => SyntaxKind.None
 		};
 	}
