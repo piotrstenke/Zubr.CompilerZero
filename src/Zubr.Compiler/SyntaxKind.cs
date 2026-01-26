@@ -293,6 +293,9 @@ public enum SyntaxKind : uint
 	// int
 	IntKeyword,
 
+	// char
+	CharKeyword,
+
 	// string
 	StringKeyword,
 
@@ -527,6 +530,9 @@ public enum SyntaxKind : uint
 
 	// ;
 	EmptyStatement,
+
+	// Expression followed by a ';'
+	ExpressionStatement,
 
 	// return x;
 	ReturnStatement,

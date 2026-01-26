@@ -49,7 +49,8 @@ public static class SyntaxFacts
 			value == SyntaxKind.BoolKeyword ||
 			value == SyntaxKind.VoidKeyword ||
 			value == SyntaxKind.IntKeyword ||
-			value == SyntaxKind.StringKeyword;
+			value == SyntaxKind.StringKeyword ||
+			value == SyntaxKind.CharKeyword;
 	}
 
 	public static bool IsTypeDeclarationKeyword(this in SyntaxToken token)
@@ -64,6 +65,28 @@ public static class SyntaxFacts
 			value == SyntaxKind.StructKeyword ||
 			value == SyntaxKind.EnumKeyword ||
 			value == SyntaxKind.TraitKeyword;
+	}
+
+	public static bool IsAssignmentOperator(this in SyntaxToken token)
+	{
+		return IsAssignmentOperator(token.Kind);
+	}
+
+	public static bool IsAssignmentOperator(SyntaxKind value)
+	{
+		return
+			value == SyntaxKind.EqualsToken ||
+			value == SyntaxKind.PlusEqualsToken ||
+			value == SyntaxKind.MinusEqualsToken ||
+			value == SyntaxKind.AsteriskEqualsToken ||
+			value == SyntaxKind.SlashEqualsToken ||
+			value == SyntaxKind.PercentEqualsToken ||
+			value == SyntaxKind.BarEqualsToken ||
+			value == SyntaxKind.CaretEqualsToken ||
+			value == SyntaxKind.AmpersandEqualsToken ||
+			value == SyntaxKind.LessThanLessThanEqualsToken ||
+			value == SyntaxKind.GreaterThanGreaterThanEqualsToken ||
+			value == SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken;
 	}
 
 	public static bool IsAccessModifier(this in SyntaxToken token)
@@ -149,6 +172,7 @@ public static class SyntaxFacts
 			"false" => SyntaxKind.FalseKeyword,
 			"int" => SyntaxKind.IntKeyword,
 			"string" => SyntaxKind.StringKeyword,
+			"char" => SyntaxKind.CharKeyword,
 			"give" => SyntaxKind.GiveKeyword,
 			"to" => SyntaxKind.ToKeyword,
 			"where" => SyntaxKind.WhereKeyword,

@@ -26,6 +26,7 @@ internal sealed partial class CSharpTranslator
 				WhileStatementSyntax w => While(w),
 				DoStatementSyntax d => Do(d),
 				ForStatementSyntax f => ForEach(f),
+				ExpressionStatementSyntax expr => Expression(expr),
 				_ => throw new UnreachableException()
 			};
 		}
@@ -33,6 +34,11 @@ internal sealed partial class CSharpTranslator
 		public static Sharp.BlockSyntax Block(BlockSyntax node)
 		{
 			return SyntaxFactory.Block(node.Statements.Select(Statement));
+		}
+
+		public static Sharp.ExpressionStatementSyntax Expression(ExpressionStatementSyntax node)
+		{
+			return SyntaxFactory.ExpressionStatement(Expressions.Expression(node.Expression));
 		}
 
 		public static Sharp.IfStatementSyntax If(IfStatementSyntax node)

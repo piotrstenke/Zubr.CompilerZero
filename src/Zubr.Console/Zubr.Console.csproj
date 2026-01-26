@@ -5,11 +5,18 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RootNamespace>Zubr</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Zubr.Compiler.CSharp\Zubr.Compiler.CSharp.csproj" />
     <ProjectReference Include="..\Zubr.Compiler\Zubr.Compiler.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="code_sample.zr">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

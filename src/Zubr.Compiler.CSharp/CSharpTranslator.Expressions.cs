@@ -29,6 +29,7 @@ internal sealed partial class CSharpTranslator
 				InvocationExpressionSyntax i => Invocation(i),
 				ParenthesizedExpressionSyntax p => Parenthesized(p),
 				ConditionalExpressionSyntax conditional => Conditional(conditional),
+				AssignmentExpressionSyntax a => Assignment(a),
 				_ => throw new UnreachableException()
 			};
 		}
@@ -69,6 +70,12 @@ internal sealed partial class CSharpTranslator
 		public static Sharp.MemberAccessExpressionSyntax MemberAccess(MemberAccessExpressionSyntax node)
 		{
 			return SyntaxFactory.MemberAccessExpression(CSyntaxKind.SimpleMemberAccessExpression, Expression(node.Expression), SimpleName(node.Name));
+		}
+
+		public static Sharp.AssignmentExpressionSyntax Assignment(AssignmentExpressionSyntax node)
+		{
+			CSyntaxKind kind = GetAssignmentKind(node.Kind);
+			return SyntaxFactory.AssignmentExpression(kind, Expression(node.Left), Expression(node.Right));
 		}
 
 		public static Sharp.PostfixUnaryExpressionSyntax PostfixUnary(PostfixUnaryExpression node)
@@ -132,6 +139,7 @@ internal sealed partial class CSharpTranslator
 				SyntaxKind.StringKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.StringKeyword)),
 				SyntaxKind.BoolKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.BoolKeyword)),
 				SyntaxKind.VoidKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.VoidKeyword)),
+				SyntaxKind.CharKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.CharKeyword)),
 				_ => throw new UnreachableException()
 			};
 		}
@@ -187,6 +195,26 @@ internal sealed partial class CSharpTranslator
 			};
 
 			return SyntaxFactory.LiteralExpression(CSyntaxKind.NumericLiteralExpression, token);
+		}
+
+		private static CSyntaxKind GetAssignmentKind(SyntaxKind kind)
+		{
+			return kind switch
+			{
+				SyntaxKind.AssignmentExpression => CSyntaxKind.SimpleAssignmentExpression,
+				SyntaxKind.AddAssignmentExpression => CSyntaxKind.AddAssignmentExpression,
+				SyntaxKind.SubtractAssignmentExpression => CSyntaxKind.SubtractAssignmentExpression,
+				SyntaxKind.MultiplyAssignmentExpression => CSyntaxKind.MultiplyAssignmentExpression,
+				SyntaxKind.DivideAssignmentExpression => CSyntaxKind.DivideAssignmentExpression,
+				SyntaxKind.ModuloAssignmentExpression => CSyntaxKind.ModuloAssignmentExpression,
+				SyntaxKind.ExclusiveOrAssignmentExpression => CSyntaxKind.ExclusiveOrAssignmentExpression,
+				SyntaxKind.AndAssignmentExpression => CSyntaxKind.AndAssignmentExpression,
+				SyntaxKind.OrAssignmentExpression => CSyntaxKind.OrAssignmentExpression,
+				SyntaxKind.LeftShiftAssignmentExpression => CSyntaxKind.LeftShiftAssignmentExpression,
+				SyntaxKind.RightShiftAssignmentExpression => CSyntaxKind.RightShiftAssignmentExpression,
+				SyntaxKind.UnsignedRightShiftAssignmentExpression => CSyntaxKind.UnsignedRightShiftAssignmentExpression,
+				_ => throw new UnreachableException()
+			};
 		}
 
 		private static CSyntaxKind GetPrefixUnaryKind(SyntaxKind kind)

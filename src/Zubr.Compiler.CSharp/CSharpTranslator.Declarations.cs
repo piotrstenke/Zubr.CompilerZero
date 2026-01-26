@@ -213,6 +213,16 @@ internal sealed partial class CSharpTranslator
 				targetModifiers.Add(Token(CSyntaxKind.SealedKeyword));
 			}
 
+			if(node is FunctionDeclarationSyntax && node.Parent is CompilationUnitSyntax or ModuleDeclarationSyntax)
+			{
+				if(!targetModifiers.Any(x => Microsoft.CodeAnalysis.CSharp.SyntaxFacts.IsAccessibilityModifier(x.Kind())))
+				{
+					targetModifiers.Add(Token(CSyntaxKind.PublicKeyword));
+				}
+
+				targetModifiers.Add(Token(CSyntaxKind.StaticKeyword));
+			}
+
 			return TokenList(targetModifiers.ToArray());
 		}
 

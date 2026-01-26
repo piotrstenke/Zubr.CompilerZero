@@ -1,119 +1,54 @@
-﻿using Zubr.Compiler;
+﻿using System.Diagnostics;
+using System.Reflection;
+using System.Text;
+using Zubr.Compiler;
 using Zubr.Compiler.CSharp;
 using Zubr.Compiler.Diagnostics;
-
 using Zubr.Compiler.Parser;
+using Zubr.Compiler.Syntax;
+using Zubr.Console;
 
-Console.WriteLine("Zubr programming language example.");
 Console.WriteLine();
+Console.WriteLine("------------------------------------------------");
+Console.WriteLine("Zubr programming language sample.");
+Console.WriteLine("------------------------------------------------");
+Console.WriteLine();
+//Console.WriteLine("Path to .zr file:");
+//Console.WriteLine("(leave empty to use default path)");
+//Console.WriteLine();
+
+string? path = "code_sample.zr"; //= Console.ReadLine();
+
+//if(string.IsNullOrWhiteSpace(path))
+//{
+//	path = "code_sample.zr";
+//}
+
+path = Path.GetFullPath(path);
+
+Console.WriteLine();
+Console.WriteLine($"Reading Zubr file at path: {path}");
+Console.WriteLine();
+
+string text = File.ReadAllText(path);
+
+Console.WriteLine();
+Console.WriteLine("------------------------------------------------");
 Console.WriteLine("Tokens:");
+Console.WriteLine("------------------------------------------------");
 Console.WriteLine();
 
-SourceText source = SourceText.FromSource(
-"""
-use System;
-use System.Collections.Generic;
-use System.Collections.Generic.Console as console;
+SourceText source = SourceText.FromSource(text);
 
-// This is a comment
-
-**
-
-This is also a comment
-
-**
-
-pub void print(string message = "")
-{
-	//Console.Write(message);
-}
-
-module top;
-
-void println<T>(mut T message, int a) where
-	T : struct
-{
-	//Console.WriteLine(message);
-}
-
-module Hello;
-
-scoped open class Program
-{
-	int main()
-	{
-		bool flag = true;
-
-		if(flag)
-		{
-			//println("Hello");
-		}
-		elif(true)
-		{
-		}
-		elif(false)
-		{
-		}
-		else
-		{
-		}
-
-		while(true)
-		{
-			int a = 2;
-		}
-
-		do
-		{
-			string b = "hello \tthere";
-			char c = '5';
-
-			bool d = (1 + -2.2) * 3 == (int)7 << 2 && foo(4) < 10;
-		}
-		while(true);
-
-		for (int a : collection)
-		{
-		}
-
-		return 1;
-	}
-
-	priv int foo(int a)
-	{
-		return ++a;
-	}
-}
-
-priv struct Test<T, U> where
-	T : Clone, U,
-	U : Clone, class,
-{
-}
-
-//pub trait Clone
-//{
-//	self clone();
-//}
-
-//give Clone to Program
-//{
-//	Program clone()
-//	{
-//		return self;
-//	}
-//}
-
-"""
-);
+Stopwatch watch = new();
+watch.Start();
 
 Lexer lexer = new(source.GetSourceReader());
 
+int count = 0;
 SyntaxToken token;
 
-int count = 0;
-
-int b = count;
+List<SyntaxToken> tokens = new();
 
 while ((token = lexer.Lex()).Kind != SyntaxKind.EOF)
 {
@@ -123,7 +58,10 @@ while ((token = lexer.Lex()).Kind != SyntaxKind.EOF)
 	}
 
 	Console.WriteLine($"{count++}: {token}");
+	tokens.Add(token);
 }
+
+watch.Stop();
 
 Diagnostic[]? errors = lexer.GetErrors();
 
@@ -137,19 +75,104 @@ if (errors is not null)
 	{
 		Console.WriteLine($"{errors[i].Code} at position {errors[i].Position}");
 	}
+
+	Console.ReadKey();
+	return;
 }
-else
+
+Console.WriteLine();
+Console.WriteLine($"Lexing took {watch.ElapsedMilliseconds}ms");
+
+// Add EOF
+tokens.Add(token);
+
+watch.Restart();
+
+SourceParser parser = new(tokens.ToArray());
+CompilationUnitSyntax root = parser.ParseCompilationUnit();
+
+watch.Stop();
+
+errors = parser.GetDiagnostics();
+
+if (errors is not null)
 {
-	SyntaxTree tree = SyntaxTree.Parse(source);
-
-	CSharpTranslator translator = CSharpTranslator.Create();
-	var compiled = translator.Translate(tree);
-
 	Console.WriteLine();
-	Console.WriteLine("Compiled Zubr code to C#:");
+	Console.WriteLine("Parsing failed with errors:");
 	Console.WriteLine();
 
-	Console.WriteLine(compiled.ToString());
+	for (int i = 0; i < errors.Length; i++)
+	{
+		Console.WriteLine($"{errors[i].Code} at position {errors[i].Position}");
+	}
+
+	Console.ReadKey();
+	return;
+}
+
+Console.WriteLine();
+Console.WriteLine($"Parsing took {watch.ElapsedMilliseconds}ms");
+
+CSharpTranslator translator = CSharpTranslator.Create();
+var tree = translator.Translate(new SyntaxTree(root, Encoding.UTF8));
+
+Console.WriteLine();
+Console.WriteLine("------------------------------------------------");
+Console.WriteLine("Compiled Zubr code to C#:");
+Console.WriteLine("------------------------------------------------");
+Console.WriteLine();
+
+Console.WriteLine(tree.ToString());
+
+var compilation = RoslynUtilities.CreateCompilation(tree);
+
+using MemoryStream stream = new();
+
+var result = compilation.Emit(stream);
+
+if(!result.Success)
+{
+	Console.WriteLine();
+	Console.WriteLine("------------------------------------------------");
+	Console.WriteLine("Emit failed with errors:");
+	Console.WriteLine("------------------------------------------------");
+	Console.WriteLine();
+
+	foreach (var diag in result.Diagnostics)
+	{
+		Console.WriteLine(diag.ToString());
+	}
+
+	Console.ReadKey();
+	return;
+}
+
+Console.WriteLine();
+Console.WriteLine("------------------------------------------------");
+Console.WriteLine("Calling main() in Zubr code...");
+Console.WriteLine("------------------------------------------------");
+Console.WriteLine();
+
+Assembly assembly = Assembly.Load(stream.ToArray());
+
+Type? type = assembly.GetType("TopLevel");
+MethodInfo? method = type?.GetMethod("main");
+
+if(method is null)
+{
+	Console.WriteLine("Could not find the main() function.");
+	Console.ReadKey();
+	return;
+}
+
+object? output = method.Invoke(null, null);
+
+if(output is not null)
+{
+	Console.WriteLine();
+	Console.WriteLine("Zubr code resulted in:");
+	Console.WriteLine();
+	Console.WriteLine(output.ToString());
 }
 
 Console.ReadKey();

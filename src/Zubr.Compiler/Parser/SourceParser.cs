@@ -515,11 +515,11 @@ internal sealed class SourceParser
 			SyntaxKind.WhileKeyword => ParseWhileStatement(),
 			SyntaxKind.DoKeyword => ParseDoStatement(),
 			SyntaxKind.ForKeyword => ParseForStatement(),
-			SyntaxKind.IdentifierToken => ParseLocalDeclaration(),
+			SyntaxKind.IdentifierToken => ParseLocalOrExpressionStatement(),
 			SyntaxKind.ReturnKeyword => ParseReturnStatement(),
 			SyntaxKind.NextKeyword => ParseNextStatement(),
 			SyntaxKind.StopKeyword => ParseStopStatement(),
-			_ => ParseLocalDeclaration(),
+			_ => ParseLocalOrExpressionStatement(),
 		};
 	}
 
@@ -561,6 +561,24 @@ internal sealed class SourceParser
 		return new(stopKeyword, semicolon)
 		{
 			Position = stopKeyword.Position,
+		};
+	}
+
+	private StatementSyntax ParseLocalOrExpressionStatement()
+	{
+		SyntaxToken token = Peek();
+
+		if(token.IsPredefinedType() && Peek(1).Kind != SyntaxKind.DotToken)
+		{
+			return ParseLocalDeclaration();
+		}
+
+		ExpressionSyntax expr = ParseExpression();
+		SyntaxToken semicolonToken = EatToken();
+
+		return new ExpressionStatementSyntax(expr, semicolonToken)
+		{
+			Position = expr.Position,
 		};
 	}
 
@@ -787,6 +805,14 @@ internal sealed class SourceParser
 
 		SyntaxToken operatorToken = EatToken();
 		ExpressionSyntax right = ParseExpression(newPrecedence);
+
+		if(SyntaxFacts.IsAssignmentOperator(operatorToken.Kind))
+		{
+			return new AssignmentExpressionSyntax(left, operatorToken, right)
+			{
+				Position = left.Position
+			};
+		}
 
 		return new BinaryExpressionSyntax(exprKind, left, operatorToken, right)
 		{
@@ -1114,6 +1140,21 @@ internal sealed class SourceParser
 			SyntaxKind.LessThanEqualsToken => SyntaxKind.LessThanOrEqualExpression,
 			SyntaxKind.BarBarToken => SyntaxKind.LogicalOrExpression,
 			SyntaxKind.AmpersandAmpersandToken => SyntaxKind.LogicalAndExpression,
+
+			// Assignment
+
+			SyntaxKind.EqualsToken => SyntaxKind.AssignmentExpression,
+			SyntaxKind.PlusEqualsToken => SyntaxKind.AddAssignmentExpression,
+			SyntaxKind.MinusEqualsToken => SyntaxKind.SubtractAssignmentExpression,
+			SyntaxKind.AsteriskEqualsToken => SyntaxKind.MultiplyAssignmentExpression,
+			SyntaxKind.SlashEqualsToken => SyntaxKind.DivideAssignmentExpression,
+			SyntaxKind.PercentEqualsToken => SyntaxKind.ModuloAssignmentExpression,
+			SyntaxKind.CaretEqualsToken => SyntaxKind.ExclusiveOrAssignmentExpression,
+			SyntaxKind.BarEqualsToken => SyntaxKind.BitwiseOrExpression,
+			SyntaxKind.AmpersandEqualsToken => SyntaxKind.BitwiseAndExpression,
+			SyntaxKind.LessThanLessThanEqualsToken => SyntaxKind.LeftShiftAssignmentExpression,
+			SyntaxKind.GreaterThanGreaterThanEqualsToken => SyntaxKind.RightShiftAssignmentExpression,
+			SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken => SyntaxKind.UnsignedRightShiftAssignmentExpression,
 			_ => default
 		};
 	}
@@ -1197,6 +1238,9 @@ internal sealed class SourceParser
 			SyntaxKind.LogicalAndExpression
 				=> Precedence.ConditionalAnd,
 
+			SyntaxKind.LogicalOrExpression
+				=> Precedence.ConditionalOr,
+
 			SyntaxKind.AssignmentExpression or
 			SyntaxKind.AddAssignmentExpression or
 			SyntaxKind.SubtractAssignmentExpression or
@@ -1208,9 +1252,8 @@ internal sealed class SourceParser
 			SyntaxKind.OrAssignmentExpression or
 			SyntaxKind.LeftShiftAssignmentExpression or
 			SyntaxKind.RightShiftAssignmentExpression or
-			SyntaxKind.UnsignedRightShiftAssignmentExpression or
-			SyntaxKind.LogicalOrExpression
-				=> Precedence.ConditionalOr,
+			SyntaxKind.UnsignedRightShiftAssignmentExpression
+				=> Precedence.Assignment,
 
 			SyntaxKind.ConditionalExpression
 				=> Precedence.Low,
