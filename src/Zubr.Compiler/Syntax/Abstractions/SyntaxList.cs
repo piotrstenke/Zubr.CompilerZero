@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 
 namespace Zubr.Compiler.Syntax.Abstractions;
 
@@ -26,6 +27,31 @@ public readonly struct SyntaxList<TNode> : IReadOnlyList<TNode> where TNode : Sy
 	internal SyntaxList(TNode[] nodes)
 	{
 		_nodes = nodes;
+	}
+
+	public override string ToString()
+	{
+		return ToString('\n');
+	}
+
+	public string ToString(char separator)
+	{
+		if (_nodes is null || _nodes.Length == 0)
+		{
+			return "";
+		}
+
+		StringBuilder sb = new();
+
+		sb.Append(_nodes[0].ToString());
+
+		for (int i = 1; i < _nodes.Length; i++)
+		{
+			sb.Append(separator);
+			sb.Append(_nodes[i].ToString());
+		}
+
+		return sb.ToString();
 	}
 
 	public Enumerator GetEnumerator()

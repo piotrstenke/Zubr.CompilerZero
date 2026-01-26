@@ -24,4 +24,9 @@ public sealed class ParameterSyntax : SyntaxNode
 		SetParent(type);
 		SetParentIfNotNull(@default);
 	}
+
+	public override string ToString()
+	{
+		return $"{Modifiers} {Type} {Identifier}{(Default is null ? "" : $" {Default}")}";
+	}
 }

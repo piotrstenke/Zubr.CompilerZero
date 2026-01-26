@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 
 namespace Zubr.Compiler.Syntax.Abstractions;
 
@@ -28,6 +29,31 @@ public readonly struct SyntaxTokenList : IReadOnlyCollection<SyntaxToken>
 	internal SyntaxTokenList(SyntaxToken[] tokens)
 	{
 		_tokens = tokens;
+	}
+
+	public override string ToString()
+	{
+		return ToString(' ');
+	}
+
+	public string ToString(char separator)
+	{
+		if (_tokens is null || _tokens.Length == 0)
+		{
+			return "";
+		}
+
+		StringBuilder sb = new();
+
+		sb.Append(_tokens[0].ToString());
+
+		for (int i = 1; i < _tokens.Length; i++)
+		{
+			sb.Append(separator);
+			sb.Append(_tokens[i].ToString());
+		}
+
+		return sb.ToString();
 	}
 
 	public bool HasKind(SyntaxKind kind)

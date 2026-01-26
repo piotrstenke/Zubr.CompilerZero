@@ -12,4 +12,9 @@ public sealed class EmptyStatementSyntax : StatementSyntax
 	{
 		SemicolonToken = semicolonToken;
 	}
+
+	public override string ToString()
+	{
+		return $"{SemicolonToken}";
+	}
 }

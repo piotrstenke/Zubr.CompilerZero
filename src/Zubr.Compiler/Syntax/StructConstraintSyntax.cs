@@ -12,4 +12,9 @@ public sealed class StructConstraintSyntax : TypeParameterConstraintSyntax
 	{
 		StructKeyword = structKeyword;
 	}
+
+	public override string ToString()
+	{
+		return $"{StructKeyword}";
+	}
 }

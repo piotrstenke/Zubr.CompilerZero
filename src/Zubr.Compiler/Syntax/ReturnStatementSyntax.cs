@@ -20,4 +20,9 @@ public sealed class ReturnStatementSyntax : StatementSyntax
 
 		SetParentIfNotNull(expression);
 	}
+
+	public override string ToString()
+	{
+		return $"{ReturnKeyword} {Expression}{SemicolonToken}";
+	}
 }

@@ -33,4 +33,9 @@ public sealed class DoStatementSyntax : StatementSyntax
 		SetParent(statement);
 		SetParent(condition);
 	}
+
+	public override string ToString()
+	{
+		return $"{DoKeyword} {Statement} {WhileKeyword}{OpenParenToken}{Condition}{CloseParenToken}{SemicolonToken}";
+	}
 }

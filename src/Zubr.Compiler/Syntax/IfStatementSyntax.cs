@@ -35,4 +35,14 @@ public sealed class IfStatementSyntax : StatementSyntax
 		SetParent(elifs);
 		SetParentIfNotNull(@else);
 	}
+
+	public override string ToString()
+	{
+		if(Else is null && Elifs.IsDefaultOrEmpty)
+		{
+			return $"{IfKeyword} {OpenParenToken}{Condition}{CloseParenToken} {Statement}";
+		}
+
+		return $"{IfKeyword} {OpenParenToken}{Condition}{CloseParenToken} {Statement} ...";
+	}
 }

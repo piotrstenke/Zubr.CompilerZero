@@ -18,4 +18,9 @@ public sealed class VariableDeclarationSyntax : SyntaxNode
 		SetParent(type);
 		SetParent(variable);
 	}
+
+	public override string ToString()
+	{
+		return $"{Type} {Variable}";
+	}
 }

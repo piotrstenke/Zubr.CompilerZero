@@ -20,4 +20,9 @@ public sealed class ParameterListSyntax : SyntaxNode
 
 		SetParent(parameters);
 	}
+
+	public override string ToString()
+	{
+		return $"{OpenParenToken}{Parameters}{CloseParenToken}";
+	}
 }

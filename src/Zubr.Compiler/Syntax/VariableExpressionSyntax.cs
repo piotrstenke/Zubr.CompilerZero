@@ -17,4 +17,14 @@ public sealed class VariableExpressionSyntax : ExpressionSyntax
 
 		SetParentIfNotNull(type);
 	}
+
+	public override string ToString()
+	{
+		if(Type is null)
+		{
+			return $"{Identifier}";
+		}
+
+		return $"{Type} {Identifier}";
+	}
 }

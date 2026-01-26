@@ -15,4 +15,9 @@ public sealed class NextStatementSyntax : StatementSyntax
 		NextKeyword = nextKeyword;
 		SemicolonToken = semicolonToken;
 	}
+
+	public override string ToString()
+	{
+		return $"{NextKeyword}{SemicolonToken}";
+	}
 }

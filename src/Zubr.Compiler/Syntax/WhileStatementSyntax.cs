@@ -27,4 +27,9 @@ public sealed class WhileStatementSyntax : StatementSyntax
 		SetParent(condition);
 		SetParent(statement);
 	}
+
+	public override string ToString()
+	{
+		return $"{WhileKeyword}{OpenParenToken}{Condition}{CloseParenToken} {Statement}";
+	}
 }

@@ -15,4 +15,9 @@ public sealed class VariableDeclaratorSyntax : SyntaxNode
 
 		SetParent(initializer);
 	}
+
+	public override string ToString()
+	{
+		return $"{Identifier} {Initializer}";
+	}
 }

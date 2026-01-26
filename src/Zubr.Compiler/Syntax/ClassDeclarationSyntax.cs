@@ -1,4 +1,6 @@
-﻿using Zubr.Compiler.Syntax.Abstractions;
+﻿using System;
+using System.Linq.Expressions;
+using Zubr.Compiler.Syntax.Abstractions;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -36,5 +38,10 @@ public sealed class ClassDeclarationSyntax : TypeDeclarationSyntax
 		SetParent(members);
 		SetParentIfNotNull(typeParameterList);
 		SetParentIfNotNull(constraintList);
+	}
+
+	public override string ToString()
+	{
+		return $"{Modifiers} {Keyword} {Identifier}{TypeParameterList}{(ConstraintList is null ? "" : $" {ConstraintList}")} {OpenBraceToken} ... {CloseBraceToken}";
 	}
 }

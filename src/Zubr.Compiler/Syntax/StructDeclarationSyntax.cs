@@ -37,4 +37,9 @@ public sealed class StructDeclarationSyntax : TypeDeclarationSyntax
 		SetParentIfNotNull(typeParameterList);
 		SetParentIfNotNull(constraintList);
 	}
+
+	public override string ToString()
+	{
+		return $"{Modifiers} {Keyword} {Identifier}{TypeParameterList}{(ConstraintList is null ? "" : $" {ConstraintList}")} {OpenBraceToken} ... {CloseBraceToken}";
+	}
 }

@@ -20,7 +20,6 @@ public sealed class ForStatementSyntax : StatementSyntax
 
 	public StatementSyntax Statement { get; }
 
-
 	internal ForStatementSyntax(SyntaxToken forKeyword, SyntaxToken openParenToken, ExpressionSyntax variable, SyntaxToken colonToken, ExpressionSyntax expression, SyntaxToken closeParenToken, StatementSyntax statement)
 	{
 		ForKeyword = forKeyword;
@@ -34,5 +33,10 @@ public sealed class ForStatementSyntax : StatementSyntax
 		SetParent(variable);
 		SetParent(expression);
 		SetParent(statement);
+	}
+
+	public override string ToString()
+	{
+		return $"{ForKeyword}{OpenParenToken}{Variable} {ColonToken} {Expression}{CloseParenToken} {Statement}";
 	}
 }

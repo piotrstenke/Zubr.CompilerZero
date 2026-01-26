@@ -17,4 +17,9 @@ public sealed class TypeParameterConstraintListSyntax : SyntaxNode
 
 		SetParent(constraints);
 	}
+
+	public override string ToString()
+	{
+		return $"{WhereKeyword} {Clauses}";
+	}
 }

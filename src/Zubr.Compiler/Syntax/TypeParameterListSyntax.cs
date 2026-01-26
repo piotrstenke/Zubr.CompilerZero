@@ -20,4 +20,9 @@ public sealed class TypeParameterListSyntax : SyntaxNode
 
 		SetParent(parameters);
 	}
+
+	public override string ToString()
+	{
+		return $"{LessThanToken}{Parameters}{GreaterThanToken}";
+	}
 }

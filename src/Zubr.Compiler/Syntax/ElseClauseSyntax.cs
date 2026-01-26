@@ -17,4 +17,9 @@ public sealed class ElseClauseSyntax : SyntaxNode
 
 		SetParent(statement);
 	}
+
+	public override string ToString()
+	{
+		return $"{ElseKeyword} {Statement}";
+	}
 }

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 
 namespace Zubr.Compiler.Syntax.Abstractions;
 
@@ -26,6 +27,27 @@ public readonly struct SeparatedSyntaxList<TNode> : IReadOnlyList<TNode> where T
 	internal SeparatedSyntaxList((TNode node, SyntaxToken separator)[] nodes)
 	{
 		_nodes = nodes;
+	}
+
+	public override string ToString()
+	{
+		if(_nodes is null || _nodes.Length == 0)
+		{
+			return "";
+		}
+
+		StringBuilder sb = new();
+
+		sb.Append(_nodes[0].node.ToString());
+
+		for (int i = 1; i < _nodes.Length; i++)
+		{
+			sb.Append(_nodes[i].separator.ToString());
+			sb.Append(' ');
+			sb.Append(_nodes[i].node.ToString());
+		}
+
+		return sb.ToString();
 	}
 
 	public SyntaxToken GetSeparator(int index)

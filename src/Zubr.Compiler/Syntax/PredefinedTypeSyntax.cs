@@ -12,4 +12,9 @@ public sealed class PredefinedTypeSyntax : TypeSyntax
 	{
 		Keyword = keyword;
 	}
+
+	public override string ToString()
+	{
+		return $"{Keyword}";
+	}
 }

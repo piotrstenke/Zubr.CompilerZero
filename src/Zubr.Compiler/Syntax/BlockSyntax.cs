@@ -20,4 +20,9 @@ public sealed class BlockSyntax : StatementSyntax
 
 		SetParent(statements);
 	}
+
+	public override string ToString()
+	{
+		return $"{OpenBraceToken} ... {CloseBraceToken}";
+	}
 }

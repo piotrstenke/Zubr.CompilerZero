@@ -17,4 +17,9 @@ public sealed class EqualsValueClauseSyntax : SyntaxNode
 
 		SetParent(value);
 	}
+
+	public override string ToString()
+	{
+		return $"{EqualsToken} {Value}";
+	}
 }

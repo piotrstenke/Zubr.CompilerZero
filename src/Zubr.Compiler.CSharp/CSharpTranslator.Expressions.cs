@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis.CSharp;
-using System;
 using System.Diagnostics;
+using System.Linq;
 using Zubr.Compiler.Syntax;
 using Zubr.Compiler.Syntax.Abstractions;
 
@@ -20,8 +20,73 @@ internal sealed partial class CSharpTranslator
 			{
 				TypeSyntax t => Type(t),
 				LiteralExpressionSyntax l => Literal(l),
+				BinaryExpressionSyntax b => Binary(b),
+				PostfixUnaryExpression postfix => PostfixUnary(postfix),
+				PrefixUnaryExpression prefix => PrefixUnary(prefix),
+				MemberAccessExpressionSyntax m => MemberAccess(m),
+				SelfExpressionSyntax s => This(s),
+				CastExpressionSyntax c => Cast(c),
+				InvocationExpressionSyntax i => Invocation(i),
+				ParenthesizedExpressionSyntax p => Parenthesized(p),
+				ConditionalExpressionSyntax conditional => Conditional(conditional),
 				_ => throw new UnreachableException()
 			};
+		}
+
+		public static Sharp.CastExpressionSyntax Cast(CastExpressionSyntax node)
+		{
+			return SyntaxFactory.CastExpression(Type(node.Type), Expression(node.Expression));
+		}
+
+		public static Sharp.ConditionalExpressionSyntax Conditional(ConditionalExpressionSyntax node)
+		{
+			return SyntaxFactory.ConditionalExpression(
+				Expression(node.Condition),
+				Expression(node.TrueExpression), 
+				Expression(node.FalseExpression)
+			);
+		}
+
+		public static Sharp.ParenthesizedExpressionSyntax Parenthesized(ParenthesizedExpressionSyntax node)
+		{
+			return SyntaxFactory.ParenthesizedExpression(Expression(node.Expression));
+		}
+
+		public static Sharp.ThisExpressionSyntax This(SelfExpressionSyntax node)
+		{
+			return SyntaxFactory.ThisExpression();
+		}
+
+		public static Sharp.InvocationExpressionSyntax Invocation(InvocationExpressionSyntax node)
+		{
+			return SyntaxFactory.InvocationExpression(
+				Expression(node.Expression),
+				SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(
+					node.ArgumentList.Arguments.Select(x => SyntaxFactory.Argument(Expression(x.Expression)))))
+			);
+		}
+
+		public static Sharp.MemberAccessExpressionSyntax MemberAccess(MemberAccessExpressionSyntax node)
+		{
+			return SyntaxFactory.MemberAccessExpression(CSyntaxKind.SimpleMemberAccessExpression, Expression(node.Expression), SimpleName(node.Name));
+		}
+
+		public static Sharp.PostfixUnaryExpressionSyntax PostfixUnary(PostfixUnaryExpression node)
+		{
+			CSyntaxKind kind = GetPostfixUnaryKind(node.Kind);
+			return SyntaxFactory.PostfixUnaryExpression(kind, Expression(node.Operand));
+		}
+
+		public static Sharp.PrefixUnaryExpressionSyntax PrefixUnary(PrefixUnaryExpression node)
+		{
+			CSyntaxKind kind = GetPrefixUnaryKind(node.Kind);
+			return SyntaxFactory.PrefixUnaryExpression(kind, Expression(node.Operand));
+		}
+
+		public static Sharp.BinaryExpressionSyntax Binary(BinaryExpressionSyntax node)
+		{
+			CSyntaxKind kind = GetBinaryKind(node.Kind);
+			return SyntaxFactory.BinaryExpression(kind, Expression(node.Left), Expression(node.Right));
 		}
 
 		public static Sharp.LiteralExpressionSyntax Literal(LiteralExpressionSyntax node)
@@ -39,11 +104,11 @@ internal sealed partial class CSharpTranslator
 
 				SyntaxKind.StringLiteralExpression
 					=> SyntaxFactory.LiteralExpression(CSyntaxKind.StringLiteralExpression,
-						SyntaxFactory.Literal(node.Value.Text, node.Value.Text.Trim('\"'))),
+						SyntaxFactory.Literal(node.Value.Text, (string)node.Value.Value!)),
 
 				SyntaxKind.CharLiteralExpression
 					=> SyntaxFactory.LiteralExpression(CSyntaxKind.CharacterLiteralExpression, 
-						SyntaxFactory.Literal(node.Value.Text, char.Parse(node.Value.Text.Trim('\'')))),
+						SyntaxFactory.Literal(node.Value.Text, (char)node.Value.Value!)),
 
 				_ => throw new UnreachableException()
 			};
@@ -87,6 +152,10 @@ internal sealed partial class CSharpTranslator
 			return node switch
 			{
 				IdentifierNameSyntax i => IdentifierName(i),
+				GenericNameSyntax g => SyntaxFactory.GenericName(
+					SyntaxFactory.Identifier(g.Identifier.Text),
+					SyntaxFactory.TypeArgumentList(
+							SyntaxFactory.SeparatedList(g.TypeArgumentList.Arguments.Select(Type)))),
 
 				_ => throw new UnreachableException()
 			};
@@ -118,6 +187,57 @@ internal sealed partial class CSharpTranslator
 			};
 
 			return SyntaxFactory.LiteralExpression(CSyntaxKind.NumericLiteralExpression, token);
+		}
+
+		private static CSyntaxKind GetPrefixUnaryKind(SyntaxKind kind)
+		{
+			return kind switch
+			{
+				SyntaxKind.UnaryPlusExpression => CSyntaxKind.UnaryPlusExpression,
+				SyntaxKind.UnaryMinusExpression => CSyntaxKind.UnaryMinusExpression,
+				SyntaxKind.PreIncrementExpression => CSyntaxKind.PreIncrementExpression,
+				SyntaxKind.PreDecrementExpression => CSyntaxKind.PreDecrementExpression,
+				SyntaxKind.LogicalNotExpression => CSyntaxKind.LogicalNotExpression,
+				SyntaxKind.BitwiseNotExpression => CSyntaxKind.BitwiseNotExpression,
+				_ => throw new UnreachableException()
+			};
+		}
+
+		private static CSyntaxKind GetPostfixUnaryKind(SyntaxKind kind)
+		{
+			return kind switch
+			{
+				SyntaxKind.PostIncrementExpression => CSyntaxKind.PostIncrementExpression,
+				SyntaxKind.PostDecrementExpression => CSyntaxKind.PostDecrementExpression,
+				_ => throw new UnreachableException()
+			};
+		}
+
+		private static CSyntaxKind GetBinaryKind(SyntaxKind kind)
+		{
+			return kind switch
+			{
+				SyntaxKind.AddExpression => CSyntaxKind.AddExpression,
+				SyntaxKind.SubtractExpression => CSyntaxKind.SubtractExpression,
+				SyntaxKind.MultiplyExpression => CSyntaxKind.MultiplyExpression,
+				SyntaxKind.DivideExpression => CSyntaxKind.DivideExpression,
+				SyntaxKind.ModuloExpression => CSyntaxKind.ModuloExpression,
+				SyntaxKind.ExclusiveOrExpression => CSyntaxKind.ExclusiveOrExpression,
+				SyntaxKind.BitwiseOrExpression => CSyntaxKind.BitwiseOrExpression,
+				SyntaxKind.BitwiseAndExpression => CSyntaxKind.BitwiseAndExpression,
+				SyntaxKind.RightShiftExpression => CSyntaxKind.RightShiftExpression,
+				SyntaxKind.LeftShiftExpression=> CSyntaxKind.LeftShiftExpression,
+				SyntaxKind.UnsignedRightShiftExpression => CSyntaxKind.UnsignedRightShiftExpression,
+				SyntaxKind.EqualsExpression => CSyntaxKind.EqualsExpression,
+				SyntaxKind.NotEqualsExpression => CSyntaxKind.NotEqualsExpression,
+				SyntaxKind.LessThanExpression => CSyntaxKind.LessThanExpression,
+				SyntaxKind.LessThanOrEqualExpression => CSyntaxKind.LessThanOrEqualExpression,
+				SyntaxKind.GreaterThanExpression => CSyntaxKind.GreaterThanExpression,
+				SyntaxKind.GreaterThanOrEqualExpression => CSyntaxKind.GreaterThanOrEqualExpression,
+				SyntaxKind.LogicalOrExpression => CSyntaxKind.LogicalOrExpression,
+				SyntaxKind.LogicalAndExpression => CSyntaxKind.LogicalAndExpression,
+				_ => throw new UnreachableException()
+			};
 		}
 	}
 }

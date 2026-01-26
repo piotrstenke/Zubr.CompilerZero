@@ -1,4 +1,5 @@
-﻿using Zubr.Compiler.Syntax.Abstractions;
+﻿using System.Linq.Expressions;
+using Zubr.Compiler.Syntax.Abstractions;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -20,5 +21,10 @@ public sealed class QualifiedNameSyntax : NameSyntax
 
 		SetParent(left);
 		SetParent(right);
+	}
+
+	public override string ToString()
+	{
+		return $"{Left}{DotToken}{Right}";
 	}
 }

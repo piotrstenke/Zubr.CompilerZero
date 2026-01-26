@@ -30,9 +30,4 @@ internal sealed partial class CSharpTranslator
 	{
 		return SyntaxFactory.Token(kind);
 	}
-
-	private static Microsoft.CodeAnalysis.SyntaxToken Token(Microsoft.CodeAnalysis.CSharp.SyntaxKind kind, SyntaxToken token)
-	{
-		return SyntaxFactory.Token(default, kind, token.Text, token.Text, default);
-	}
 }

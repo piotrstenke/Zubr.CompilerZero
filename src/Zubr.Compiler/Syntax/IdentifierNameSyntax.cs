@@ -12,4 +12,9 @@ public sealed class IdentifierNameSyntax : SimpleNameSyntax
 	{
 		Identifier = identifier;
 	}
+
+	public override string ToString()
+	{
+		return $"{Identifier}";
+	}
 }

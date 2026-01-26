@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Zubr.Compiler.Diagnostics;
 using Zubr.Compiler.Syntax;
@@ -30,9 +31,9 @@ internal sealed class SourceParser
 		List<UseDirectiveSyntax> uses = new();
 		List<MemberDeclarationSyntax> members = new();
 
-		while(!(token = Peek()).IsKind(SyntaxKind.EOF))
+		while (!(token = Peek()).IsKind(SyntaxKind.EOF))
 		{
-			switch(token.Kind)
+			switch (token.Kind)
 			{
 				case SyntaxKind.UseKeyword:
 					uses.Add(ParseUseDirective());
@@ -44,7 +45,7 @@ internal sealed class SourceParser
 
 				default:
 
-					if(TryParseMemberDeclaration() is MemberDeclarationSyntax member)
+					if (TryParseMemberDeclaration() is MemberDeclarationSyntax member)
 					{
 						members.Add(member);
 						break;
@@ -67,7 +68,7 @@ internal sealed class SourceParser
 
 		SyntaxToken semicolonToken;
 
-		if(PeekKind(SyntaxKind.TopKeyword))
+		if (PeekKind(SyntaxKind.TopKeyword))
 		{
 			name = null;
 
@@ -133,14 +134,14 @@ internal sealed class SourceParser
 		{
 			SyntaxToken token = Peek();
 
-			if(token.IsPredefinedTypeKeyword())
+			if (token.IsPredefinedType())
 			{
 				return ParseFunctionDeclaration(modifiers);
 			}
 
 			return token.Kind switch
 			{
-				SyntaxKind.ClassKeyword 
+				SyntaxKind.ClassKeyword
 					=> ParseClassDeclaration(modifiers),
 
 				SyntaxKind.StructKeyword
@@ -176,7 +177,7 @@ internal sealed class SourceParser
 	{
 		SyntaxToken lessThanToken = Peek();
 
-		if(!lessThanToken.IsKind(SyntaxKind.LessThanToken))
+		if (!lessThanToken.IsKind(SyntaxKind.LessThanToken))
 		{
 			return null;
 		}
@@ -185,7 +186,7 @@ internal sealed class SourceParser
 
 		List<(TypeParameterSyntax, SyntaxToken)> parameters = new();
 
-		while(true)
+		while (true)
 		{
 			SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
 
@@ -216,7 +217,7 @@ internal sealed class SourceParser
 	{
 		SyntaxToken whereKeyword = Peek();
 
-		if(!whereKeyword.IsKind(SyntaxKind.WhereKeyword))
+		if (!whereKeyword.IsKind(SyntaxKind.WhereKeyword))
 		{
 			return null;
 		}
@@ -231,19 +232,19 @@ internal sealed class SourceParser
 			SyntaxToken colonToken = EatToken(SyntaxKind.ColonToken);
 
 			List<(TypeParameterConstraintSyntax, SyntaxToken)> constraints = new();
-			
+
 			// Comma token must be default-initialized, because the child constraint clause might not have a comma.
 			SyntaxToken commaToken = default;
 
 			while (true)
 			{
-				if(TryParseConstraint(Peek()) is not TypeParameterConstraintSyntax constraint)
+				if (TryParseConstraint(Peek()) is not TypeParameterConstraintSyntax constraint)
 				{
 					break;
 				}
 
 				// This is the last constraint, so comma is not required.
-				if(!Peek().IsKind(SyntaxKind.CommaToken))
+				if (!Peek().IsKind(SyntaxKind.CommaToken))
 				{
 					constraints.Add((constraint, default));
 					break;
@@ -255,7 +256,7 @@ internal sealed class SourceParser
 				//
 				// 1. Another type constraint for the current constraint clause.
 				// 2. Identifier of type parameter in the next constraint clause.
-				if(!Peek().IsKind(SyntaxKind.IdentifierToken))
+				if (!Peek().IsKind(SyntaxKind.IdentifierToken))
 				{
 					// Not an identifier, so we can go directly to the next constraint.
 					constraints.Add((constraint, commaToken));
@@ -263,7 +264,7 @@ internal sealed class SourceParser
 				}
 
 				// Scenario 1, so add the constraint with comma and go to the next constraint.
-				if(!Peek(1).IsKind(SyntaxKind.ColonToken))
+				if (!Peek(1).IsKind(SyntaxKind.ColonToken))
 				{
 					constraints.Add((constraint, commaToken));
 					continue;
@@ -282,7 +283,7 @@ internal sealed class SourceParser
 			clauses.Add((clause, commaToken));
 
 			// End of the constraint clause list.
-			if(!Peek().IsKind(SyntaxKind.IdentifierToken))
+			if (!Peek().IsKind(SyntaxKind.IdentifierToken))
 			{
 				break;
 			}
@@ -296,7 +297,7 @@ internal sealed class SourceParser
 
 	private TypeParameterConstraintSyntax? TryParseConstraint(SyntaxToken token)
 	{
-		switch(token.Kind)
+		switch (token.Kind)
 		{
 			case SyntaxKind.ClassKeyword:
 				EatToken();
@@ -373,7 +374,7 @@ internal sealed class SourceParser
 	{
 		List<SyntaxToken> modifiers = new();
 
-		if(PeekKind(SyntaxKind.MutKeyword))
+		if (PeekKind(SyntaxKind.MutKeyword))
 		{
 			modifiers.Add(EatToken());
 		}
@@ -384,7 +385,7 @@ internal sealed class SourceParser
 
 		EqualsValueClauseSyntax? @default = null;
 
-		if(PeekKind(SyntaxKind.EqualsToken))
+		if (PeekKind(SyntaxKind.EqualsToken))
 		{
 			SyntaxToken equalsToken = EatToken();
 
@@ -411,7 +412,7 @@ internal sealed class SourceParser
 	{
 		foreach (SyntaxToken modifier in modifiers)
 		{
-			if(!modifier.IsAccessModifier())
+			if (!modifier.IsAccessModifier())
 			{
 				AddError(ErrorCode.ERR_InvalidModifier, modifier.Position);
 			}
@@ -483,11 +484,11 @@ internal sealed class SourceParser
 
 		List<StatementSyntax> statements = new();
 
-		while(true)
+		while (true)
 		{
 			SyntaxToken token = Peek();
 
-			if(token.IsKind(SyntaxKind.EOF) || token.IsKind(SyntaxKind.CloseBraceToken))
+			if (token.IsKind(SyntaxKind.EOF) || token.IsKind(SyntaxKind.CloseBraceToken))
 			{
 				break;
 			}
@@ -507,38 +508,19 @@ internal sealed class SourceParser
 	{
 		SyntaxToken token = Peek();
 
-		switch(token.Kind)
+		return token.Kind switch
 		{
-			case SyntaxKind.OpenBraceToken:
-				return ParseBlock();
-
-			case SyntaxKind.IfKeyword:
-				return ParseIfStatement();
-
-			case SyntaxKind.WhileKeyword:
-				return ParseWhileStatement();
-
-			case SyntaxKind.DoKeyword:
-				return ParseDoStatement();
-
-			case SyntaxKind.ForKeyword:
-				return ParseForStatement();
-
-			case SyntaxKind.IdentifierToken:
-				return ParseLocalDeclaration();
-
-			case SyntaxKind.ReturnKeyword:
-				return ParseReturnStatement();
-
-			case SyntaxKind.NextKeyword:
-				return ParseNextStatement();
-
-			case SyntaxKind.StopKeyword:
-				return ParseStopStatement();
-
-			default:
-				return ParseLocalDeclaration();
-		}
+			SyntaxKind.OpenBraceToken => ParseBlock(),
+			SyntaxKind.IfKeyword => ParseIfStatement(),
+			SyntaxKind.WhileKeyword => ParseWhileStatement(),
+			SyntaxKind.DoKeyword => ParseDoStatement(),
+			SyntaxKind.ForKeyword => ParseForStatement(),
+			SyntaxKind.IdentifierToken => ParseLocalDeclaration(),
+			SyntaxKind.ReturnKeyword => ParseReturnStatement(),
+			SyntaxKind.NextKeyword => ParseNextStatement(),
+			SyntaxKind.StopKeyword => ParseStopStatement(),
+			_ => ParseLocalDeclaration(),
+		};
 	}
 
 	private ReturnStatementSyntax ParseReturnStatement()
@@ -696,7 +678,7 @@ internal sealed class SourceParser
 		List<ElifClauseSyntax>? elifs = null;
 		ElseClauseSyntax? @else = null;
 
-		if(PeekKind(SyntaxKind.ElifKeyword))
+		if (PeekKind(SyntaxKind.ElifKeyword))
 		{
 			elifs = new()
 			{
@@ -709,7 +691,7 @@ internal sealed class SourceParser
 			}
 		}
 
-		if(PeekKind(SyntaxKind.ElseKeyword))
+		if (PeekKind(SyntaxKind.ElseKeyword))
 		{
 			SyntaxToken elseKeyword = EatToken();
 
@@ -746,80 +728,258 @@ internal sealed class SourceParser
 		return new(elifKeyword, openParen, condition, closeParen, statement);
 	}
 
-	private ExpressionSyntax ParseExpression()
+	private ExpressionSyntax ParseExpression(Precedence precedence = default)
 	{
 		SyntaxToken token = Peek();
+		SyntaxKind kind = GetPrefixUnaryExpressionKind(token.Kind);
 
-		switch(token.Kind)
+		if (kind != default)
+		{
+			EatToken();
+			ExpressionSyntax expr = ParseExpression(GetPrecedence(kind));
+			return new PrefixUnaryExpression(kind, token, expr)
+			{
+				Position = token.Position
+			};
+		}
+
+		ExpressionSyntax primary = ParsePrimaryExpression();
+		primary = ParsePostfixExpression(primary);
+
+		ExpressionSyntax current = primary;
+
+		while(TryParseSubExpression(current, precedence) is ExpressionSyntax expr)
+		{
+			current = expr;
+		}
+
+		if(PeekKind(SyntaxKind.QuestionToken) && precedence <= Precedence.Conditional)
+		{
+			SyntaxToken questionToken = EatToken();
+			ExpressionSyntax trueExpression = ParseExpression();
+			SyntaxToken colonToken = EatToken(SyntaxKind.ColonToken);
+			ExpressionSyntax falseExpression = ParseExpression();
+
+			current = new ConditionalExpressionSyntax(current, questionToken, trueExpression, colonToken, falseExpression)
+			{
+				Position = current.Position
+			};
+		}
+
+		return current;
+	}
+
+	private ExpressionSyntax? TryParseSubExpression(ExpressionSyntax left, Precedence precedence)
+	{
+		SyntaxKind exprKind = GetBinaryExpressionKind(PeekKind());
+
+		Precedence newPrecedence = GetPrecedence(exprKind);
+
+		if (newPrecedence < precedence)
+		{
+			return null;
+		}
+
+		if (newPrecedence == precedence && !IsRightAssociative(exprKind))
+		{
+			return null;
+		}
+
+		SyntaxToken operatorToken = EatToken();
+		ExpressionSyntax right = ParseExpression(newPrecedence);
+
+		return new BinaryExpressionSyntax(exprKind, left, operatorToken, right)
+		{
+			Position = left.Position,
+		};
+	}
+
+	private ExpressionSyntax ParsePrimaryExpression()
+	{
+		ref readonly SyntaxToken token = ref Peek();
+
+		switch (token.Kind)
 		{
 			case SyntaxKind.IdentifierToken:
-				return ParseIdentifierName();
+				return ParseName();
 
-			case SyntaxKind.StringLiteralToken:
+			case SyntaxKind.SelfKeyword:
 				EatToken();
 
-				return new LiteralExpressionSyntax(SyntaxKind.StringLiteralExpression, token)
-				{
-					Position = token.Position
-				};
-
-			case SyntaxKind.CharLiteralToken:
-				EatToken();
-
-				return new LiteralExpressionSyntax(SyntaxKind.CharLiteralExpression, token)
-				{
-					Position = token.Position
-				};
-
-			case SyntaxKind.NumericLiteralToken:
-				EatToken();
-
-				return new LiteralExpressionSyntax(SyntaxKind.NumericLiteralExpression, token)
-				{
-					Position = token.Position
-				};
-
-			case SyntaxKind.TrueKeyword:
-				EatToken();
-
-				return new LiteralExpressionSyntax(SyntaxKind.TrueLiteralExpression, token)
+				return new SelfExpressionSyntax(token)
 				{
 					Position = token.Position
 				};
 
 			case SyntaxKind.FalseKeyword:
+			case SyntaxKind.TrueKeyword:
+			case SyntaxKind.NumericLiteralToken:
+			case SyntaxKind.StringLiteralToken:
+			case SyntaxKind.CharLiteralToken:
 				EatToken();
 
-				return new LiteralExpressionSyntax(SyntaxKind.FalseLiteralExpression, token)
+				return new LiteralExpressionSyntax(GetLiteralExpressionKind(token.Kind), token)
 				{
 					Position = token.Position
 				};
 
-			case SyntaxKind.EOF:
-				EatToken();
-				AddError(ErrorCode.ERR_UnexpectedEndOfFile, token.Position);
+			case SyntaxKind.OpenParenToken:
 
-				return new LiteralExpressionSyntax(SyntaxKind.BadToken, UnexpectedToken(token))
+				if (TryParseCastExpression() is CastExpressionSyntax castExpr)
 				{
-					Position = token.Position
+					return castExpr;
+				}
+
+				SyntaxToken openParen = EatToken();
+				ExpressionSyntax expr = ParseExpression();
+				SyntaxToken closeParen = EatToken(SyntaxKind.CloseParenToken);
+
+				return new ParenthesizedExpressionSyntax(openParen, expr, closeParen)
+				{
+					Position = openParen.Position,
 				};
 
 			default:
-				EatToken();
-				AddError(ErrorCode.ERR_SyntaxError, token.Position);
+				if (SyntaxFacts.IsPredefinedType(token.Kind))
+				{
+					return new PredefinedTypeSyntax(token)
+					{
+						Position = token.Position
+					};
+				}
 
-				return new LiteralExpressionSyntax(SyntaxKind.BadToken, UnexpectedToken(token))
+				return new IdentifierNameSyntax(MissingToken(token))
 				{
 					Position = token.Position
 				};
 		}
 	}
 
+	private ExpressionSyntax ParsePostfixExpression(ExpressionSyntax left)
+	{
+		ExpressionSyntax expr = left;
+
+		while (true)
+		{
+			SyntaxToken token = Peek();
+
+			switch (token.Kind)
+			{
+				case SyntaxKind.OpenParenToken:
+					expr = new InvocationExpressionSyntax(expr, ParseArgumentList())
+					{
+						Position = expr.Position,
+					};
+
+					break;
+
+				case SyntaxKind.PlusPlusToken:
+				case SyntaxKind.MinusMinusToken:
+					expr = new PostfixUnaryExpression(GetPostfixUnaryExpressionKind(token.Kind), expr, EatToken())
+					{
+						Position = expr.Position,
+					};
+
+					break;
+
+				case SyntaxKind.DotToken:
+					expr = new MemberAccessExpressionSyntax(expr, EatToken(), ParseSimpleName())
+					{
+						Position = expr.Position,
+					};
+
+					break;
+
+				default:
+					return expr;
+			}
+		}
+	}
+
+	private ArgumentListSyntax ParseArgumentList()
+	{
+		SyntaxToken openParen = EatToken(SyntaxKind.OpenParenToken);
+
+		List<(ArgumentSyntax, SyntaxToken)> args = new();
+
+		while(true)
+		{
+			SyntaxToken token = Peek();
+
+			if(token.IsKind(SyntaxKind.CloseParenToken))
+			{
+				break;
+			}
+
+			ArgumentSyntax arg = ParseArgument();
+
+			token = Peek();
+
+			if(token.IsKind(SyntaxKind.CommaToken))
+			{
+				args.Add((arg, token));
+				continue;
+			}
+
+			args.Add((arg, default));
+		}
+
+		SyntaxToken closeParen = EatToken(SyntaxKind.CloseParenToken);
+
+		return new(openParen, List(args), closeParen)
+		{
+			Position = openParen.Position
+		};
+	}
+
+	private ArgumentSyntax ParseArgument()
+	{
+		ExpressionSyntax expr = ParseExpression();
+
+		return new(expr);
+	}
+
+	private CastExpressionSyntax? TryParseCastExpression()
+	{
+		using Snapshot snapshot = TakeSnapshot();
+
+		SyntaxToken openParen = EatToken();
+
+		if (openParen.Kind != SyntaxKind.OpenParenToken)
+		{
+			return null;
+		}
+
+		SyntaxToken token = Peek();
+
+		if(!token.IsPredefinedType())
+		{
+			return null;
+		}
+
+		TypeSyntax type = ParseType();
+
+		SyntaxToken closeParen = EatToken();
+
+		if(closeParen.Kind != SyntaxKind.CloseParenToken)
+		{
+			return null;
+		}
+
+		snapshot.Accept();
+
+		ExpressionSyntax expr = ParseExpression(Precedence.Cast);
+		return new(openParen, type, closeParen, expr)
+		{
+			Position = openParen.Position,
+		};
+	}
+
 	private TypeSyntax ParseType()
 	{
 		SyntaxToken token = Peek();
 
-		if(token.IsPredefinedTypeKeyword())
+		if (token.IsPredefinedType())
 		{
 			EatToken();
 
@@ -838,7 +998,7 @@ internal sealed class SourceParser
 	{
 		NameSyntax name = ParseIdentifierName();
 
-		while(PeekKind(SyntaxKind.DotToken))
+		while (PeekKind(SyntaxKind.DotToken))
 		{
 			SyntaxToken dot = EatToken();
 
@@ -852,6 +1012,51 @@ internal sealed class SourceParser
 		return name;
 	}
 
+	private SimpleNameSyntax ParseSimpleName()
+	{
+		SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
+
+		if(!PeekKind(SyntaxKind.LessThanToken))
+		{
+			return new IdentifierNameSyntax(identifier)
+			{
+				Position = identifier.Position
+			};
+		}
+
+		SyntaxToken lessThanToken = EatToken();
+		List<(TypeSyntax, SyntaxToken)> args = new();
+
+		while (true)
+		{
+			TypeSyntax type = ParseType();
+
+			if(PeekKind(SyntaxKind.CommaToken))
+			{
+				args.Add((type, EatToken()));
+				continue;
+			}
+
+			if(PeekKind(SyntaxKind.GreaterThanToken))
+			{
+				args.Add((type, default));
+				break;
+			}
+		}
+
+		SyntaxToken greaterThanToken = EatToken(SyntaxKind.GreaterThanToken);
+
+		TypeArgumentListSyntax list = new(lessThanToken, List(args), greaterThanToken)
+		{
+			Position = lessThanToken.Position
+		};
+
+		return new GenericNameSyntax(identifier, list)
+		{
+			Position = identifier.Position
+		};
+	}
+
 	private IdentifierNameSyntax ParseIdentifierName()
 	{
 		SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
@@ -862,6 +1067,175 @@ internal sealed class SourceParser
 		};
 	}
 
+	private static SyntaxKind GetPrefixUnaryExpressionKind(SyntaxKind kind)
+	{
+		return kind switch
+		{
+			SyntaxKind.PlusToken => SyntaxKind.UnaryPlusExpression,
+			SyntaxKind.PlusPlusToken => SyntaxKind.PreIncrementExpression,
+			SyntaxKind.MinusToken => SyntaxKind.UnaryMinusExpression,
+			SyntaxKind.MinusMinusToken => SyntaxKind.PreDecrementExpression,
+			SyntaxKind.ExclamationToken => SyntaxKind.LogicalNotExpression,
+			SyntaxKind.TildeToken => SyntaxKind.BitwiseNotExpression,
+			_ => default
+		};
+	}
+
+	private static SyntaxKind GetPostfixUnaryExpressionKind(SyntaxKind kind)
+	{
+		return kind switch
+		{
+			SyntaxKind.PlusPlusToken => SyntaxKind.PostIncrementExpression,
+			SyntaxKind.MinusMinusToken => SyntaxKind.PostDecrementExpression,
+			_ => default
+		};
+	}
+
+	private static SyntaxKind GetBinaryExpressionKind(SyntaxKind kind)
+	{
+		return kind switch
+		{
+			SyntaxKind.PlusToken => SyntaxKind.AddExpression,
+			SyntaxKind.MinusToken => SyntaxKind.SubtractExpression,
+			SyntaxKind.AsteriskToken => SyntaxKind.MultiplyExpression,
+			SyntaxKind.SlashToken => SyntaxKind.DivideExpression,
+			SyntaxKind.PercentToken => SyntaxKind.ModuloExpression,
+			SyntaxKind.CaretToken => SyntaxKind.ExclusiveOrExpression,
+			SyntaxKind.BarToken => SyntaxKind.BitwiseOrExpression,
+			SyntaxKind.AmpersandToken => SyntaxKind.BitwiseAndExpression,
+			SyntaxKind.GreaterThanGreaterThanToken => SyntaxKind.RightShiftExpression,
+			SyntaxKind.LessThanLessThanToken => SyntaxKind.LeftShiftExpression,
+			SyntaxKind.GreaterThanGreaterThanGreaterThanToken => SyntaxKind.UnsignedRightShiftExpression,
+			SyntaxKind.EqualsEqualsToken => SyntaxKind.EqualsExpression,
+			SyntaxKind.ExclamationEqualsToken => SyntaxKind.NotEqualsExpression,
+			SyntaxKind.GreaterThanToken => SyntaxKind.GreaterThanExpression,
+			SyntaxKind.GreaterThanEqualsToken => SyntaxKind.GreaterThanOrEqualExpression,
+			SyntaxKind.LessThanToken => SyntaxKind.LessThanExpression,
+			SyntaxKind.LessThanEqualsToken => SyntaxKind.LessThanOrEqualExpression,
+			SyntaxKind.BarBarToken => SyntaxKind.LogicalOrExpression,
+			SyntaxKind.AmpersandAmpersandToken => SyntaxKind.LogicalAndExpression,
+			_ => default
+		};
+	}
+
+	private static SyntaxKind GetLiteralExpressionKind(SyntaxKind kind)
+	{
+		return kind switch
+		{
+			SyntaxKind.StringLiteralToken => SyntaxKind.StringLiteralExpression,
+			SyntaxKind.NumericLiteralToken => SyntaxKind.NumericLiteralExpression,
+			SyntaxKind.CharLiteralToken => SyntaxKind.CharLiteralExpression,
+			SyntaxKind.TrueKeyword => SyntaxKind.TrueLiteralExpression,
+			SyntaxKind.FalseKeyword => SyntaxKind.FalseLiteralExpression,
+			_ => default
+		};
+	}
+
+	private static Precedence GetPrecedence(SyntaxKind kind)
+	{
+		return kind switch
+		{
+			SyntaxKind.CharLiteralExpression or
+			SyntaxKind.FalseLiteralExpression or
+			SyntaxKind.TrueLiteralExpression or
+			SyntaxKind.StringLiteralExpression or
+			SyntaxKind.NumericLiteralExpression or
+			SyntaxKind.ParenthesizedExpression or
+			SyntaxKind.IdentifierName or
+			SyntaxKind.GenericName or
+			SyntaxKind.PredefinedType or
+			SyntaxKind.InvocationExpression or
+			SyntaxKind.PostDecrementExpression or
+			SyntaxKind.PostIncrementExpression or
+			SyntaxKind.SelfExpression
+				=> Precedence.Primary,
+
+			SyntaxKind.CastExpression
+				=> Precedence.Cast,
+
+			SyntaxKind.UnaryPlusExpression or
+			SyntaxKind.UnaryMinusExpression or
+			SyntaxKind.BitwiseNotExpression or
+			SyntaxKind.LogicalNotExpression or
+			SyntaxKind.PreIncrementExpression or
+			SyntaxKind.PreDecrementExpression
+				=> Precedence.Unary,
+
+			SyntaxKind.MultiplyExpression or
+			SyntaxKind.DivideExpression or
+			SyntaxKind.ModuloExpression
+				=> Precedence.Multiplicative,
+
+			SyntaxKind.AddExpression or
+			SyntaxKind.SubtractExpression
+				=> Precedence.Additive,
+
+			SyntaxKind.LeftShiftExpression or
+			SyntaxKind.RightShiftExpression or
+			SyntaxKind.UnsignedRightShiftExpression
+				=> Precedence.Shift,
+
+			SyntaxKind.LessThanExpression or
+			SyntaxKind.LessThanOrEqualExpression or
+			SyntaxKind.GreaterThanExpression or
+			SyntaxKind.GreaterThanOrEqualExpression
+				=> Precedence.Relational,
+
+			SyntaxKind.EqualsExpression or
+			SyntaxKind.NotEqualsExpression
+				=> Precedence.Equality,
+
+			SyntaxKind.BitwiseAndExpression
+				=> Precedence.BitwiseAnd,
+
+			SyntaxKind.ExclusiveOrExpression
+				=> Precedence.BitwiseXor,
+
+			SyntaxKind.BitwiseOrExpression
+				=> Precedence.BitwiseOr,
+
+			SyntaxKind.LogicalAndExpression
+				=> Precedence.ConditionalAnd,
+
+			SyntaxKind.AssignmentExpression or
+			SyntaxKind.AddAssignmentExpression or
+			SyntaxKind.SubtractAssignmentExpression or
+			SyntaxKind.MultiplyAssignmentExpression or
+			SyntaxKind.DivideAssignmentExpression or
+			SyntaxKind.ModuloAssignmentExpression or
+			SyntaxKind.AndAssignmentExpression or
+			SyntaxKind.ExclusiveOrAssignmentExpression or
+			SyntaxKind.OrAssignmentExpression or
+			SyntaxKind.LeftShiftAssignmentExpression or
+			SyntaxKind.RightShiftAssignmentExpression or
+			SyntaxKind.UnsignedRightShiftAssignmentExpression or
+			SyntaxKind.LogicalOrExpression
+				=> Precedence.ConditionalOr,
+
+			SyntaxKind.ConditionalExpression
+				=> Precedence.Low,
+
+			_ => default,
+		};
+	}
+
+	private static bool IsRightAssociative(SyntaxKind kind)
+	{
+		return
+			kind == SyntaxKind.AssignmentExpression ||
+			kind == SyntaxKind.AddAssignmentExpression ||
+			kind == SyntaxKind.SubtractAssignmentExpression ||
+			kind == SyntaxKind.MultiplyAssignmentExpression ||
+			kind == SyntaxKind.DivideAssignmentExpression ||
+			kind == SyntaxKind.ModuloAssignmentExpression ||
+			kind == SyntaxKind.AndAssignmentExpression ||
+			kind == SyntaxKind.ExclusiveOrAssignmentExpression ||
+			kind == SyntaxKind.OrAssignmentExpression ||
+			kind == SyntaxKind.LeftShiftAssignmentExpression ||
+			kind == SyntaxKind.RightShiftAssignmentExpression ||
+			kind == SyntaxKind.UnsignedRightShiftAssignmentExpression;
+	}
+
 	private static SyntaxList<TNode> List<TNode>(List<TNode> nodes) where TNode : SyntaxNode
 	{
 		return new(nodes.ToArray());
@@ -869,7 +1243,7 @@ internal sealed class SourceParser
 
 	private static SyntaxList<TNode> ListIfNotNull<TNode>(List<TNode>? nodes) where TNode : SyntaxNode
 	{
-		if(nodes is null)
+		if (nodes is null)
 		{
 			return default;
 		}
@@ -896,7 +1270,7 @@ internal sealed class SourceParser
 	{
 		ref readonly SyntaxToken current = ref Peek();
 
-		if(current.Kind != kind)
+		if (current.Kind != kind)
 		{
 			if (current.Kind == SyntaxKind.EOF)
 			{
@@ -930,12 +1304,23 @@ internal sealed class SourceParser
 		int next = _current + pos;
 
 		// Return EOF if pos is too big.
-		if(next > _tokens.Length - 1)
+		if (next > _tokens.Length - 1)
 		{
 			return ref _tokens[^1];
 		}
 
 		return ref _tokens[_current + pos];
+	}
+
+	private Snapshot TakeSnapshot()
+	{
+		return new(this);
+	}
+
+	private SyntaxKind PeekKind()
+	{
+		ref readonly SyntaxToken token = ref Peek();
+		return token.Kind;
 	}
 
 	private bool PeekKind(SyntaxKind kind)
@@ -970,5 +1355,94 @@ internal sealed class SourceParser
 	{
 		_errors ??= new();
 		_errors.Add(new(code, position));
+	}
+
+	private ref struct Snapshot : IDisposable
+	{
+		private readonly SourceParser _parser;
+		private readonly int _pos;
+		private bool _isAccepted;
+
+		public Snapshot(SourceParser parser)
+		{
+			_parser = parser;
+			_pos = parser._current; 
+		}
+
+		public readonly void Reset()
+		{
+			_parser._current = _pos;
+		}
+
+		public void Accept()
+		{
+			_isAccepted = true;
+		}
+
+		public readonly void Dispose()
+		{
+			if (!_isAccepted)
+			{
+				Reset();
+			}
+		}
+	}
+
+	private enum Precedence : uint
+	{
+		Low = 0,
+
+		// a = b, a += b, a >>= b etc.
+		Assignment,
+
+		// a ? b : c
+		Conditional,
+
+		//NullCoalescing,
+
+		// a || b
+		ConditionalOr,
+
+		// a && b
+		ConditionalAnd,
+
+		// a | b
+		BitwiseOr,
+
+		// a ^ b
+		BitwiseXor,
+
+		// a & b
+		BitwiseAnd,
+
+		// a == b, a != b
+		Equality,
+
+		// a < b, a > b, etc.
+		Relational,
+
+		// a << b, a >>> b etc.
+		Shift,
+
+		// a + b, a - b
+		Additive,
+
+		// a * b, a / b
+		Multiplicative,
+
+		// match (a)
+		//Match,
+
+		// a..b
+		//Range
+
+		// ++a, -a, !a, true/false etc.
+		Unary,
+
+		// (int) a
+		Cast,
+
+		// a.b, a++, etc.
+		Primary
 	}
 }

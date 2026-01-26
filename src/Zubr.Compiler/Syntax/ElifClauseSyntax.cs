@@ -12,9 +12,9 @@ public sealed class ElifClauseSyntax : SyntaxNode
 
 	public ExpressionSyntax Condition { get; }
 
-	public StatementSyntax Statement { get; }
-
 	public SyntaxToken CloseParenToken { get; }
+
+	public StatementSyntax Statement { get; }
 
 	internal ElifClauseSyntax(SyntaxToken elifKeyword, SyntaxToken openParenToken, ExpressionSyntax condition, SyntaxToken closeParenToken, StatementSyntax statement)
 	{
@@ -26,5 +26,10 @@ public sealed class ElifClauseSyntax : SyntaxNode
 
 		SetParent(condition);
 		SetParent(statement);
+	}
+
+	public override string ToString()
+	{
+		return $"{ElifKeyword} {OpenParenToken}{Condition}{CloseParenToken} {Statement}";
 	}
 }

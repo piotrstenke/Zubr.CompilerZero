@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
@@ -6,17 +7,32 @@ using Zubr.Compiler.Diagnostics;
 
 namespace Zubr.Compiler.Parser;
 
-internal sealed partial class Lexer
+internal struct Lexer
 {
 	private readonly SourceReader _reader;
 	private readonly StringBuilder _builder;
+	private List<Diagnostic>? _errors;
 
 	private int _tokenStartPos;
+
+	internal readonly bool HasErrors => _errors?.Count > 0;
 
 	internal Lexer(SourceReader reader)
 	{
 		_reader = reader;
 		_builder = new(32);
+	}
+
+	internal readonly Diagnostic[]? GetErrors()
+	{
+		return _errors?.ToArray();
+	}
+
+	private void AddError(ErrorCode code)
+	{
+		_errors ??= new();
+
+		_errors.Add(new Diagnostic(code, _tokenStartPos));
 	}
 
 	public SyntaxToken Lex()
@@ -69,7 +85,7 @@ internal sealed partial class Lexer
 					return new(SyntaxKind.MinusEqualsToken, "-=", _tokenStartPos);
 				}
 
-				return new(SyntaxKind.PlusToken, "-", _tokenStartPos);
+				return new(SyntaxKind.MinusToken, "-", _tokenStartPos);
 
 			case '=':
 				_reader.Move();
@@ -169,6 +185,10 @@ internal sealed partial class Lexer
 
 				return new(SyntaxKind.SlashToken, "/", _tokenStartPos);
 
+			case '~':
+				_reader.Move();
+				return new(SyntaxKind.TildeToken, "~", _tokenStartPos);
+
 			case '(':
 				_reader.Move();
 				return new(SyntaxKind.OpenParenToken, "(", _tokenStartPos);
@@ -213,6 +233,13 @@ internal sealed partial class Lexer
 
 			case '!':
 				_reader.Move();
+
+				if (_reader.Peek() == '=')
+				{
+					_reader.Move();
+					return new(SyntaxKind.ExclamationEqualsToken, "!=", _tokenStartPos);
+				}
+
 				return new(SyntaxKind.ExclamationToken, "!", _tokenStartPos);
 
 			case '>':
@@ -221,7 +248,33 @@ internal sealed partial class Lexer
 				if (_reader.Peek() == '=')
 				{
 					_reader.Move();
-					return new(SyntaxKind.GreaterThanOrEqualToken, ">=", _tokenStartPos);
+					return new(SyntaxKind.GreaterThanEqualsToken, ">=", _tokenStartPos);
+				}
+
+				if (_reader.Peek() == '>')
+				{
+					_reader.Move();
+
+					if (_reader.Peek() == '=')
+					{
+						_reader.Move();
+						return new(SyntaxKind.GreaterThanEqualsToken, ">>=", _tokenStartPos);
+					}
+
+					if (_reader.Peek() == '>')
+					{
+						_reader.Move();
+
+						if (_reader.Peek() == '=')
+						{
+							_reader.Move();
+							return new(SyntaxKind.GreaterThanEqualsToken, ">>>=", _tokenStartPos);
+						}
+
+						return new(SyntaxKind.GreaterThanGreaterThanGreaterThanToken, ">>>", _tokenStartPos);
+					}
+
+					return new(SyntaxKind.GreaterThanGreaterThanToken, ">>", _tokenStartPos);
 				}
 
 				return new(SyntaxKind.GreaterThanToken, ">", _tokenStartPos);
@@ -232,7 +285,20 @@ internal sealed partial class Lexer
 				if (_reader.Peek() == '=')
 				{
 					_reader.Move();
-					return new(SyntaxKind.LessThanOrEqualToken, "<=", _tokenStartPos);
+					return new(SyntaxKind.LessThanEqualsToken, "<=", _tokenStartPos);
+				}
+
+				if (_reader.Peek() == '<')
+				{
+					_reader.Move();
+
+					if (_reader.Peek() == '=')
+					{
+						_reader.Move();
+						return new(SyntaxKind.LessThanLessThanEqualsToken, "<<=", _tokenStartPos);
+					}
+
+					return new(SyntaxKind.LessThanLessThanToken, "<<", _tokenStartPos);
 				}
 
 				return new(SyntaxKind.LessThanToken, "<", _tokenStartPos);
@@ -280,7 +346,7 @@ internal sealed partial class Lexer
 		}
 	}
 
-	private SyntaxToken ReadIdentifierOrKeyword()
+	private readonly SyntaxToken ReadIdentifierOrKeyword()
 	{
 		string identifier = ReadIdentifier();
 
@@ -288,13 +354,23 @@ internal sealed partial class Lexer
 
 		if(keyword != SyntaxKind.None)
 		{
+			if(keyword == SyntaxKind.TrueKeyword)
+			{
+				return new(keyword, identifier, _tokenStartPos, true);
+			}
+
+			if(keyword == SyntaxKind.FalseKeyword)
+			{
+				return new(keyword, identifier, _tokenStartPos, false);
+			}
+
 			return new(keyword, identifier, _tokenStartPos);
 		}
 
 		return new(SyntaxKind.IdentifierToken, identifier, _tokenStartPos);
 	}
 
-	private string ReadIdentifier()
+	private readonly string ReadIdentifier()
 	{
 		// Add the first char.
 		char c = _reader.Peek();
@@ -792,20 +868,20 @@ internal sealed partial class Lexer
 		};
 	}
 
-	private string ToStringAndClear()
+	private readonly string ToStringAndClear()
 	{
 		string str = _builder.ToString();
 		_builder.Clear();
 		return str;
 	}
 
-	private void AppendAndMove(char c)
+	private readonly void AppendAndMove(char c)
 	{
 		_builder.Append(c);
 		_reader.Move();
 	}
 
-	private void ReadTrivia()
+	private readonly void ReadTrivia()
 	{
 		char c;
 
@@ -856,7 +932,7 @@ internal sealed partial class Lexer
 		}
 	}
 
-	private void ReadUntilNewLine()
+	private readonly void ReadUntilNewLine()
 	{
 		char c;
 
@@ -882,7 +958,7 @@ internal sealed partial class Lexer
 		}
 	}
 
-	private void ReadUntilMultiLineCommentEnd()
+	private readonly void ReadUntilMultiLineCommentEnd()
 	{
 		char c;
 

@@ -1,7 +1,9 @@
-﻿using Zubr.Compiler.Syntax.Abstractions;
+﻿using System.Diagnostics;
+using Zubr.Compiler.Syntax.Abstractions;
 
 namespace Zubr.Compiler;
 
+[DebuggerDisplay("{ToString(),nq}")]
 public abstract class SyntaxNode
 {
 	public int Position { get; internal set; }
@@ -13,6 +15,11 @@ public abstract class SyntaxNode
 	public bool IsKind(SyntaxKind kind)
 	{
 		return Kind == kind;
+	}
+
+	public override string ToString()
+	{
+		return $"{Kind} at {Position}";
 	}
 
 	private protected void SetParent<TNode>(SyntaxList<TNode> list) where TNode : SyntaxNode

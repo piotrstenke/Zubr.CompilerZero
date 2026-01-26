@@ -10,26 +10,50 @@ public enum SyntaxKind : uint
 	// Tokens
 	// -----------------------------
 
-	// !
-	ExclamationToken,
-
 	// =
 	EqualsToken,
 
 	// ==
 	EqualsEqualsToken,
 
+	// !
+	ExclamationToken,
+
+	// !=
+	ExclamationEqualsToken,
+
 	// >
 	GreaterThanToken,
+
+	// >>
+	GreaterThanGreaterThanToken,
+
+	// >>>
+	GreaterThanGreaterThanGreaterThanToken,
+
+	// >=
+	GreaterThanEqualsToken,
+
+	// >>=
+	GreaterThanGreaterThanEqualsToken,
+
+	// >>>=
+	GreaterThanGreaterThanGreaterThanEqualsToken,
 
 	// <
 	LessThanToken,
 
-	// >=
-	GreaterThanOrEqualToken,
+	// <<
+	LessThanLessThanToken,
 
 	// <=
-	LessThanOrEqualToken,
+	LessThanEqualsToken,
+
+	// <<=
+	LessThanLessThanEqualsToken,
+
+	// <<<=
+	LessThanLessThanLessThanEqualsToken,
 
 	// +
 	PlusToken,
@@ -90,6 +114,9 @@ public enum SyntaxKind : uint
 
 	// &=
 	AmpersandEqualsToken,
+
+	// ~
+	TildeToken,
 
 	// (
 	OpenParenToken,
@@ -331,6 +358,147 @@ public enum SyntaxKind : uint
 	// int a
 	VariableExpression,
 
+	// a + b
+	AddExpression,
+	
+	// a - b
+	SubtractExpression,
+	
+	// a * b
+	MultiplyExpression,
+
+	// a / b
+	DivideExpression,
+
+	// a % b
+	ModuloExpression,
+
+	// a << b
+	LeftShiftExpression,
+
+	// a >> b
+	RightShiftExpression,
+
+	// a >>> b
+	UnsignedRightShiftExpression,
+
+	// a | b
+	BitwiseOrExpression,
+
+	// a & b
+	BitwiseAndExpression,
+
+	// a ^ b
+	ExclusiveOrExpression,
+
+	// a || b
+	LogicalOrExpression,
+
+	// a && b
+	LogicalAndExpression,
+
+	// a == b
+	EqualsExpression,
+	
+	// a != b
+	NotEqualsExpression,
+
+	// a < b
+	LessThanExpression,
+
+	// a <=
+	LessThanOrEqualExpression,
+
+	// a > b
+	GreaterThanExpression,
+
+	// a >= b
+	GreaterThanOrEqualExpression,
+
+	// +a
+	UnaryPlusExpression,
+
+	// -a
+	UnaryMinusExpression,
+
+	// ~a
+	BitwiseNotExpression,
+
+	// !a
+	LogicalNotExpression,
+
+	// ++a
+	PreIncrementExpression,
+
+	// --a
+	PreDecrementExpression,
+
+	// a++
+	PostIncrementExpression,
+
+	// a--
+	PostDecrementExpression,
+
+	// a = b
+	AssignmentExpression,
+
+	// a += b
+	AddAssignmentExpression,
+
+	// a -= b
+	SubtractAssignmentExpression,
+
+	// a *= b
+	MultiplyAssignmentExpression,
+
+	// a /= b
+	DivideAssignmentExpression,
+
+	// a %= b
+	ModuloAssignmentExpression,
+
+	// a <<= b
+	LeftShiftAssignmentExpression,
+
+	// a >>= b
+	RightShiftAssignmentExpression,
+
+	// a >>>= b
+	UnsignedRightShiftAssignmentExpression,
+
+	// a |= b
+	OrAssignmentExpression,
+
+	// a &= b
+	AndAssignmentExpression,
+
+	// a ^= b
+	ExclusiveOrAssignmentExpression,
+
+	// (a + b)
+	ParenthesizedExpression,
+
+	// a ? b : c
+	ConditionalExpression,
+
+	// (int)a
+	CastExpression,
+
+	// self
+	SelfExpression,
+
+	// a.b
+	MemberAccessExpression,
+
+	// a(1, 2)
+	InvocationExpression,
+
+	// the '(1, 2)' in 'a(1, 2)'
+	ArgumentList,
+
+	// the '1' and '2 'in 'a(1, 2)'
+	Argument,
+
 	// -----------------------------
 	// Names
 	// -----------------------------
@@ -343,6 +511,9 @@ public enum SyntaxKind : uint
 
 	// Test<T>
 	GenericName,
+
+	// '<T>' in 'Test<T>'
+	TypeArgumentList,
 
 	// int, string, bool etc.
 	PredefinedType,

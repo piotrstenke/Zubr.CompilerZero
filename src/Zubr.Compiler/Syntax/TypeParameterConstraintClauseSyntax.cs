@@ -20,4 +20,9 @@ public sealed class TypeParameterConstraintClauseSyntax : SyntaxNode
 
 		SetParent(constraints);
 	}
+
+	public override string ToString()
+	{
+		return $"{Identifier} {ColonToken} {Constraints}";
+	}
 }

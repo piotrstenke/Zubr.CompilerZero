@@ -67,6 +67,8 @@ scoped open class Program
 		{
 			string b = "hello \tthere";
 			char c = '5';
+
+			bool d = (1 + -2.2) * 3 == (int)7 << 2 && foo(4) < 10;
 		}
 		while(true);
 
@@ -75,6 +77,11 @@ scoped open class Program
 		}
 
 		return 1;
+	}
+
+	priv int foo(int a)
+	{
+		return ++a;
 	}
 }
 
@@ -105,6 +112,8 @@ Lexer lexer = new(source.GetSourceReader());
 SyntaxToken token;
 
 int count = 0;
+
+int b = count;
 
 while ((token = lexer.Lex()).Kind != SyntaxKind.EOF)
 {

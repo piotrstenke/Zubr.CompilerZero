@@ -1,6 +1,4 @@
-﻿using System.Runtime.InteropServices;
-
-namespace Zubr.Compiler;
+﻿namespace Zubr.Compiler;
 
 public static class SyntaxFacts
 {
@@ -25,7 +23,7 @@ public static class SyntaxFacts
 		return IsBetween(value, KEYWORDS_START, KEYWORDS_END);
 	}
 
-	public static bool IsLiteralExpression(this SyntaxToken token)
+	public static bool IsLiteralExpression(this in SyntaxToken token)
 	{
 		return IsLiteralExpression(token.Kind);
 	}
@@ -40,12 +38,12 @@ public static class SyntaxFacts
 			value == SyntaxKind.NumericLiteralExpression;
 	}
 
-	public static bool IsPredefinedTypeKeyword(this SyntaxToken token)
+	public static bool IsPredefinedType(this in SyntaxToken token)
 	{
-		return IsPredefinedTypeKeyword(token.Kind);
+		return IsPredefinedType(token.Kind);
 	}
 
-	public static bool IsPredefinedTypeKeyword(SyntaxKind value)
+	public static bool IsPredefinedType(SyntaxKind value)
 	{
 		return 
 			value == SyntaxKind.BoolKeyword ||
@@ -54,7 +52,7 @@ public static class SyntaxFacts
 			value == SyntaxKind.StringKeyword;
 	}
 
-	public static bool IsTypeDeclarationKeyword(this SyntaxToken token)
+	public static bool IsTypeDeclarationKeyword(this in SyntaxToken token)
 	{
 		return IsTypeDeclarationKeyword(token.Kind);
 	}
@@ -68,7 +66,7 @@ public static class SyntaxFacts
 			value == SyntaxKind.TraitKeyword;
 	}
 
-	public static bool IsAccessModifier(this SyntaxToken token)
+	public static bool IsAccessModifier(this in SyntaxToken token)
 	{
 		return IsAccessModifier(token.Kind);
 	}
@@ -82,7 +80,7 @@ public static class SyntaxFacts
 			value == SyntaxKind.ScopedKeyword;
 	}
 
-	public static bool IsModifier(this SyntaxToken token)
+	public static bool IsModifier(this in SyntaxToken token)
 	{
 		return IsModifier(token.Kind);
 	}
@@ -92,7 +90,7 @@ public static class SyntaxFacts
 		return IsAccessModifier(value) || value == SyntaxKind.OpenKeyword;
 	}
 
-	public static bool IsValid(this SyntaxToken token)
+	public static bool IsValid(this in SyntaxToken token)
 	{
 		return IsValid(token.Kind);
 	}
@@ -102,7 +100,7 @@ public static class SyntaxFacts
 		return IsBetween(value, START_KIND, END_KIND) && !IsError(value);
 	}
 
-	public static bool IsError(this SyntaxToken token)
+	public static bool IsError(this in SyntaxToken token)
 	{
 		return IsError(token.Kind);
 	}

@@ -20,4 +20,9 @@ public sealed class LocalDeclarationStatementSyntax : StatementSyntax
 
 		SetParent(declaration);
 	}
+
+	public override string ToString()
+	{
+		return $"{Modifiers} {Declaration}{SemicolonToken}";
+	}
 }

@@ -12,4 +12,9 @@ public sealed class ClassConstraintSyntax : TypeParameterConstraintSyntax
 	{
 		ClassKeyword = classKeyword;
 	}
+
+	public override string ToString()
+	{
+		return $"{ClassKeyword}";
+	}
 }

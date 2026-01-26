@@ -14,4 +14,9 @@ public sealed class TypeConstraintSyntax : TypeParameterConstraintSyntax
 
 		SetParent(type);
 	}
+
+	public override string ToString()
+	{
+		return $"{Type}";
+	}
 }
