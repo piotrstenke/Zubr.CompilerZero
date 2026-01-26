@@ -17,5 +17,8 @@ public sealed class AssignmentExpressionSyntax : ExpressionSyntax
 		Left = left;
 		OperatorToken = operatorToken;
 		Right = right;
+
+		SetParent(left);
+		SetParent(right);
 	}
 }
