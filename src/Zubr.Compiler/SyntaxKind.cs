@@ -318,25 +318,34 @@ public enum SyntaxKind : uint
 	// struct Test { }
 	StructDeclaration,
 
-	// void Main() { }
+	// void main() { }
 	FunctionDeclaration,
 
+	// the '(int a, bool b)' in 'foo(int a, bool b)'
 	ParameterList,
 
+	// the 'int a' and 'bool b' in 'foo(int a, bool b)'
 	Parameter,
 
+	// the '<int, string>' in 'Test<int, string>'
 	TypeParameterList,
 
+	// the 'int' and 'string' in 'Test<int, string>'
 	TypeParameter,
 
+	// where T : X, class, U : T, struct
 	TypeParameterConstraintList,
 
+	// T : X, class
 	TypeParameterConstraintClause,
 
+	// the 'class' in 'where T : class'
 	ClassConstraint,
 
+	// the 'struct' in 'where T : struct'
 	StructConstraint,
 
+	// the 'X' in 'where T : X'
 	TypeConstraint,
 
 	// -----------------------------
@@ -346,7 +355,7 @@ public enum SyntaxKind : uint
 	// "some text"
 	StringLiteralExpression,
 
-	// 1, 2L, 3u etc. 1.2f, 0.42e2 etc.
+	// 1, 2L, 3u, 1.2f, 0.42e2 etc.
 	NumericLiteralExpression,
 
 	// 'a'
@@ -543,7 +552,7 @@ public enum SyntaxKind : uint
 	// next;
 	NextStatement,
 
-	/// int x = 1;
+	// int x = 1;
 	LocalDeclarationStatement,
 
 	// do { } while (condition);
@@ -552,7 +561,7 @@ public enum SyntaxKind : uint
 	// while(condition) { }
 	WhileStatement,
 
-	// for (index, x : collection) { }
+	// for (x : collection) { }
 	ForStatement,
 
 	// if (x == y) { }
@@ -590,5 +599,5 @@ public enum SyntaxKind : uint
 	// -----------------------------
 
 	// End of file
-	EOF = 9999
+	EOF = uint.MaxValue
 }
