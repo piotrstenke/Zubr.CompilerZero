@@ -23,15 +23,18 @@ public sealed class SyntaxTree
 		Lexer lexer = new(reader);
 
 		List<SyntaxToken> tokens = new(source.Length * 2);
-		SyntaxToken token;
 
-		while ((token = lexer.Lex()).Kind != SyntaxKind.EOF)
+		while (true)
 		{
-			tokens.Add(token);
-		}
+			SyntaxToken token = lexer.Lex();
 
-		// Add EOF
-		tokens.Add(token);
+			tokens.Add(token);
+
+			if(token.IsKind(SyntaxKind.EOF))
+			{
+				break;
+			}
+		}
 
 		SourceParser parser = new(tokens.ToArray());
 		CompilationUnitSyntax root = parser.ParseCompilationUnit();
