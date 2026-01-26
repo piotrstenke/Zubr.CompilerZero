@@ -43,7 +43,7 @@ internal sealed partial class CSharpTranslator
 		{
 			return SyntaxFactory.ConditionalExpression(
 				Expression(node.Condition),
-				Expression(node.TrueExpression), 
+				Expression(node.TrueExpression),
 				Expression(node.FalseExpression)
 			);
 		}
@@ -114,7 +114,7 @@ internal sealed partial class CSharpTranslator
 						SyntaxFactory.Literal(node.Value.Text, (string)node.Value.Value!)),
 
 				SyntaxKind.CharLiteralExpression
-					=> SyntaxFactory.LiteralExpression(CSyntaxKind.CharacterLiteralExpression, 
+					=> SyntaxFactory.LiteralExpression(CSyntaxKind.CharacterLiteralExpression,
 						SyntaxFactory.Literal(node.Value.Text, (char)node.Value.Value!)),
 
 				_ => throw new UnreachableException()
@@ -254,7 +254,7 @@ internal sealed partial class CSharpTranslator
 				SyntaxKind.BitwiseOrExpression => CSyntaxKind.BitwiseOrExpression,
 				SyntaxKind.BitwiseAndExpression => CSyntaxKind.BitwiseAndExpression,
 				SyntaxKind.RightShiftExpression => CSyntaxKind.RightShiftExpression,
-				SyntaxKind.LeftShiftExpression=> CSyntaxKind.LeftShiftExpression,
+				SyntaxKind.LeftShiftExpression => CSyntaxKind.LeftShiftExpression,
 				SyntaxKind.UnsignedRightShiftExpression => CSyntaxKind.UnsignedRightShiftExpression,
 				SyntaxKind.EqualsExpression => CSyntaxKind.EqualsExpression,
 				SyntaxKind.NotEqualsExpression => CSyntaxKind.NotEqualsExpression,

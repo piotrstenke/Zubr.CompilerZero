@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq.Expressions;
-using Zubr.Compiler.Syntax.Abstractions;
+﻿using Zubr.Compiler.Syntax.Abstractions;
 
 namespace Zubr.Compiler.Syntax;
 

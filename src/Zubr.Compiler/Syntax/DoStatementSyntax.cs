@@ -24,7 +24,7 @@ public sealed class DoStatementSyntax : StatementSyntax
 	{
 		DoKeyword = doKeyword;
 		Statement = statement;
-		WhileKeyword= whileKeyword;
+		WhileKeyword = whileKeyword;
 		OpenParenToken = openParenToken;
 		Condition = condition;
 		CloseParenToken = closeParenToken;

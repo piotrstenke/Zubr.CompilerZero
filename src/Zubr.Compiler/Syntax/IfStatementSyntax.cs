@@ -38,7 +38,7 @@ public sealed class IfStatementSyntax : StatementSyntax
 
 	public override string ToString()
 	{
-		if(Else is null && Elifs.IsDefaultOrEmpty)
+		if (Else is null && Elifs.IsDefaultOrEmpty)
 		{
 			return $"{IfKeyword} {OpenParenToken}{Condition}{CloseParenToken} {Statement}";
 		}

@@ -45,7 +45,7 @@ public static class SyntaxFacts
 
 	public static bool IsPredefinedType(SyntaxKind value)
 	{
-		return 
+		return
 			value == SyntaxKind.BoolKeyword ||
 			value == SyntaxKind.VoidKeyword ||
 			value == SyntaxKind.IntKeyword ||

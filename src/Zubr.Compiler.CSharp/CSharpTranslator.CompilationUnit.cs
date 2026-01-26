@@ -5,12 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Zubr.Compiler.Syntax;
 using Zubr.Compiler.Syntax.Abstractions;
-
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-
-using Sharp = Microsoft.CodeAnalysis.CSharp.Syntax;
-
 using CSyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
+using Sharp = Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Zubr.Compiler.CSharp;
 

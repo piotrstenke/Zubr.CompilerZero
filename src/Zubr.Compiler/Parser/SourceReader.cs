@@ -30,7 +30,7 @@ internal sealed class SourceReader
 
 	public char Peek()
 	{
-		if(IsEnd())
+		if (IsEnd())
 		{
 			return InvalidChar;
 		}
@@ -42,7 +42,7 @@ internal sealed class SourceReader
 	{
 		int target = _pos + dist;
 
-		if(!IsValid(target))
+		if (!IsValid(target))
 		{
 			return InvalidChar;
 		}

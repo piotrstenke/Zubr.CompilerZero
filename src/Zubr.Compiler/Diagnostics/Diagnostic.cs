@@ -2,7 +2,7 @@
 
 internal sealed class Diagnostic
 {
-	public ErrorCode Code { get;}
+	public ErrorCode Code { get; }
 
 	public int Position { get; }
 

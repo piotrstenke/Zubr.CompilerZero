@@ -133,7 +133,7 @@ internal sealed partial class CSharpTranslator
 
 		private static Sharp.TypeParameterListSyntax? TypeParameterList(TypeParameterListSyntax? node)
 		{
-			if(node is null)
+			if (node is null)
 			{
 				return null;
 			}
@@ -213,9 +213,9 @@ internal sealed partial class CSharpTranslator
 				targetModifiers.Add(Token(CSyntaxKind.SealedKeyword));
 			}
 
-			if(node is FunctionDeclarationSyntax && node.Parent is CompilationUnitSyntax or ModuleDeclarationSyntax)
+			if (node is FunctionDeclarationSyntax && node.Parent is CompilationUnitSyntax or ModuleDeclarationSyntax)
 			{
-				if(!targetModifiers.Any(x => Microsoft.CodeAnalysis.CSharp.SyntaxFacts.IsAccessibilityModifier(x.Kind())))
+				if (!targetModifiers.Any(x => Microsoft.CodeAnalysis.CSharp.SyntaxFacts.IsAccessibilityModifier(x.Kind())))
 				{
 					targetModifiers.Add(Token(CSyntaxKind.PublicKeyword));
 				}

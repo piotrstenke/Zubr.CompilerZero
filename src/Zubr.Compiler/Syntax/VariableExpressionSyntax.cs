@@ -20,7 +20,7 @@ public sealed class VariableExpressionSyntax : ExpressionSyntax
 
 	public override string ToString()
 	{
-		if(Type is null)
+		if (Type is null)
 		{
 			return $"{Identifier}";
 		}

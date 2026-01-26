@@ -1,5 +1,4 @@
-﻿using System;
-using Zubr.Compiler.Syntax.Abstractions;
+﻿using Zubr.Compiler.Syntax.Abstractions;
 
 namespace Zubr.Compiler.Syntax;
 

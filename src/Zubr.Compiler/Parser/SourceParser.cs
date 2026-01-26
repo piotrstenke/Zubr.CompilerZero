@@ -568,7 +568,7 @@ internal sealed class SourceParser
 	{
 		SyntaxToken token = Peek();
 
-		if(token.IsPredefinedType() && Peek(1).Kind != SyntaxKind.DotToken)
+		if (token.IsPredefinedType() && Peek(1).Kind != SyntaxKind.DotToken)
 		{
 			return ParseLocalDeclaration();
 		}
@@ -766,12 +766,12 @@ internal sealed class SourceParser
 
 		ExpressionSyntax current = primary;
 
-		while(TryParseSubExpression(current, precedence) is ExpressionSyntax expr)
+		while (TryParseSubExpression(current, precedence) is ExpressionSyntax expr)
 		{
 			current = expr;
 		}
 
-		if(PeekKind(SyntaxKind.QuestionToken) && precedence <= Precedence.Conditional)
+		if (PeekKind(SyntaxKind.QuestionToken) && precedence <= Precedence.Conditional)
 		{
 			SyntaxToken questionToken = EatToken();
 			ExpressionSyntax trueExpression = ParseExpression();
@@ -806,7 +806,7 @@ internal sealed class SourceParser
 		SyntaxToken operatorToken = EatToken();
 		ExpressionSyntax right = ParseExpression(newPrecedence);
 
-		if(SyntaxFacts.IsAssignmentOperator(operatorToken.Kind))
+		if (SyntaxFacts.IsAssignmentOperator(operatorToken.Kind))
 		{
 			return new AssignmentExpressionSyntax(left, operatorToken, right)
 			{
@@ -928,11 +928,11 @@ internal sealed class SourceParser
 
 		List<(ArgumentSyntax, SyntaxToken)> args = new();
 
-		while(true)
+		while (true)
 		{
 			SyntaxToken token = Peek();
 
-			if(token.IsKind(SyntaxKind.CloseParenToken))
+			if (token.IsKind(SyntaxKind.CloseParenToken))
 			{
 				break;
 			}
@@ -941,7 +941,7 @@ internal sealed class SourceParser
 
 			token = Peek();
 
-			if(token.IsKind(SyntaxKind.CommaToken))
+			if (token.IsKind(SyntaxKind.CommaToken))
 			{
 				args.Add((arg, token));
 				continue;
@@ -978,7 +978,7 @@ internal sealed class SourceParser
 
 		SyntaxToken token = Peek();
 
-		if(!token.IsPredefinedType())
+		if (!token.IsPredefinedType())
 		{
 			return null;
 		}
@@ -987,7 +987,7 @@ internal sealed class SourceParser
 
 		SyntaxToken closeParen = EatToken();
 
-		if(closeParen.Kind != SyntaxKind.CloseParenToken)
+		if (closeParen.Kind != SyntaxKind.CloseParenToken)
 		{
 			return null;
 		}
@@ -1042,7 +1042,7 @@ internal sealed class SourceParser
 	{
 		SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
 
-		if(!PeekKind(SyntaxKind.LessThanToken))
+		if (!PeekKind(SyntaxKind.LessThanToken))
 		{
 			return new IdentifierNameSyntax(identifier)
 			{
@@ -1057,13 +1057,13 @@ internal sealed class SourceParser
 		{
 			TypeSyntax type = ParseType();
 
-			if(PeekKind(SyntaxKind.CommaToken))
+			if (PeekKind(SyntaxKind.CommaToken))
 			{
 				args.Add((type, EatToken()));
 				continue;
 			}
 
-			if(PeekKind(SyntaxKind.GreaterThanToken))
+			if (PeekKind(SyntaxKind.GreaterThanToken))
 			{
 				args.Add((type, default));
 				break;
@@ -1409,7 +1409,7 @@ internal sealed class SourceParser
 		public Snapshot(SourceParser parser)
 		{
 			_parser = parser;
-			_pos = parser._current; 
+			_pos = parser._current;
 		}
 
 		public readonly void Reset()

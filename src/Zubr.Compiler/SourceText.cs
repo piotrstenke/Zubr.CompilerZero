@@ -1,5 +1,5 @@
-﻿using Zubr.Compiler.Parser;
-using System.Text;
+﻿using System.Text;
+using Zubr.Compiler.Parser;
 
 namespace Zubr.Compiler;
 

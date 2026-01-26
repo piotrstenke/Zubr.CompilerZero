@@ -56,7 +56,7 @@ public readonly struct SyntaxList<TNode> : IReadOnlyList<TNode> where TNode : Sy
 
 	public Enumerator GetEnumerator()
 	{
-		if(IsDefault)
+		if (IsDefault)
 		{
 			return new(Array.Empty<TNode>());
 		}

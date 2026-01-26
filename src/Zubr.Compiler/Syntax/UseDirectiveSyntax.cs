@@ -1,5 +1,4 @@
-﻿using System.Text;
-using Zubr.Compiler.Syntax.Abstractions;
+﻿using Zubr.Compiler.Syntax.Abstractions;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -31,7 +30,7 @@ public sealed class UseDirectiveSyntax : SyntaxNode
 
 	public override string ToString()
 	{
-		if(Alias is not null)
+		if (Alias is not null)
 		{
 			return $"{UseKeyword} {Name} {AsKeyword} {Alias}{SemicolonToken}";
 		}

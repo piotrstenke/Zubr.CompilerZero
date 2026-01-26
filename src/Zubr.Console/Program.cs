@@ -52,7 +52,7 @@ List<SyntaxToken> tokens = new();
 
 while ((token = lexer.Lex()).Kind != SyntaxKind.EOF)
 {
-	if(token.Kind == SyntaxKind.None)
+	if (token.Kind == SyntaxKind.None)
 	{
 		continue;
 	}
@@ -130,7 +130,7 @@ using MemoryStream stream = new();
 
 var result = compilation.Emit(stream);
 
-if(!result.Success)
+if (!result.Success)
 {
 	Console.WriteLine();
 	Console.WriteLine("------------------------------------------------");
@@ -158,7 +158,7 @@ Assembly assembly = Assembly.Load(stream.ToArray());
 Type? type = assembly.GetType("TopLevel");
 MethodInfo? method = type?.GetMethod("main");
 
-if(method is null)
+if (method is null)
 {
 	Console.WriteLine("Could not find the main() function.");
 	Console.ReadKey();
@@ -167,7 +167,7 @@ if(method is null)
 
 object? output = method.Invoke(null, null);
 
-if(output is not null)
+if (output is not null)
 {
 	Console.WriteLine();
 	Console.WriteLine("Zubr code resulted in:");

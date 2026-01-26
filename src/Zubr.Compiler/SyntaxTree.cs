@@ -1,7 +1,7 @@
-﻿using Zubr.Compiler.Parser;
-using System.Collections.Generic;
-using Zubr.Compiler.Syntax;
+﻿using System.Collections.Generic;
 using System.Text;
+using Zubr.Compiler.Parser;
+using Zubr.Compiler.Syntax;
 
 namespace Zubr.Compiler;
 
@@ -30,7 +30,7 @@ public sealed class SyntaxTree
 
 			tokens.Add(token);
 
-			if(token.IsKind(SyntaxKind.EOF))
+			if (token.IsKind(SyntaxKind.EOF))
 			{
 				break;
 			}

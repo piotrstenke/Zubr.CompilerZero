@@ -199,7 +199,7 @@ public enum SyntaxKind : uint
 
 	// trait
 	TraitKeyword,
-	
+
 	// self
 	SelfKeyword,
 
@@ -363,10 +363,10 @@ public enum SyntaxKind : uint
 
 	// a + b
 	AddExpression,
-	
+
 	// a - b
 	SubtractExpression,
-	
+
 	// a * b
 	MultiplyExpression,
 
@@ -402,7 +402,7 @@ public enum SyntaxKind : uint
 
 	// a == b
 	EqualsExpression,
-	
+
 	// a != b
 	NotEqualsExpression,
 

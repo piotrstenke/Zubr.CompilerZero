@@ -47,19 +47,19 @@ internal struct Lexer
 
 		char c = _reader.Peek();
 
-		switch(c)
+		switch (c)
 		{
 			case '+':
 				_reader.Move();
 
-				if(_reader.Peek() == '+')
+				if (_reader.Peek() == '+')
 				{
 					_reader.Move();
 
 					return new(SyntaxKind.PlusPlusToken, "++", _tokenStartPos);
 				}
 
-				if(_reader.Peek() == '=')
+				if (_reader.Peek() == '=')
 				{
 					_reader.Move();
 
@@ -90,7 +90,7 @@ internal struct Lexer
 			case '=':
 				_reader.Move();
 
-				if(_reader.Peek() == '=')
+				if (_reader.Peek() == '=')
 				{
 					_reader.Move();
 
@@ -224,7 +224,7 @@ internal struct Lexer
 			case ':':
 				_reader.Move();
 
-				if(_reader.Peek() == ':')
+				if (_reader.Peek() == ':')
 				{
 					return new(SyntaxKind.ColonColonToken, "::", _tokenStartPos);
 				}
@@ -352,14 +352,14 @@ internal struct Lexer
 
 		SyntaxKind keyword = SyntaxFacts.GetKeywordKind(identifier);
 
-		if(keyword != SyntaxKind.None)
+		if (keyword != SyntaxKind.None)
 		{
-			if(keyword == SyntaxKind.TrueKeyword)
+			if (keyword == SyntaxKind.TrueKeyword)
 			{
 				return new(keyword, identifier, _tokenStartPos, true);
 			}
 
-			if(keyword == SyntaxKind.FalseKeyword)
+			if (keyword == SyntaxKind.FalseKeyword)
 			{
 				return new(keyword, identifier, _tokenStartPos, false);
 			}
@@ -713,7 +713,7 @@ internal struct Lexer
 				int next = i + 1;
 
 				// Empty escape character, invalid.
-				if(next > span.Length - 1)
+				if (next > span.Length - 1)
 				{
 					AddError(ErrorCode.ERR_SyntaxError);
 					_builder.Clear();
@@ -885,18 +885,18 @@ internal struct Lexer
 	{
 		char c;
 
-		while((c = _reader.Peek()) != SourceReader.InvalidChar)
+		while ((c = _reader.Peek()) != SourceReader.InvalidChar)
 		{
-			if(char.IsWhiteSpace(c))
+			if (char.IsWhiteSpace(c))
 			{
 				_reader.Move();
 				continue;
 			}
 
-			if(c == '/')
+			if (c == '/')
 			{
 				// Single-line comment.
-				if(_reader.Peek(1) == '/')
+				if (_reader.Peek(1) == '/')
 				{
 					_reader.Move(2);
 					ReadUntilNewLine();
@@ -910,10 +910,10 @@ internal struct Lexer
 				}
 			}
 
-			if(c == '*')
+			if (c == '*')
 			{
 				// Multi-line comment.
-				if(_reader.Peek(1) == '*')
+				if (_reader.Peek(1) == '*')
 				{
 					_reader.Move(2);
 					ReadUntilMultiLineCommentEnd();
@@ -936,14 +936,14 @@ internal struct Lexer
 	{
 		char c;
 
-		while((c = _reader.Peek()) != SourceReader.InvalidChar)
+		while ((c = _reader.Peek()) != SourceReader.InvalidChar)
 		{
 			_reader.Move();
 
 			if (c == '\r')
 			{
 				// Eat the new line too.
-				if(_reader.Peek() == '\n')
+				if (_reader.Peek() == '\n')
 				{
 					_reader.Move();
 				}
@@ -951,7 +951,7 @@ internal struct Lexer
 				return;
 			}
 
-			if(SyntaxFacts.IsNewLine(c))
+			if (SyntaxFacts.IsNewLine(c))
 			{
 				return;
 			}
@@ -962,12 +962,12 @@ internal struct Lexer
 	{
 		char c;
 
-		while((c = _reader.Peek()) != SourceReader.InvalidChar)
+		while ((c = _reader.Peek()) != SourceReader.InvalidChar)
 		{
 			_reader.Move();
 
 			// End of the multi-line comment.
-			if(c == '*' && _reader.Peek() == '*')
+			if (c == '*' && _reader.Peek() == '*')
 			{
 				_reader.Move();
 				return;

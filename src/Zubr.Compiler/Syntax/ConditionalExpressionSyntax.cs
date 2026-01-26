@@ -16,7 +16,7 @@ public sealed class ConditionalExpressionSyntax : ExpressionSyntax
 
 	public ExpressionSyntax FalseExpression { get; }
 
-	internal ConditionalExpressionSyntax(ExpressionSyntax condition, SyntaxToken questionToken, ExpressionSyntax trueExpression, SyntaxToken colonToken,  ExpressionSyntax falseExpression)
+	internal ConditionalExpressionSyntax(ExpressionSyntax condition, SyntaxToken questionToken, ExpressionSyntax trueExpression, SyntaxToken colonToken, ExpressionSyntax falseExpression)
 	{
 		Condition = condition;
 		QuestionToken = questionToken;

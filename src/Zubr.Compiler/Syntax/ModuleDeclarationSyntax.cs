@@ -1,5 +1,4 @@
-﻿using System.Linq.Expressions;
-using Zubr.Compiler.Syntax.Abstractions;
+﻿using Zubr.Compiler.Syntax.Abstractions;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -33,7 +32,7 @@ public sealed class ModuleDeclarationSyntax : MemberDeclarationSyntax
 
 	public override string ToString()
 	{
-		if(Name is null)
+		if (Name is null)
 		{
 			return $"{ModuleKeyword} {TopKeyword}{SemicolonToken}";
 		}

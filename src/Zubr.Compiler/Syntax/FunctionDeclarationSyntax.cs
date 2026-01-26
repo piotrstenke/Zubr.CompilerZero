@@ -4,7 +4,7 @@ namespace Zubr.Compiler.Syntax;
 
 public sealed class FunctionDeclarationSyntax : MemberDeclarationSyntax
 {
-	public override SyntaxKind Kind =>  SyntaxKind.FunctionDeclaration;
+	public override SyntaxKind Kind => SyntaxKind.FunctionDeclaration;
 
 	public override SyntaxTokenList Modifiers { get; }
 

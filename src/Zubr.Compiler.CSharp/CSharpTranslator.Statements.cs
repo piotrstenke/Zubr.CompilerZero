@@ -100,7 +100,7 @@ internal sealed partial class CSharpTranslator
 
 		public static Sharp.CommonForEachStatementSyntax ForEach(ForStatementSyntax node)
 		{
-			if(node.Variable is VariableExpressionSyntax expr)
+			if (node.Variable is VariableExpressionSyntax expr)
 			{
 				Sharp.TypeSyntax type = expr.Type is null
 					? SyntaxFactory.IdentifierName(SyntaxFactory.Identifier("var"))

@@ -31,7 +31,7 @@ public readonly struct SeparatedSyntaxList<TNode> : IReadOnlyList<TNode> where T
 
 	public override string ToString()
 	{
-		if(_nodes is null || _nodes.Length == 0)
+		if (_nodes is null || _nodes.Length == 0)
 		{
 			return "";
 		}
