@@ -4,11 +4,11 @@ public sealed class VariableDeclaratorSyntax : SyntaxNode
 {
 	public override SyntaxKind Kind => SyntaxKind.VariableDeclarator;
 
-	public SyntaxToken Identifier { get; }
+	public Token Identifier { get; }
 
 	public EqualsValueClauseSyntax Initializer { get; }
 
-	internal VariableDeclaratorSyntax(SyntaxToken identifier, EqualsValueClauseSyntax initializer)
+	internal VariableDeclaratorSyntax(Token identifier, EqualsValueClauseSyntax initializer)
 	{
 		Identifier = identifier;
 		Initializer = initializer;

@@ -8,11 +8,11 @@ public sealed class QualifiedNameSyntax : NameSyntax
 
 	public NameSyntax Left { get; }
 
-	public SyntaxToken DotToken { get; }
+	public Token DotToken { get; }
 
 	public SimpleNameSyntax Right { get; }
 
-	internal QualifiedNameSyntax(NameSyntax left, SyntaxToken dotToken, SimpleNameSyntax right)
+	internal QualifiedNameSyntax(NameSyntax left, Token dotToken, SimpleNameSyntax right)
 	{
 		Left = left;
 		DotToken = dotToken;

@@ -6,9 +6,9 @@ public sealed class EmptyStatementSyntax : StatementSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.EmptyStatement;
 
-	public SyntaxToken SemicolonToken { get; }
+	public Token SemicolonToken { get; }
 
-	internal EmptyStatementSyntax(SyntaxToken semicolonToken)
+	internal EmptyStatementSyntax(Token semicolonToken)
 	{
 		SemicolonToken = semicolonToken;
 	}

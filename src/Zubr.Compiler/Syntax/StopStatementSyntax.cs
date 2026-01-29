@@ -6,11 +6,11 @@ public sealed class StopStatementSyntax : StatementSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.StopStatement;
 
-	public SyntaxToken StopKeyword { get; }
+	public Token StopKeyword { get; }
 
-	public SyntaxToken SemicolonToken { get; }
+	public Token SemicolonToken { get; }
 
-	internal StopStatementSyntax(SyntaxToken stopKeyword, SyntaxToken semicolonToken)
+	internal StopStatementSyntax(Token stopKeyword, Token semicolonToken)
 	{
 		StopKeyword = stopKeyword;
 		SemicolonToken = semicolonToken;

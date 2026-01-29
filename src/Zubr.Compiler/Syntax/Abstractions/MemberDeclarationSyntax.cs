@@ -2,5 +2,5 @@
 
 public abstract class MemberDeclarationSyntax : NameSyntax
 {
-	public abstract SyntaxTokenList Modifiers { get; }
+	public abstract TokenList Modifiers { get; }
 }

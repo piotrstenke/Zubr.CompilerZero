@@ -6,21 +6,21 @@ public sealed class IfStatementSyntax : StatementSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.IfStatement;
 
-	public SyntaxToken IfKeyword { get; }
+	public Token IfKeyword { get; }
 
-	public SyntaxToken OpenParenToken { get; }
+	public Token OpenParenToken { get; }
 
 	public ExpressionSyntax Condition { get; }
 
 	public StatementSyntax Statement { get; }
 
-	public SyntaxToken CloseParenToken { get; }
+	public Token CloseParenToken { get; }
 
 	public SyntaxList<ElifClauseSyntax> Elifs { get; }
 
 	public ElseClauseSyntax? Else { get; }
 
-	internal IfStatementSyntax(SyntaxToken ifKeyword, SyntaxToken openParenToken, ExpressionSyntax condition, SyntaxToken closeParenToken, StatementSyntax statement, SyntaxList<ElifClauseSyntax> elifs, ElseClauseSyntax? @else)
+	internal IfStatementSyntax(Token ifKeyword, Token openParenToken, ExpressionSyntax condition, Token closeParenToken, StatementSyntax statement, SyntaxList<ElifClauseSyntax> elifs, ElseClauseSyntax? @else)
 	{
 		IfKeyword = ifKeyword;
 		OpenParenToken = openParenToken;

@@ -6,15 +6,15 @@ public sealed class CastExpressionSyntax : ExpressionSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.CastExpression;
 
-	public SyntaxToken OpenParenToken { get; }
+	public Token OpenParenToken { get; }
 
 	public TypeSyntax Type { get; }
 
-	public SyntaxToken CloseParenToken { get; }
+	public Token CloseParenToken { get; }
 
 	public ExpressionSyntax Expression { get; }
 
-	internal CastExpressionSyntax(SyntaxToken openParenToken, TypeSyntax type, SyntaxToken closeParenToken, ExpressionSyntax expression)
+	internal CastExpressionSyntax(Token openParenToken, TypeSyntax type, Token closeParenToken, ExpressionSyntax expression)
 	{
 		OpenParenToken = openParenToken;
 		Type = type;

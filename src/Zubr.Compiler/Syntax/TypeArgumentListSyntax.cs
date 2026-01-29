@@ -6,13 +6,13 @@ public sealed class TypeArgumentListSyntax : SyntaxNode
 {
 	public override SyntaxKind Kind => SyntaxKind.TypeArgumentList;
 
-	public SyntaxToken LessThanToken { get; }
+	public Token LessThanToken { get; }
 
 	public SeparatedSyntaxList<TypeSyntax> Arguments { get; }
 
-	public SyntaxToken GreaterThanToken { get; }
+	public Token GreaterThanToken { get; }
 
-	internal TypeArgumentListSyntax(SyntaxToken lessThanToken, SeparatedSyntaxList<TypeSyntax> arguments, SyntaxToken greaterThanToken)
+	internal TypeArgumentListSyntax(Token lessThanToken, SeparatedSyntaxList<TypeSyntax> arguments, Token greaterThanToken)
 	{
 		LessThanToken = lessThanToken;
 		Arguments = arguments;

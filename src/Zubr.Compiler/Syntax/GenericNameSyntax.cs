@@ -6,11 +6,11 @@ public sealed class GenericNameSyntax : SimpleNameSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.GenericName;
 
-	public override SyntaxToken Identifier { get; }
+	public override Token Identifier { get; }
 
 	public TypeArgumentListSyntax TypeArgumentList { get; }
 
-	internal GenericNameSyntax(SyntaxToken identifier, TypeArgumentListSyntax typeArgumentList)
+	internal GenericNameSyntax(Token identifier, TypeArgumentListSyntax typeArgumentList)
 	{
 		Identifier = identifier;
 		TypeArgumentList = typeArgumentList;

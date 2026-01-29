@@ -2,5 +2,5 @@
 
 public abstract class SimpleNameSyntax : NameSyntax
 {
-	public abstract SyntaxToken Identifier { get; }
+	public abstract Token Identifier { get; }
 }

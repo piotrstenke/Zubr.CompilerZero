@@ -9,12 +9,12 @@ namespace Zubr.Compiler.Parser;
 
 internal sealed class SourceParser
 {
-	private readonly SyntaxToken[] _tokens;
+	private readonly Token[] _tokens;
 	private int _current;
 
 	private List<Diagnostic>? _errors;
 
-	public SourceParser(SyntaxToken[] tokens)
+	public SourceParser(Token[] tokens)
 	{
 		_tokens = tokens;
 	}
@@ -26,20 +26,20 @@ internal sealed class SourceParser
 
 	public CompilationUnitSyntax ParseCompilationUnit()
 	{
-		SyntaxToken token;
+		Token token;
 
 		List<UseDirectiveSyntax> uses = new();
 		List<MemberDeclarationSyntax> members = new();
 
-		while (!(token = Peek()).IsKind(SyntaxKind.EOF))
+		while (!(token = Peek()).IsKind(TokenKind.EOF))
 		{
 			switch (token.Kind)
 			{
-				case SyntaxKind.UseKeyword:
+				case TokenKind.UseKeyword:
 					uses.Add(ParseUseDirective());
 					break;
 
-				case SyntaxKind.ModuleKeyword:
+				case TokenKind.ModuleKeyword:
 					members.Add(ParseModuleDeclaration());
 					break;
 
@@ -61,26 +61,26 @@ internal sealed class SourceParser
 
 	private ModuleDeclarationSyntax ParseModuleDeclaration()
 	{
-		SyntaxToken moduleKeyword = EatToken();
-		SyntaxToken topKeyword;
+		Token moduleKeyword = EatToken();
+		Token topKeyword;
 
 		NameSyntax? name;
 
-		SyntaxToken semicolonToken;
+		Token semicolonToken;
 
-		if (PeekKind(SyntaxKind.TopKeyword))
+		if (PeekKind(TokenKind.TopKeyword))
 		{
 			name = null;
 
 			topKeyword = EatToken();
-			semicolonToken = EatToken(SyntaxKind.SemicolonToken);
+			semicolonToken = EatToken(TokenKind.SemicolonToken);
 		}
 		else
 		{
 			topKeyword = default;
 
 			name = ParseName();
-			semicolonToken = EatToken(SyntaxKind.SemicolonToken);
+			semicolonToken = EatToken(TokenKind.SemicolonToken);
 		}
 
 		List<MemberDeclarationSyntax> members = new();
@@ -105,20 +105,20 @@ internal sealed class SourceParser
 
 	private UseDirectiveSyntax ParseUseDirective()
 	{
-		SyntaxToken useKeyword = EatToken();
+		Token useKeyword = EatToken();
 
 		NameSyntax name = ParseName();
 
-		SyntaxToken asKeyword = default;
+		Token asKeyword = default;
 		IdentifierNameSyntax? alias = null;
 
-		if (PeekKind(SyntaxKind.AsKeyword))
+		if (PeekKind(TokenKind.AsKeyword))
 		{
 			asKeyword = EatToken();
 			alias = ParseIdentifierName();
 		}
 
-		SyntaxToken semicolon = EatToken(SyntaxKind.SemicolonToken);
+		Token semicolon = EatToken(TokenKind.SemicolonToken);
 
 		return new(useKeyword, name, asKeyword, alias, semicolon)
 		{
@@ -128,11 +128,11 @@ internal sealed class SourceParser
 
 	private MemberDeclarationSyntax? TryParseMemberDeclaration()
 	{
-		SyntaxTokenList modifiers = ParseModifiers();
+		TokenList modifiers = ParseModifiers();
 
 		while (true)
 		{
-			SyntaxToken token = Peek();
+			Token token = Peek();
 
 			if (token.IsPredefinedType())
 			{
@@ -141,13 +141,13 @@ internal sealed class SourceParser
 
 			return token.Kind switch
 			{
-				SyntaxKind.ClassKeyword
+				TokenKind.ClassKeyword
 					=> ParseClassDeclaration(modifiers),
 
-				SyntaxKind.StructKeyword
+				TokenKind.StructKeyword
 					=> ParseStructDeclaration(modifiers),
 
-				SyntaxKind.IdentifierName
+				TokenKind.IdentifierToken
 					=> ParseFunctionDeclaration(modifiers),
 
 				_ => null,
@@ -155,11 +155,11 @@ internal sealed class SourceParser
 		}
 	}
 
-	private FunctionDeclarationSyntax ParseFunctionDeclaration(SyntaxTokenList modifiers)
+	private FunctionDeclarationSyntax ParseFunctionDeclaration(TokenList modifiers)
 	{
 		TypeSyntax returnType = ParseType();
 
-		SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
+		Token identifier = EatToken(TokenKind.IdentifierToken);
 
 		TypeParameterListSyntax? typeParameterList = TryParseTypeParameterList();
 		ParameterListSyntax parameterList = ParseParameterList();
@@ -175,66 +175,66 @@ internal sealed class SourceParser
 
 	private TypeParameterListSyntax? TryParseTypeParameterList()
 	{
-		SyntaxToken lessThanToken = Peek();
+		Token lessThanToken = Peek();
 
-		if (!lessThanToken.IsKind(SyntaxKind.LessThanToken))
+		if (!lessThanToken.IsKind(TokenKind.LessThanToken))
 		{
 			return null;
 		}
 
 		EatToken();
 
-		List<(TypeParameterSyntax, SyntaxToken)> parameters = new();
+		List<(TypeParameterSyntax, Token)> parameters = new();
 
 		while (true)
 		{
-			SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
+			Token identifier = EatToken(TokenKind.IdentifierToken);
 
-			SyntaxToken token = Peek();
+			Token token = Peek();
 
 			TypeParameterSyntax typeParameter = new(identifier)
 			{
 				Position = identifier.Position
 			};
 
-			if (token.IsKind(SyntaxKind.GreaterThanToken))
+			if (token.IsKind(TokenKind.GreaterThanToken))
 			{
 				parameters.Add((typeParameter, default));
 				break;
 			}
 
-			EatToken(SyntaxKind.CommaToken);
+			EatToken(TokenKind.CommaToken);
 
 			parameters.Add((typeParameter, token));
 		}
 
-		SyntaxToken greaterThanToken = EatToken();
+		Token greaterThanToken = EatToken();
 
 		return new(lessThanToken, List(parameters), greaterThanToken);
 	}
 
 	private TypeParameterConstraintListSyntax? TryParseConstraintList()
 	{
-		SyntaxToken whereKeyword = Peek();
+		Token whereKeyword = Peek();
 
-		if (!whereKeyword.IsKind(SyntaxKind.WhereKeyword))
+		if (!whereKeyword.IsKind(TokenKind.WhereKeyword))
 		{
 			return null;
 		}
 
 		EatToken();
 
-		List<(TypeParameterConstraintClauseSyntax, SyntaxToken)> clauses = new();
+		List<(TypeParameterConstraintClauseSyntax, Token)> clauses = new();
 
 		while (true)
 		{
-			SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
-			SyntaxToken colonToken = EatToken(SyntaxKind.ColonToken);
+			Token identifier = EatToken(TokenKind.IdentifierToken);
+			Token colonToken = EatToken(TokenKind.ColonToken);
 
-			List<(TypeParameterConstraintSyntax, SyntaxToken)> constraints = new();
+			List<(TypeParameterConstraintSyntax, Token)> constraints = new();
 
 			// Comma token must be default-initialized, because the child constraint clause might not have a comma.
-			SyntaxToken commaToken = default;
+			Token commaToken = default;
 
 			while (true)
 			{
@@ -244,7 +244,7 @@ internal sealed class SourceParser
 				}
 
 				// This is the last constraint, so comma is not required.
-				if (!Peek().IsKind(SyntaxKind.CommaToken))
+				if (!Peek().IsKind(TokenKind.CommaToken))
 				{
 					constraints.Add((constraint, default));
 					break;
@@ -256,7 +256,7 @@ internal sealed class SourceParser
 				//
 				// 1. Another type constraint for the current constraint clause.
 				// 2. Identifier of type parameter in the next constraint clause.
-				if (!Peek().IsKind(SyntaxKind.IdentifierToken))
+				if (!Peek().IsKind(TokenKind.IdentifierToken))
 				{
 					// Not an identifier, so we can go directly to the next constraint.
 					constraints.Add((constraint, commaToken));
@@ -264,7 +264,7 @@ internal sealed class SourceParser
 				}
 
 				// Scenario 1, so add the constraint with comma and go to the next constraint.
-				if (!Peek(1).IsKind(SyntaxKind.ColonToken))
+				if (!Peek(1).IsKind(TokenKind.ColonToken))
 				{
 					constraints.Add((constraint, commaToken));
 					continue;
@@ -283,7 +283,7 @@ internal sealed class SourceParser
 			clauses.Add((clause, commaToken));
 
 			// End of the constraint clause list.
-			if (!Peek().IsKind(SyntaxKind.IdentifierToken))
+			if (!Peek().IsKind(TokenKind.IdentifierToken))
 			{
 				break;
 			}
@@ -295,11 +295,11 @@ internal sealed class SourceParser
 		};
 	}
 
-	private TypeParameterConstraintSyntax? TryParseConstraint(SyntaxToken token)
+	private TypeParameterConstraintSyntax? TryParseConstraint(Token token)
 	{
 		switch (token.Kind)
 		{
-			case SyntaxKind.ClassKeyword:
+			case TokenKind.ClassKeyword:
 				EatToken();
 
 				return new ClassConstraintSyntax(token)
@@ -307,7 +307,7 @@ internal sealed class SourceParser
 					Position = token.Position
 				};
 
-			case SyntaxKind.StructKeyword:
+			case TokenKind.StructKeyword:
 				EatToken();
 
 				return new StructConstraintSyntax(token)
@@ -315,7 +315,7 @@ internal sealed class SourceParser
 					Position = token.Position
 				};
 
-			case SyntaxKind.IdentifierToken:
+			case TokenKind.IdentifierToken:
 				return new TypeConstraintSyntax(ParseName())
 				{
 					Position = token.Position
@@ -328,13 +328,13 @@ internal sealed class SourceParser
 
 	private ParameterListSyntax ParseParameterList()
 	{
-		SyntaxToken openParen = EatToken(SyntaxKind.OpenParenToken);
+		Token openParen = EatToken(TokenKind.OpenParenToken);
 
-		List<(ParameterSyntax parameter, SyntaxToken separator)> parameters = new();
+		List<(ParameterSyntax parameter, Token separator)> parameters = new();
 
-		SyntaxToken token = Peek();
+		Token token = Peek();
 
-		if (token.IsKind(SyntaxKind.CloseParenToken))
+		if (token.IsKind(TokenKind.CloseParenToken))
 		{
 			EatToken();
 		}
@@ -346,7 +346,7 @@ internal sealed class SourceParser
 
 				token = Peek();
 
-				if (token.IsKind(SyntaxKind.CloseParenToken))
+				if (token.IsKind(TokenKind.CloseParenToken))
 				{
 					EatToken();
 					parameters.Add((parameter, default));
@@ -354,7 +354,7 @@ internal sealed class SourceParser
 					break;
 				}
 
-				if (token.IsKind(SyntaxKind.CommaToken))
+				if (token.IsKind(TokenKind.CommaToken))
 				{
 					EatToken();
 					parameters.Add((parameter, token));
@@ -372,22 +372,22 @@ internal sealed class SourceParser
 
 	private ParameterSyntax ParseParameter()
 	{
-		List<SyntaxToken> modifiers = new();
+		List<Token> modifiers = new();
 
-		if (PeekKind(SyntaxKind.MutKeyword))
+		if (PeekKind(TokenKind.MutKeyword))
 		{
 			modifiers.Add(EatToken());
 		}
 
 		TypeSyntax type = ParseType();
 
-		SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
+		Token identifier = EatToken(TokenKind.IdentifierToken);
 
 		EqualsValueClauseSyntax? @default = null;
 
-		if (PeekKind(SyntaxKind.EqualsToken))
+		if (PeekKind(TokenKind.EqualsToken))
 		{
-			SyntaxToken equalsToken = EatToken();
+			Token equalsToken = EatToken();
 
 			ExpressionSyntax value = ParseExpression();
 
@@ -403,14 +403,14 @@ internal sealed class SourceParser
 		};
 	}
 
-	private ClassDeclarationSyntax ParseClassDeclaration(SyntaxTokenList modifiers)
+	private ClassDeclarationSyntax ParseClassDeclaration(TokenList modifiers)
 	{
 		return (ClassDeclarationSyntax)ParseTypeDeclaration(modifiers, SyntaxKind.ClassDeclaration);
 	}
 
-	private StructDeclarationSyntax ParseStructDeclaration(SyntaxTokenList modifiers)
+	private StructDeclarationSyntax ParseStructDeclaration(TokenList modifiers)
 	{
-		foreach (SyntaxToken modifier in modifiers)
+		foreach (Token modifier in modifiers)
 		{
 			if (!modifier.IsAccessModifier())
 			{
@@ -421,22 +421,22 @@ internal sealed class SourceParser
 		return (StructDeclarationSyntax)ParseTypeDeclaration(modifiers, SyntaxKind.StructDeclaration);
 	}
 
-	private TypeDeclarationSyntax ParseTypeDeclaration(SyntaxTokenList modifiers, SyntaxKind kind)
+	private TypeDeclarationSyntax ParseTypeDeclaration(TokenList modifiers, SyntaxKind kind)
 	{
-		SyntaxToken keyword = EatToken();
+		Token keyword = EatToken();
 
-		SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
+		Token identifier = EatToken(TokenKind.IdentifierToken);
 
 		TypeParameterListSyntax? typeParameterList = TryParseTypeParameterList();
 		TypeParameterConstraintListSyntax? constraints = TryParseConstraintList();
 
-		SyntaxToken openBrace = EatToken(SyntaxKind.OpenBraceToken);
+		Token openBrace = EatToken(TokenKind.OpenBraceToken);
 
 		List<MemberDeclarationSyntax> members = new();
 
-		SyntaxToken token;
+		Token token;
 
-		while ((token = Peek()).IsValid() && !token.IsKind(SyntaxKind.CloseBraceToken))
+		while ((token = Peek()).IsValid() && !token.IsKind(TokenKind.CloseBraceToken))
 		{
 			if (TryParseMemberDeclaration() is MemberDeclarationSyntax member)
 			{
@@ -444,7 +444,7 @@ internal sealed class SourceParser
 			}
 		}
 
-		SyntaxToken closeBrace = EatToken(SyntaxKind.CloseBraceToken);
+		Token closeBrace = EatToken(TokenKind.CloseBraceToken);
 
 		return kind switch
 		{
@@ -462,11 +462,11 @@ internal sealed class SourceParser
 		};
 	}
 
-	private SyntaxTokenList ParseModifiers()
+	private TokenList ParseModifiers()
 	{
-		SyntaxToken token;
+		Token token;
 
-		List<SyntaxToken> modifiers = new();
+		List<Token> modifiers = new();
 
 		while ((token = Peek()).IsModifier())
 		{
@@ -480,15 +480,15 @@ internal sealed class SourceParser
 
 	private BlockSyntax ParseBlock()
 	{
-		SyntaxToken openBrace = EatToken(SyntaxKind.OpenBraceToken);
+		Token openBrace = EatToken(TokenKind.OpenBraceToken);
 
 		List<StatementSyntax> statements = new();
 
 		while (true)
 		{
-			SyntaxToken token = Peek();
+			Token token = Peek();
 
-			if (token.IsKind(SyntaxKind.EOF) || token.IsKind(SyntaxKind.CloseBraceToken))
+			if (token.IsKind(TokenKind.EOF) || token.IsKind(TokenKind.CloseBraceToken))
 			{
 				break;
 			}
@@ -496,7 +496,7 @@ internal sealed class SourceParser
 			statements.Add(ParseStatement());
 		}
 
-		SyntaxToken closeBrace = EatToken(SyntaxKind.CloseBraceToken);
+		Token closeBrace = EatToken(TokenKind.CloseBraceToken);
 
 		return new(openBrace, List(statements), closeBrace)
 		{
@@ -506,35 +506,35 @@ internal sealed class SourceParser
 
 	private StatementSyntax ParseStatement()
 	{
-		SyntaxToken token = Peek();
+		Token token = Peek();
 
 		return token.Kind switch
 		{
-			SyntaxKind.OpenBraceToken => ParseBlock(),
-			SyntaxKind.IfKeyword => ParseIfStatement(),
-			SyntaxKind.WhileKeyword => ParseWhileStatement(),
-			SyntaxKind.DoKeyword => ParseDoStatement(),
-			SyntaxKind.ForKeyword => ParseForStatement(),
-			SyntaxKind.IdentifierToken => ParseLocalOrExpressionStatement(),
-			SyntaxKind.ReturnKeyword => ParseReturnStatement(),
-			SyntaxKind.NextKeyword => ParseNextStatement(),
-			SyntaxKind.StopKeyword => ParseStopStatement(),
+			TokenKind.OpenBraceToken => ParseBlock(),
+			TokenKind.IfKeyword => ParseIfStatement(),
+			TokenKind.WhileKeyword => ParseWhileStatement(),
+			TokenKind.DoKeyword => ParseDoStatement(),
+			TokenKind.ForKeyword => ParseForStatement(),
+			TokenKind.IdentifierToken => ParseLocalOrExpressionStatement(),
+			TokenKind.ReturnKeyword => ParseReturnStatement(),
+			TokenKind.NextKeyword => ParseNextStatement(),
+			TokenKind.StopKeyword => ParseStopStatement(),
 			_ => ParseLocalOrExpressionStatement(),
 		};
 	}
 
 	private ReturnStatementSyntax ParseReturnStatement()
 	{
-		SyntaxToken returnKeyword = EatToken(SyntaxKind.ReturnKeyword);
+		Token returnKeyword = EatToken(TokenKind.ReturnKeyword);
 
 		ExpressionSyntax? expression = null;
 
-		if (!PeekKind(SyntaxKind.SemicolonToken))
+		if (!PeekKind(TokenKind.SemicolonToken))
 		{
 			expression = ParseExpression();
 		}
 
-		SyntaxToken semicolon = EatToken(SyntaxKind.SemicolonToken);
+		Token semicolon = EatToken(TokenKind.SemicolonToken);
 
 		return new(returnKeyword, expression, semicolon)
 		{
@@ -544,8 +544,8 @@ internal sealed class SourceParser
 
 	private NextStatementSyntax ParseNextStatement()
 	{
-		SyntaxToken nextKeyword = EatToken(SyntaxKind.NextKeyword);
-		SyntaxToken semicolon = EatToken(SyntaxKind.SemicolonToken);
+		Token nextKeyword = EatToken(TokenKind.NextKeyword);
+		Token semicolon = EatToken(TokenKind.SemicolonToken);
 
 		return new(nextKeyword, semicolon)
 		{
@@ -555,8 +555,8 @@ internal sealed class SourceParser
 
 	private StopStatementSyntax ParseStopStatement()
 	{
-		SyntaxToken stopKeyword = EatToken(SyntaxKind.StopKeyword);
-		SyntaxToken semicolon = EatToken(SyntaxKind.SemicolonToken);
+		Token stopKeyword = EatToken(TokenKind.StopKeyword);
+		Token semicolon = EatToken(TokenKind.SemicolonToken);
 
 		return new(stopKeyword, semicolon)
 		{
@@ -566,15 +566,15 @@ internal sealed class SourceParser
 
 	private StatementSyntax ParseLocalOrExpressionStatement()
 	{
-		SyntaxToken token = Peek();
+		Token token = Peek();
 
-		if (token.IsPredefinedType() && Peek(1).Kind != SyntaxKind.DotToken)
+		if (token.IsPredefinedType() && Peek(1).Kind != TokenKind.DotToken)
 		{
 			return ParseLocalDeclaration();
 		}
 
 		ExpressionSyntax expr = ParseExpression();
-		SyntaxToken semicolonToken = EatToken();
+		Token semicolonToken = EatToken();
 
 		return new ExpressionStatementSyntax(expr, semicolonToken)
 		{
@@ -586,9 +586,9 @@ internal sealed class SourceParser
 	{
 		TypeSyntax type = ParseType();
 
-		SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
+		Token identifier = EatToken(TokenKind.IdentifierToken);
 
-		SyntaxToken equalsToken = EatToken(SyntaxKind.EqualsToken);
+		Token equalsToken = EatToken(TokenKind.EqualsToken);
 
 		ExpressionSyntax expression = ParseExpression();
 
@@ -607,9 +607,9 @@ internal sealed class SourceParser
 			Position = type.Position
 		};
 
-		SyntaxToken semicolon = EatToken(SyntaxKind.SemicolonToken);
+		Token semicolon = EatToken(TokenKind.SemicolonToken);
 
-		if (type is PredefinedTypeSyntax p && p.Keyword.IsKind(SyntaxKind.VoidKeyword))
+		if (type is PredefinedTypeSyntax p && p.Keyword.IsKind(TokenKind.VoidKeyword))
 		{
 			AddError(ErrorCode.ERR_SyntaxError);
 		}
@@ -622,12 +622,12 @@ internal sealed class SourceParser
 
 	private WhileStatementSyntax ParseWhileStatement()
 	{
-		SyntaxToken whileKeyword = EatToken(SyntaxKind.WhileKeyword);
-		SyntaxToken openParen = EatToken(SyntaxKind.OpenParenToken);
+		Token whileKeyword = EatToken(TokenKind.WhileKeyword);
+		Token openParen = EatToken(TokenKind.OpenParenToken);
 
 		ExpressionSyntax condition = ParseExpression();
 
-		SyntaxToken closeParen = EatToken(SyntaxKind.CloseParenToken);
+		Token closeParen = EatToken(TokenKind.CloseParenToken);
 
 		StatementSyntax statement = ParseStatement();
 
@@ -639,17 +639,17 @@ internal sealed class SourceParser
 
 	private DoStatementSyntax ParseDoStatement()
 	{
-		SyntaxToken doKeyword = EatToken(SyntaxKind.DoKeyword);
+		Token doKeyword = EatToken(TokenKind.DoKeyword);
 
 		StatementSyntax statement = ParseStatement();
 
-		SyntaxToken whileKeyword = EatToken(SyntaxKind.WhileKeyword);
-		SyntaxToken openParen = EatToken(SyntaxKind.OpenParenToken);
+		Token whileKeyword = EatToken(TokenKind.WhileKeyword);
+		Token openParen = EatToken(TokenKind.OpenParenToken);
 
 		ExpressionSyntax condition = ParseExpression();
 
-		SyntaxToken closeParen = EatToken(SyntaxKind.CloseParenToken);
-		SyntaxToken semicolon = EatToken(SyntaxKind.SemicolonToken);
+		Token closeParen = EatToken(TokenKind.CloseParenToken);
+		Token semicolon = EatToken(TokenKind.SemicolonToken);
 
 		return new(doKeyword, statement, whileKeyword, openParen, condition, closeParen, semicolon)
 		{
@@ -659,23 +659,23 @@ internal sealed class SourceParser
 
 	private ForStatementSyntax ParseForStatement()
 	{
-		SyntaxToken forKeyword = EatToken(SyntaxKind.ForKeyword);
+		Token forKeyword = EatToken(TokenKind.ForKeyword);
 
-		SyntaxToken openParen = EatToken(SyntaxKind.OpenParenToken);
+		Token openParen = EatToken(TokenKind.OpenParenToken);
 
 		TypeSyntax type = ParseType();
-		SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
+		Token identifier = EatToken(TokenKind.IdentifierToken);
 
 		VariableExpressionSyntax variable = new(type, identifier)
 		{
 			Position = type.Position
 		};
 
-		SyntaxToken colon = EatToken(SyntaxKind.ColonToken);
+		Token colon = EatToken(TokenKind.ColonToken);
 
 		ExpressionSyntax expression = ParseExpression();
 
-		SyntaxToken closeParen = EatToken(SyntaxKind.CloseParenToken);
+		Token closeParen = EatToken(TokenKind.CloseParenToken);
 
 		StatementSyntax statement = ParseStatement();
 
@@ -684,34 +684,34 @@ internal sealed class SourceParser
 
 	private IfStatementSyntax ParseIfStatement()
 	{
-		SyntaxToken ifKeyword = EatToken(SyntaxKind.IfKeyword);
-		SyntaxToken openParen = EatToken(SyntaxKind.OpenParenToken);
+		Token ifKeyword = EatToken(TokenKind.IfKeyword);
+		Token openParen = EatToken(TokenKind.OpenParenToken);
 
 		ExpressionSyntax condition = ParseExpression();
 
-		SyntaxToken closeParen = EatToken(SyntaxKind.CloseParenToken);
+		Token closeParen = EatToken(TokenKind.CloseParenToken);
 
 		StatementSyntax statement = ParseStatement();
 
 		List<ElifClauseSyntax>? elifs = null;
 		ElseClauseSyntax? @else = null;
 
-		if (PeekKind(SyntaxKind.ElifKeyword))
+		if (PeekKind(TokenKind.ElifKeyword))
 		{
 			elifs = new()
 			{
 				ParseElifClause()
 			};
 
-			while (PeekKind(SyntaxKind.ElifKeyword))
+			while (PeekKind(TokenKind.ElifKeyword))
 			{
 				elifs.Add(ParseElifClause());
 			}
 		}
 
-		if (PeekKind(SyntaxKind.ElseKeyword))
+		if (PeekKind(TokenKind.ElseKeyword))
 		{
-			SyntaxToken elseKeyword = EatToken();
+			Token elseKeyword = EatToken();
 
 			StatementSyntax elseStatement = ParseStatement();
 
@@ -734,12 +734,12 @@ internal sealed class SourceParser
 
 	private ElifClauseSyntax ParseElifClause()
 	{
-		SyntaxToken elifKeyword = EatToken(SyntaxKind.ElifKeyword);
-		SyntaxToken openParen = EatToken(SyntaxKind.OpenParenToken);
+		Token elifKeyword = EatToken(TokenKind.ElifKeyword);
+		Token openParen = EatToken(TokenKind.OpenParenToken);
 
 		ExpressionSyntax condition = ParseExpression();
 
-		SyntaxToken closeParen = EatToken(SyntaxKind.CloseParenToken);
+		Token closeParen = EatToken(TokenKind.CloseParenToken);
 
 		StatementSyntax statement = ParseStatement();
 
@@ -748,7 +748,7 @@ internal sealed class SourceParser
 
 	private ExpressionSyntax ParseExpression(Precedence precedence = default)
 	{
-		SyntaxToken token = Peek();
+		Token token = Peek();
 		SyntaxKind kind = GetPrefixUnaryExpressionKind(token.Kind);
 
 		if (kind != default)
@@ -771,11 +771,11 @@ internal sealed class SourceParser
 			current = expr;
 		}
 
-		if (PeekKind(SyntaxKind.QuestionToken) && precedence <= Precedence.Conditional)
+		if (PeekKind(TokenKind.QuestionToken) && precedence <= Precedence.Conditional)
 		{
-			SyntaxToken questionToken = EatToken();
+			Token questionToken = EatToken();
 			ExpressionSyntax trueExpression = ParseExpression();
-			SyntaxToken colonToken = EatToken(SyntaxKind.ColonToken);
+			Token colonToken = EatToken(TokenKind.ColonToken);
 			ExpressionSyntax falseExpression = ParseExpression();
 
 			current = new ConditionalExpressionSyntax(current, questionToken, trueExpression, colonToken, falseExpression)
@@ -803,7 +803,7 @@ internal sealed class SourceParser
 			return null;
 		}
 
-		SyntaxToken operatorToken = EatToken();
+		Token operatorToken = EatToken();
 		ExpressionSyntax right = ParseExpression(newPrecedence);
 
 		if (SyntaxFacts.IsAssignmentOperator(operatorToken.Kind))
@@ -822,14 +822,14 @@ internal sealed class SourceParser
 
 	private ExpressionSyntax ParsePrimaryExpression()
 	{
-		ref readonly SyntaxToken token = ref Peek();
+		ref readonly Token token = ref Peek();
 
 		switch (token.Kind)
 		{
-			case SyntaxKind.IdentifierToken:
+			case TokenKind.IdentifierToken:
 				return ParseName();
 
-			case SyntaxKind.SelfKeyword:
+			case TokenKind.SelfKeyword:
 				EatToken();
 
 				return new SelfExpressionSyntax(token)
@@ -837,11 +837,11 @@ internal sealed class SourceParser
 					Position = token.Position
 				};
 
-			case SyntaxKind.FalseKeyword:
-			case SyntaxKind.TrueKeyword:
-			case SyntaxKind.NumericLiteralToken:
-			case SyntaxKind.StringLiteralToken:
-			case SyntaxKind.CharLiteralToken:
+			case TokenKind.FalseKeyword:
+			case TokenKind.TrueKeyword:
+			case TokenKind.NumericLiteralToken:
+			case TokenKind.StringLiteralToken:
+			case TokenKind.CharLiteralToken:
 				EatToken();
 
 				return new LiteralExpressionSyntax(GetLiteralExpressionKind(token.Kind), token)
@@ -849,16 +849,16 @@ internal sealed class SourceParser
 					Position = token.Position
 				};
 
-			case SyntaxKind.OpenParenToken:
+			case TokenKind.OpenParenToken:
 
 				if (TryParseCastExpression() is CastExpressionSyntax castExpr)
 				{
 					return castExpr;
 				}
 
-				SyntaxToken openParen = EatToken();
+				Token openParen = EatToken();
 				ExpressionSyntax expr = ParseExpression();
-				SyntaxToken closeParen = EatToken(SyntaxKind.CloseParenToken);
+				Token closeParen = EatToken(TokenKind.CloseParenToken);
 
 				return new ParenthesizedExpressionSyntax(openParen, expr, closeParen)
 				{
@@ -887,11 +887,11 @@ internal sealed class SourceParser
 
 		while (true)
 		{
-			SyntaxToken token = Peek();
+			Token token = Peek();
 
 			switch (token.Kind)
 			{
-				case SyntaxKind.OpenParenToken:
+				case TokenKind.OpenParenToken:
 					expr = new InvocationExpressionSyntax(expr, ParseArgumentList())
 					{
 						Position = expr.Position,
@@ -899,8 +899,8 @@ internal sealed class SourceParser
 
 					break;
 
-				case SyntaxKind.PlusPlusToken:
-				case SyntaxKind.MinusMinusToken:
+				case TokenKind.PlusPlusToken:
+				case TokenKind.MinusMinusToken:
 					expr = new PostfixUnaryExpression(GetPostfixUnaryExpressionKind(token.Kind), expr, EatToken())
 					{
 						Position = expr.Position,
@@ -908,7 +908,7 @@ internal sealed class SourceParser
 
 					break;
 
-				case SyntaxKind.DotToken:
+				case TokenKind.DotToken:
 					expr = new MemberAccessExpressionSyntax(expr, EatToken(), ParseSimpleName())
 					{
 						Position = expr.Position,
@@ -924,15 +924,15 @@ internal sealed class SourceParser
 
 	private ArgumentListSyntax ParseArgumentList()
 	{
-		SyntaxToken openParen = EatToken(SyntaxKind.OpenParenToken);
+		Token openParen = EatToken(TokenKind.OpenParenToken);
 
-		List<(ArgumentSyntax, SyntaxToken)> args = new();
+		List<(ArgumentSyntax, Token)> args = new();
 
 		while (true)
 		{
-			SyntaxToken token = Peek();
+			Token token = Peek();
 
-			if (token.IsKind(SyntaxKind.CloseParenToken))
+			if (token.IsKind(TokenKind.CloseParenToken))
 			{
 				break;
 			}
@@ -941,7 +941,7 @@ internal sealed class SourceParser
 
 			token = Peek();
 
-			if (token.IsKind(SyntaxKind.CommaToken))
+			if (token.IsKind(TokenKind.CommaToken))
 			{
 				args.Add((arg, token));
 				continue;
@@ -950,7 +950,7 @@ internal sealed class SourceParser
 			args.Add((arg, default));
 		}
 
-		SyntaxToken closeParen = EatToken(SyntaxKind.CloseParenToken);
+		Token closeParen = EatToken(TokenKind.CloseParenToken);
 
 		return new(openParen, List(args), closeParen)
 		{
@@ -969,14 +969,14 @@ internal sealed class SourceParser
 	{
 		using Snapshot snapshot = TakeSnapshot();
 
-		SyntaxToken openParen = EatToken();
+		Token openParen = EatToken();
 
-		if (openParen.Kind != SyntaxKind.OpenParenToken)
+		if (openParen.Kind != TokenKind.OpenParenToken)
 		{
 			return null;
 		}
 
-		SyntaxToken token = Peek();
+		Token token = Peek();
 
 		if (!token.IsPredefinedType())
 		{
@@ -985,9 +985,9 @@ internal sealed class SourceParser
 
 		TypeSyntax type = ParseType();
 
-		SyntaxToken closeParen = EatToken();
+		Token closeParen = EatToken();
 
-		if (closeParen.Kind != SyntaxKind.CloseParenToken)
+		if (closeParen.Kind != TokenKind.CloseParenToken)
 		{
 			return null;
 		}
@@ -1003,7 +1003,7 @@ internal sealed class SourceParser
 
 	private TypeSyntax ParseType()
 	{
-		SyntaxToken token = Peek();
+		Token token = Peek();
 
 		if (token.IsPredefinedType())
 		{
@@ -1024,9 +1024,9 @@ internal sealed class SourceParser
 	{
 		NameSyntax name = ParseIdentifierName();
 
-		while (PeekKind(SyntaxKind.DotToken))
+		while (PeekKind(TokenKind.DotToken))
 		{
-			SyntaxToken dot = EatToken();
+			Token dot = EatToken();
 
 			IdentifierNameSyntax right = ParseIdentifierName();
 			name = new QualifiedNameSyntax(name, dot, right)
@@ -1040,9 +1040,9 @@ internal sealed class SourceParser
 
 	private SimpleNameSyntax ParseSimpleName()
 	{
-		SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
+		Token identifier = EatToken(TokenKind.IdentifierToken);
 
-		if (!PeekKind(SyntaxKind.LessThanToken))
+		if (!PeekKind(TokenKind.LessThanToken))
 		{
 			return new IdentifierNameSyntax(identifier)
 			{
@@ -1050,27 +1050,27 @@ internal sealed class SourceParser
 			};
 		}
 
-		SyntaxToken lessThanToken = EatToken();
-		List<(TypeSyntax, SyntaxToken)> args = new();
+		Token lessThanToken = EatToken();
+		List<(TypeSyntax, Token)> args = new();
 
 		while (true)
 		{
 			TypeSyntax type = ParseType();
 
-			if (PeekKind(SyntaxKind.CommaToken))
+			if (PeekKind(TokenKind.CommaToken))
 			{
 				args.Add((type, EatToken()));
 				continue;
 			}
 
-			if (PeekKind(SyntaxKind.GreaterThanToken))
+			if (PeekKind(TokenKind.GreaterThanToken))
 			{
 				args.Add((type, default));
 				break;
 			}
 		}
 
-		SyntaxToken greaterThanToken = EatToken(SyntaxKind.GreaterThanToken);
+		Token greaterThanToken = EatToken(TokenKind.GreaterThanToken);
 
 		TypeArgumentListSyntax list = new(lessThanToken, List(args), greaterThanToken)
 		{
@@ -1085,7 +1085,7 @@ internal sealed class SourceParser
 
 	private IdentifierNameSyntax ParseIdentifierName()
 	{
-		SyntaxToken identifier = EatToken(SyntaxKind.IdentifierToken);
+		Token identifier = EatToken(TokenKind.IdentifierToken);
 
 		return new(identifier)
 		{
@@ -1093,81 +1093,81 @@ internal sealed class SourceParser
 		};
 	}
 
-	private static SyntaxKind GetPrefixUnaryExpressionKind(SyntaxKind kind)
+	private static SyntaxKind GetPrefixUnaryExpressionKind(TokenKind kind)
 	{
 		return kind switch
 		{
-			SyntaxKind.PlusToken => SyntaxKind.UnaryPlusExpression,
-			SyntaxKind.PlusPlusToken => SyntaxKind.PreIncrementExpression,
-			SyntaxKind.MinusToken => SyntaxKind.UnaryMinusExpression,
-			SyntaxKind.MinusMinusToken => SyntaxKind.PreDecrementExpression,
-			SyntaxKind.ExclamationToken => SyntaxKind.LogicalNotExpression,
-			SyntaxKind.TildeToken => SyntaxKind.BitwiseNotExpression,
+			TokenKind.PlusToken => SyntaxKind.UnaryPlusExpression,
+			TokenKind.PlusPlusToken => SyntaxKind.PreIncrementExpression,
+			TokenKind.MinusToken => SyntaxKind.UnaryMinusExpression,
+			TokenKind.MinusMinusToken => SyntaxKind.PreDecrementExpression,
+			TokenKind.ExclamationToken => SyntaxKind.LogicalNotExpression,
+			TokenKind.TildeToken => SyntaxKind.BitwiseNotExpression,
 			_ => default
 		};
 	}
 
-	private static SyntaxKind GetPostfixUnaryExpressionKind(SyntaxKind kind)
+	private static SyntaxKind GetPostfixUnaryExpressionKind(TokenKind kind)
 	{
 		return kind switch
 		{
-			SyntaxKind.PlusPlusToken => SyntaxKind.PostIncrementExpression,
-			SyntaxKind.MinusMinusToken => SyntaxKind.PostDecrementExpression,
+			TokenKind.PlusPlusToken => SyntaxKind.PostIncrementExpression,
+			TokenKind.MinusMinusToken => SyntaxKind.PostDecrementExpression,
 			_ => default
 		};
 	}
 
-	private static SyntaxKind GetBinaryExpressionKind(SyntaxKind kind)
+	private static SyntaxKind GetBinaryExpressionKind(TokenKind kind)
 	{
 		return kind switch
 		{
-			SyntaxKind.PlusToken => SyntaxKind.AddExpression,
-			SyntaxKind.MinusToken => SyntaxKind.SubtractExpression,
-			SyntaxKind.AsteriskToken => SyntaxKind.MultiplyExpression,
-			SyntaxKind.SlashToken => SyntaxKind.DivideExpression,
-			SyntaxKind.PercentToken => SyntaxKind.ModuloExpression,
-			SyntaxKind.CaretToken => SyntaxKind.ExclusiveOrExpression,
-			SyntaxKind.BarToken => SyntaxKind.BitwiseOrExpression,
-			SyntaxKind.AmpersandToken => SyntaxKind.BitwiseAndExpression,
-			SyntaxKind.GreaterThanGreaterThanToken => SyntaxKind.RightShiftExpression,
-			SyntaxKind.LessThanLessThanToken => SyntaxKind.LeftShiftExpression,
-			SyntaxKind.GreaterThanGreaterThanGreaterThanToken => SyntaxKind.UnsignedRightShiftExpression,
-			SyntaxKind.EqualsEqualsToken => SyntaxKind.EqualsExpression,
-			SyntaxKind.ExclamationEqualsToken => SyntaxKind.NotEqualsExpression,
-			SyntaxKind.GreaterThanToken => SyntaxKind.GreaterThanExpression,
-			SyntaxKind.GreaterThanEqualsToken => SyntaxKind.GreaterThanOrEqualExpression,
-			SyntaxKind.LessThanToken => SyntaxKind.LessThanExpression,
-			SyntaxKind.LessThanEqualsToken => SyntaxKind.LessThanOrEqualExpression,
-			SyntaxKind.BarBarToken => SyntaxKind.LogicalOrExpression,
-			SyntaxKind.AmpersandAmpersandToken => SyntaxKind.LogicalAndExpression,
+			TokenKind.PlusToken => SyntaxKind.AddExpression,
+			TokenKind.MinusToken => SyntaxKind.SubtractExpression,
+			TokenKind.AsteriskToken => SyntaxKind.MultiplyExpression,
+			TokenKind.SlashToken => SyntaxKind.DivideExpression,
+			TokenKind.PercentToken => SyntaxKind.ModuloExpression,
+			TokenKind.CaretToken => SyntaxKind.ExclusiveOrExpression,
+			TokenKind.BarToken => SyntaxKind.BitwiseOrExpression,
+			TokenKind.AmpersandToken => SyntaxKind.BitwiseAndExpression,
+			TokenKind.GreaterThanGreaterThanToken => SyntaxKind.RightShiftExpression,
+			TokenKind.LessThanLessThanToken => SyntaxKind.LeftShiftExpression,
+			TokenKind.GreaterThanGreaterThanGreaterThanToken => SyntaxKind.UnsignedRightShiftExpression,
+			TokenKind.EqualsEqualsToken => SyntaxKind.EqualsExpression,
+			TokenKind.ExclamationEqualsToken => SyntaxKind.NotEqualsExpression,
+			TokenKind.GreaterThanToken => SyntaxKind.GreaterThanExpression,
+			TokenKind.GreaterThanEqualsToken => SyntaxKind.GreaterThanOrEqualExpression,
+			TokenKind.LessThanToken => SyntaxKind.LessThanExpression,
+			TokenKind.LessThanEqualsToken => SyntaxKind.LessThanOrEqualExpression,
+			TokenKind.BarBarToken => SyntaxKind.LogicalOrExpression,
+			TokenKind.AmpersandAmpersandToken => SyntaxKind.LogicalAndExpression,
 
 			// Assignment
 
-			SyntaxKind.EqualsToken => SyntaxKind.AssignmentExpression,
-			SyntaxKind.PlusEqualsToken => SyntaxKind.AddAssignmentExpression,
-			SyntaxKind.MinusEqualsToken => SyntaxKind.SubtractAssignmentExpression,
-			SyntaxKind.AsteriskEqualsToken => SyntaxKind.MultiplyAssignmentExpression,
-			SyntaxKind.SlashEqualsToken => SyntaxKind.DivideAssignmentExpression,
-			SyntaxKind.PercentEqualsToken => SyntaxKind.ModuloAssignmentExpression,
-			SyntaxKind.CaretEqualsToken => SyntaxKind.ExclusiveOrAssignmentExpression,
-			SyntaxKind.BarEqualsToken => SyntaxKind.BitwiseOrExpression,
-			SyntaxKind.AmpersandEqualsToken => SyntaxKind.BitwiseAndExpression,
-			SyntaxKind.LessThanLessThanEqualsToken => SyntaxKind.LeftShiftAssignmentExpression,
-			SyntaxKind.GreaterThanGreaterThanEqualsToken => SyntaxKind.RightShiftAssignmentExpression,
-			SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken => SyntaxKind.UnsignedRightShiftAssignmentExpression,
+			TokenKind.EqualsToken => SyntaxKind.AssignmentExpression,
+			TokenKind.PlusEqualsToken => SyntaxKind.AddAssignmentExpression,
+			TokenKind.MinusEqualsToken => SyntaxKind.SubtractAssignmentExpression,
+			TokenKind.AsteriskEqualsToken => SyntaxKind.MultiplyAssignmentExpression,
+			TokenKind.SlashEqualsToken => SyntaxKind.DivideAssignmentExpression,
+			TokenKind.PercentEqualsToken => SyntaxKind.ModuloAssignmentExpression,
+			TokenKind.CaretEqualsToken => SyntaxKind.ExclusiveOrAssignmentExpression,
+			TokenKind.BarEqualsToken => SyntaxKind.BitwiseOrExpression,
+			TokenKind.AmpersandEqualsToken => SyntaxKind.BitwiseAndExpression,
+			TokenKind.LessThanLessThanEqualsToken => SyntaxKind.LeftShiftAssignmentExpression,
+			TokenKind.GreaterThanGreaterThanEqualsToken => SyntaxKind.RightShiftAssignmentExpression,
+			TokenKind.GreaterThanGreaterThanGreaterThanEqualsToken => SyntaxKind.UnsignedRightShiftAssignmentExpression,
 			_ => default
 		};
 	}
 
-	private static SyntaxKind GetLiteralExpressionKind(SyntaxKind kind)
+	private static SyntaxKind GetLiteralExpressionKind(TokenKind kind)
 	{
 		return kind switch
 		{
-			SyntaxKind.StringLiteralToken => SyntaxKind.StringLiteralExpression,
-			SyntaxKind.NumericLiteralToken => SyntaxKind.NumericLiteralExpression,
-			SyntaxKind.CharLiteralToken => SyntaxKind.CharLiteralExpression,
-			SyntaxKind.TrueKeyword => SyntaxKind.TrueLiteralExpression,
-			SyntaxKind.FalseKeyword => SyntaxKind.FalseLiteralExpression,
+			TokenKind.StringLiteralToken => SyntaxKind.StringLiteralExpression,
+			TokenKind.NumericLiteralToken => SyntaxKind.NumericLiteralExpression,
+			TokenKind.CharLiteralToken => SyntaxKind.CharLiteralExpression,
+			TokenKind.TrueKeyword => SyntaxKind.TrueLiteralExpression,
+			TokenKind.FalseKeyword => SyntaxKind.FalseLiteralExpression,
 			_ => default
 		};
 	}
@@ -1299,23 +1299,23 @@ internal sealed class SourceParser
 		return new(nodes);
 	}
 
-	private static SyntaxTokenList List(List<SyntaxToken> tokens)
+	private static TokenList List(List<Token> tokens)
 	{
 		return new(tokens.ToArray());
 	}
 
-	private static SeparatedSyntaxList<TNode> List<TNode>(List<(TNode node, SyntaxToken seprator)> nodes) where TNode : SyntaxNode
+	private static SeparatedSyntaxList<TNode> List<TNode>(List<(TNode node, Token seprator)> nodes) where TNode : SyntaxNode
 	{
 		return new(nodes.ToArray());
 	}
 
-	private SyntaxToken EatToken(SyntaxKind kind)
+	private Token EatToken(TokenKind kind)
 	{
-		ref readonly SyntaxToken current = ref Peek();
+		ref readonly Token current = ref Peek();
 
 		if (current.Kind != kind)
 		{
-			if (current.Kind == SyntaxKind.EOF)
+			if (current.Kind == TokenKind.EOF)
 			{
 				AddError(ErrorCode.ERR_UnexpectedEndOfFile);
 			}
@@ -1332,17 +1332,17 @@ internal sealed class SourceParser
 		return current;
 	}
 
-	private ref readonly SyntaxToken EatToken()
+	private ref readonly Token EatToken()
 	{
 		return ref _tokens[_current++];
 	}
 
-	private ref readonly SyntaxToken Peek()
+	private ref readonly Token Peek()
 	{
 		return ref _tokens[_current];
 	}
 
-	private ref readonly SyntaxToken Peek(int pos)
+	private ref readonly Token Peek(int pos)
 	{
 		int next = _current + pos;
 
@@ -1360,32 +1360,32 @@ internal sealed class SourceParser
 		return new(this);
 	}
 
-	private SyntaxKind PeekKind()
+	private TokenKind PeekKind()
 	{
-		ref readonly SyntaxToken token = ref Peek();
+		ref readonly Token token = ref Peek();
 		return token.Kind;
 	}
 
-	private bool PeekKind(SyntaxKind kind)
+	private bool PeekKind(TokenKind kind)
 	{
-		ref readonly SyntaxToken token = ref Peek();
+		ref readonly Token token = ref Peek();
 		return token.Kind == kind;
 	}
 
-	private static SyntaxToken MissingToken(in SyntaxToken current)
+	private static Token MissingToken(in Token current)
 	{
-		return new(SyntaxKind.MissingToken, string.Empty, current.Position);
+		return new(TokenKind.MissingToken, string.Empty, current.Position);
 	}
 
-	private SyntaxToken UnexpectedToken()
+	private Token UnexpectedToken()
 	{
-		ref readonly SyntaxToken current = ref EatToken();
+		ref readonly Token current = ref EatToken();
 		return UnexpectedToken(in current);
 	}
 
-	private static SyntaxToken UnexpectedToken(in SyntaxToken token)
+	private static Token UnexpectedToken(in Token token)
 	{
-		return new(SyntaxKind.BadToken, token.Text, token.Position);
+		return new(TokenKind.BadToken, token.Text, token.Position);
 	}
 
 	private void AddError(ErrorCode code)

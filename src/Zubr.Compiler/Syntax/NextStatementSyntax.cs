@@ -6,11 +6,11 @@ public sealed class NextStatementSyntax : StatementSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.NextStatement;
 
-	public SyntaxToken NextKeyword { get; }
+	public Token NextKeyword { get; }
 
-	public SyntaxToken SemicolonToken { get; }
+	public Token SemicolonToken { get; }
 
-	internal NextStatementSyntax(SyntaxToken nextKeyword, SyntaxToken semicolonToken)
+	internal NextStatementSyntax(Token nextKeyword, Token semicolonToken)
 	{
 		NextKeyword = nextKeyword;
 		SemicolonToken = semicolonToken;

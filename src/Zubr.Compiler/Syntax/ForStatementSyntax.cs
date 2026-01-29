@@ -6,21 +6,21 @@ public sealed class ForStatementSyntax : StatementSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.ForStatement;
 
-	public SyntaxToken ForKeyword { get; }
+	public Token ForKeyword { get; }
 
-	public SyntaxToken OpenParenToken { get; }
+	public Token OpenParenToken { get; }
 
 	public ExpressionSyntax Variable { get; }
 
-	public SyntaxToken ColonToken { get; }
+	public Token ColonToken { get; }
 
 	public ExpressionSyntax Expression { get; }
 
-	public SyntaxToken CloseParenToken { get; }
+	public Token CloseParenToken { get; }
 
 	public StatementSyntax Statement { get; }
 
-	internal ForStatementSyntax(SyntaxToken forKeyword, SyntaxToken openParenToken, ExpressionSyntax variable, SyntaxToken colonToken, ExpressionSyntax expression, SyntaxToken closeParenToken, StatementSyntax statement)
+	internal ForStatementSyntax(Token forKeyword, Token openParenToken, ExpressionSyntax variable, Token colonToken, ExpressionSyntax expression, Token closeParenToken, StatementSyntax statement)
 	{
 		ForKeyword = forKeyword;
 		OpenParenToken = openParenToken;

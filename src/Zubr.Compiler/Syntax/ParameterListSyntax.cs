@@ -6,13 +6,13 @@ public sealed class ParameterListSyntax : SyntaxNode
 {
 	public override SyntaxKind Kind => SyntaxKind.ParameterList;
 
-	public SyntaxToken OpenParenToken { get; }
+	public Token OpenParenToken { get; }
 
 	public SeparatedSyntaxList<ParameterSyntax> Parameters { get; }
 
-	public SyntaxToken CloseParenToken { get; }
+	public Token CloseParenToken { get; }
 
-	internal ParameterListSyntax(SyntaxToken openParenToken, SeparatedSyntaxList<ParameterSyntax> parameters, SyntaxToken closeParenToken)
+	internal ParameterListSyntax(Token openParenToken, SeparatedSyntaxList<ParameterSyntax> parameters, Token closeParenToken)
 	{
 		OpenParenToken = openParenToken;
 		Parameters = parameters;

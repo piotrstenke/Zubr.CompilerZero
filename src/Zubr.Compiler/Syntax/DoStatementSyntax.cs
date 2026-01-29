@@ -6,21 +6,21 @@ public sealed class DoStatementSyntax : StatementSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.DoStatement;
 
-	public SyntaxToken DoKeyword { get; }
+	public Token DoKeyword { get; }
 
 	public StatementSyntax Statement { get; }
 
-	public SyntaxToken WhileKeyword { get; }
+	public Token WhileKeyword { get; }
 
-	public SyntaxToken OpenParenToken { get; }
+	public Token OpenParenToken { get; }
 
 	public ExpressionSyntax Condition { get; }
 
-	public SyntaxToken CloseParenToken { get; }
+	public Token CloseParenToken { get; }
 
-	public SyntaxToken SemicolonToken { get; }
+	public Token SemicolonToken { get; }
 
-	internal DoStatementSyntax(SyntaxToken doKeyword, StatementSyntax statement, SyntaxToken whileKeyword, SyntaxToken openParenToken, ExpressionSyntax condition, SyntaxToken closeParenToken, SyntaxToken semicolonToken)
+	internal DoStatementSyntax(Token doKeyword, StatementSyntax statement, Token whileKeyword, Token openParenToken, ExpressionSyntax condition, Token closeParenToken, Token semicolonToken)
 	{
 		DoKeyword = doKeyword;
 		Statement = statement;

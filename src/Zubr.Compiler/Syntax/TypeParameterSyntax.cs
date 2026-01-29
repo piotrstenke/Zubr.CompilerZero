@@ -4,9 +4,9 @@ public sealed class TypeParameterSyntax : SyntaxNode
 {
 	public override SyntaxKind Kind => SyntaxKind.TypeParameter;
 
-	public SyntaxToken Identifier { get; }
+	public Token Identifier { get; }
 
-	internal TypeParameterSyntax(SyntaxToken identifier)
+	internal TypeParameterSyntax(Token identifier)
 	{
 		Identifier = identifier;
 	}

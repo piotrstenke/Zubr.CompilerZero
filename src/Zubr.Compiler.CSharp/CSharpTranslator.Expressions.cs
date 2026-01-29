@@ -135,11 +135,11 @@ internal sealed partial class CSharpTranslator
 		{
 			return node.Keyword.Kind switch
 			{
-				SyntaxKind.IntKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.IntKeyword)),
-				SyntaxKind.StringKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.StringKeyword)),
-				SyntaxKind.BoolKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.BoolKeyword)),
-				SyntaxKind.VoidKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.VoidKeyword)),
-				SyntaxKind.CharKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.CharKeyword)),
+				TokenKind.IntKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.IntKeyword)),
+				TokenKind.StrKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.StringKeyword)),
+				TokenKind.BoolKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.BoolKeyword)),
+				TokenKind.VoidKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.VoidKeyword)),
+				TokenKind.CharKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.CharKeyword)),
 				_ => throw new UnreachableException()
 			};
 		}
@@ -176,7 +176,7 @@ internal sealed partial class CSharpTranslator
 
 		private static Sharp.LiteralExpressionSyntax NumericLiteral(LiteralExpressionSyntax node)
 		{
-			SyntaxToken current = node.Value;
+			Token current = node.Value;
 
 			Microsoft.CodeAnalysis.SyntaxToken token = current.Value switch
 			{

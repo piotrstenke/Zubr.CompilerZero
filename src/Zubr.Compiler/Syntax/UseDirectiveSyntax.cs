@@ -6,17 +6,17 @@ public sealed class UseDirectiveSyntax : SyntaxNode
 {
 	public override SyntaxKind Kind => SyntaxKind.UseDirective;
 
-	public SyntaxToken UseKeyword { get; }
+	public Token UseKeyword { get; }
 
 	public NameSyntax Name { get; }
 
-	public SyntaxToken AsKeyword { get; }
+	public Token AsKeyword { get; }
 
 	public IdentifierNameSyntax? Alias { get; }
 
-	public SyntaxToken SemicolonToken { get; }
+	public Token SemicolonToken { get; }
 
-	internal UseDirectiveSyntax(SyntaxToken useKeyword, NameSyntax name, SyntaxToken asKeyword, IdentifierNameSyntax? alias, SyntaxToken semicolonToken)
+	internal UseDirectiveSyntax(Token useKeyword, NameSyntax name, Token asKeyword, IdentifierNameSyntax? alias, Token semicolonToken)
 	{
 		UseKeyword = useKeyword;
 		Name = name;

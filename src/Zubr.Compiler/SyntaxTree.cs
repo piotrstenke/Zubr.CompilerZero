@@ -22,15 +22,15 @@ public sealed class SyntaxTree
 		SourceReader reader = source.GetSourceReader();
 		Lexer lexer = new(reader);
 
-		List<SyntaxToken> tokens = new(source.Length * 2);
+		List<Token> tokens = new(source.Length * 2);
 
 		while (true)
 		{
-			SyntaxToken token = lexer.Lex();
+			Token token = lexer.Lex();
 
 			tokens.Add(token);
 
-			if (token.IsKind(SyntaxKind.EOF))
+			if (token.IsKind(TokenKind.EOF))
 			{
 				break;
 			}

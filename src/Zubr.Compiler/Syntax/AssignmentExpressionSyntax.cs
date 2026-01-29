@@ -8,11 +8,11 @@ public sealed class AssignmentExpressionSyntax : ExpressionSyntax
 
 	public ExpressionSyntax Left { get; }
 
-	public SyntaxToken OperatorToken { get; }
+	public Token OperatorToken { get; }
 
 	public ExpressionSyntax Right { get; }
 
-	internal AssignmentExpressionSyntax(ExpressionSyntax left, SyntaxToken operatorToken, ExpressionSyntax right)
+	internal AssignmentExpressionSyntax(ExpressionSyntax left, Token operatorToken, ExpressionSyntax right)
 	{
 		Left = left;
 		OperatorToken = operatorToken;

@@ -8,15 +8,15 @@ public sealed class ConditionalExpressionSyntax : ExpressionSyntax
 
 	public ExpressionSyntax Condition { get; }
 
-	public SyntaxToken QuestionToken { get; }
+	public Token QuestionToken { get; }
 
 	public ExpressionSyntax TrueExpression { get; }
 
-	public SyntaxToken ColonToken { get; }
+	public Token ColonToken { get; }
 
 	public ExpressionSyntax FalseExpression { get; }
 
-	internal ConditionalExpressionSyntax(ExpressionSyntax condition, SyntaxToken questionToken, ExpressionSyntax trueExpression, SyntaxToken colonToken, ExpressionSyntax falseExpression)
+	internal ConditionalExpressionSyntax(ExpressionSyntax condition, Token questionToken, ExpressionSyntax trueExpression, Token colonToken, ExpressionSyntax falseExpression)
 	{
 		Condition = condition;
 		QuestionToken = questionToken;

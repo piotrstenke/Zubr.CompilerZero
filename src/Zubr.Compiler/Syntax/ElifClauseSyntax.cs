@@ -6,17 +6,17 @@ public sealed class ElifClauseSyntax : SyntaxNode
 {
 	public override SyntaxKind Kind => SyntaxKind.ElifClause;
 
-	public SyntaxToken ElifKeyword { get; }
+	public Token ElifKeyword { get; }
 
-	public SyntaxToken OpenParenToken { get; }
+	public Token OpenParenToken { get; }
 
 	public ExpressionSyntax Condition { get; }
 
-	public SyntaxToken CloseParenToken { get; }
+	public Token CloseParenToken { get; }
 
 	public StatementSyntax Statement { get; }
 
-	internal ElifClauseSyntax(SyntaxToken elifKeyword, SyntaxToken openParenToken, ExpressionSyntax condition, SyntaxToken closeParenToken, StatementSyntax statement)
+	internal ElifClauseSyntax(Token elifKeyword, Token openParenToken, ExpressionSyntax condition, Token closeParenToken, StatementSyntax statement)
 	{
 		ElifKeyword = elifKeyword;
 		OpenParenToken = openParenToken;

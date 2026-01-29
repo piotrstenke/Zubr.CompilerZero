@@ -35,13 +35,13 @@ internal struct Lexer
 		_errors.Add(new Diagnostic(code, _tokenStartPos));
 	}
 
-	public SyntaxToken Lex()
+	public Token Lex()
 	{
 		ReadTrivia();
 		return ReadToken();
 	}
 
-	private SyntaxToken ReadToken()
+	private Token ReadToken()
 	{
 		_tokenStartPos = _reader.Position;
 
@@ -56,17 +56,17 @@ internal struct Lexer
 				{
 					_reader.Move();
 
-					return new(SyntaxKind.PlusPlusToken, "++", _tokenStartPos);
+					return new(TokenKind.PlusPlusToken, "++", _tokenStartPos);
 				}
 
 				if (_reader.Peek() == '=')
 				{
 					_reader.Move();
 
-					return new(SyntaxKind.PlusEqualsToken, "+=", _tokenStartPos);
+					return new(TokenKind.PlusEqualsToken, "+=", _tokenStartPos);
 				}
 
-				return new(SyntaxKind.PlusToken, "+", _tokenStartPos);
+				return new(TokenKind.PlusToken, "+", _tokenStartPos);
 
 			case '-':
 				_reader.Move();
@@ -75,17 +75,17 @@ internal struct Lexer
 				{
 					_reader.Move();
 
-					return new(SyntaxKind.MinusMinusToken, "--", _tokenStartPos);
+					return new(TokenKind.MinusMinusToken, "--", _tokenStartPos);
 				}
 
 				if (_reader.Peek() == '=')
 				{
 					_reader.Move();
 
-					return new(SyntaxKind.MinusEqualsToken, "-=", _tokenStartPos);
+					return new(TokenKind.MinusEqualsToken, "-=", _tokenStartPos);
 				}
 
-				return new(SyntaxKind.MinusToken, "-", _tokenStartPos);
+				return new(TokenKind.MinusToken, "-", _tokenStartPos);
 
 			case '=':
 				_reader.Move();
@@ -94,10 +94,10 @@ internal struct Lexer
 				{
 					_reader.Move();
 
-					return new(SyntaxKind.EqualsEqualsToken, "==", _tokenStartPos);
+					return new(TokenKind.EqualsEqualsToken, "==", _tokenStartPos);
 				}
 
-				return new(SyntaxKind.EqualsToken, "=", _tokenStartPos);
+				return new(TokenKind.EqualsToken, "=", _tokenStartPos);
 
 			case '&':
 				_reader.Move();
@@ -106,17 +106,17 @@ internal struct Lexer
 				{
 					_reader.Move();
 
-					return new(SyntaxKind.AmpersandAmpersandToken, "&&", _tokenStartPos);
+					return new(TokenKind.AmpersandAmpersandToken, "&&", _tokenStartPos);
 				}
 
 				if (_reader.Peek() == '=')
 				{
 					_reader.Move();
 
-					return new(SyntaxKind.AmpersandEqualsToken, "&=", _tokenStartPos);
+					return new(TokenKind.AmpersandEqualsToken, "&=", _tokenStartPos);
 				}
 
-				return new(SyntaxKind.AmpersandToken, "&", _tokenStartPos);
+				return new(TokenKind.AmpersandToken, "&", _tokenStartPos);
 
 			case '|':
 				_reader.Move();
@@ -125,17 +125,17 @@ internal struct Lexer
 				{
 					_reader.Move();
 
-					return new(SyntaxKind.BarBarToken, "||", _tokenStartPos);
+					return new(TokenKind.BarBarToken, "||", _tokenStartPos);
 				}
 
 				if (_reader.Peek() == '=')
 				{
 					_reader.Move();
 
-					return new(SyntaxKind.BarEqualsToken, "|=", _tokenStartPos);
+					return new(TokenKind.BarEqualsToken, "|=", _tokenStartPos);
 				}
 
-				return new(SyntaxKind.BarToken, "|", _tokenStartPos);
+				return new(TokenKind.BarToken, "|", _tokenStartPos);
 
 			case '*':
 				_reader.Move();
@@ -144,10 +144,10 @@ internal struct Lexer
 				{
 					_reader.Move();
 
-					return new(SyntaxKind.AsteriskEqualsToken, "*=", _tokenStartPos);
+					return new(TokenKind.AsteriskEqualsToken, "*=", _tokenStartPos);
 				}
 
-				return new(SyntaxKind.AsteriskToken, "*", _tokenStartPos);
+				return new(TokenKind.AsteriskToken, "*", _tokenStartPos);
 
 			case '^':
 				_reader.Move();
@@ -156,10 +156,10 @@ internal struct Lexer
 				{
 					_reader.Move();
 
-					return new(SyntaxKind.CaretEqualsToken, "^=", _tokenStartPos);
+					return new(TokenKind.CaretEqualsToken, "^=", _tokenStartPos);
 				}
 
-				return new(SyntaxKind.CaretToken, "^", _tokenStartPos);
+				return new(TokenKind.CaretToken, "^", _tokenStartPos);
 
 			case '%':
 				_reader.Move();
@@ -168,10 +168,10 @@ internal struct Lexer
 				{
 					_reader.Move();
 
-					return new(SyntaxKind.PercentEqualsToken, "%=", _tokenStartPos);
+					return new(TokenKind.PercentEqualsToken, "%=", _tokenStartPos);
 				}
 
-				return new(SyntaxKind.PercentToken, "%", _tokenStartPos);
+				return new(TokenKind.PercentToken, "%", _tokenStartPos);
 
 			case '/':
 				_reader.Move();
@@ -180,56 +180,56 @@ internal struct Lexer
 				{
 					_reader.Move();
 
-					return new(SyntaxKind.SlashEqualsToken, "/=", _tokenStartPos);
+					return new(TokenKind.SlashEqualsToken, "/=", _tokenStartPos);
 				}
 
-				return new(SyntaxKind.SlashToken, "/", _tokenStartPos);
+				return new(TokenKind.SlashToken, "/", _tokenStartPos);
 
 			case '~':
 				_reader.Move();
-				return new(SyntaxKind.TildeToken, "~", _tokenStartPos);
+				return new(TokenKind.TildeToken, "~", _tokenStartPos);
 
 			case '(':
 				_reader.Move();
-				return new(SyntaxKind.OpenParenToken, "(", _tokenStartPos);
+				return new(TokenKind.OpenParenToken, "(", _tokenStartPos);
 
 			case ')':
 				_reader.Move();
-				return new(SyntaxKind.CloseParenToken, ")", _tokenStartPos);
+				return new(TokenKind.CloseParenToken, ")", _tokenStartPos);
 
 			case '[':
 				_reader.Move();
-				return new(SyntaxKind.OpenBracketToken, "[", _tokenStartPos);
+				return new(TokenKind.OpenBracketToken, "[", _tokenStartPos);
 
 			case ']':
 				_reader.Move();
-				return new(SyntaxKind.CloseBracketToken, "]", _tokenStartPos);
+				return new(TokenKind.CloseBracketToken, "]", _tokenStartPos);
 
 			case '{':
 				_reader.Move();
-				return new(SyntaxKind.OpenBraceToken, "{", _tokenStartPos);
+				return new(TokenKind.OpenBraceToken, "{", _tokenStartPos);
 
 			case '}':
 				_reader.Move();
-				return new(SyntaxKind.CloseBraceToken, "}", _tokenStartPos);
+				return new(TokenKind.CloseBraceToken, "}", _tokenStartPos);
 
 			case ',':
 				_reader.Move();
-				return new(SyntaxKind.CommaToken, ",", _tokenStartPos);
+				return new(TokenKind.CommaToken, ",", _tokenStartPos);
 
 			case ';':
 				_reader.Move();
-				return new(SyntaxKind.SemicolonToken, ";", _tokenStartPos);
+				return new(TokenKind.SemicolonToken, ";", _tokenStartPos);
 
 			case ':':
 				_reader.Move();
 
 				if (_reader.Peek() == ':')
 				{
-					return new(SyntaxKind.ColonColonToken, "::", _tokenStartPos);
+					return new(TokenKind.ColonColonToken, "::", _tokenStartPos);
 				}
 
-				return new(SyntaxKind.ColonToken, ":", _tokenStartPos);
+				return new(TokenKind.ColonToken, ":", _tokenStartPos);
 
 			case '!':
 				_reader.Move();
@@ -237,10 +237,10 @@ internal struct Lexer
 				if (_reader.Peek() == '=')
 				{
 					_reader.Move();
-					return new(SyntaxKind.ExclamationEqualsToken, "!=", _tokenStartPos);
+					return new(TokenKind.ExclamationEqualsToken, "!=", _tokenStartPos);
 				}
 
-				return new(SyntaxKind.ExclamationToken, "!", _tokenStartPos);
+				return new(TokenKind.ExclamationToken, "!", _tokenStartPos);
 
 			case '>':
 				_reader.Move();
@@ -248,7 +248,7 @@ internal struct Lexer
 				if (_reader.Peek() == '=')
 				{
 					_reader.Move();
-					return new(SyntaxKind.GreaterThanEqualsToken, ">=", _tokenStartPos);
+					return new(TokenKind.GreaterThanEqualsToken, ">=", _tokenStartPos);
 				}
 
 				if (_reader.Peek() == '>')
@@ -258,7 +258,7 @@ internal struct Lexer
 					if (_reader.Peek() == '=')
 					{
 						_reader.Move();
-						return new(SyntaxKind.GreaterThanEqualsToken, ">>=", _tokenStartPos);
+						return new(TokenKind.GreaterThanEqualsToken, ">>=", _tokenStartPos);
 					}
 
 					if (_reader.Peek() == '>')
@@ -268,16 +268,16 @@ internal struct Lexer
 						if (_reader.Peek() == '=')
 						{
 							_reader.Move();
-							return new(SyntaxKind.GreaterThanEqualsToken, ">>>=", _tokenStartPos);
+							return new(TokenKind.GreaterThanEqualsToken, ">>>=", _tokenStartPos);
 						}
 
-						return new(SyntaxKind.GreaterThanGreaterThanGreaterThanToken, ">>>", _tokenStartPos);
+						return new(TokenKind.GreaterThanGreaterThanGreaterThanToken, ">>>", _tokenStartPos);
 					}
 
-					return new(SyntaxKind.GreaterThanGreaterThanToken, ">>", _tokenStartPos);
+					return new(TokenKind.GreaterThanGreaterThanToken, ">>", _tokenStartPos);
 				}
 
-				return new(SyntaxKind.GreaterThanToken, ">", _tokenStartPos);
+				return new(TokenKind.GreaterThanToken, ">", _tokenStartPos);
 
 			case '<':
 				_reader.Move();
@@ -285,7 +285,7 @@ internal struct Lexer
 				if (_reader.Peek() == '=')
 				{
 					_reader.Move();
-					return new(SyntaxKind.LessThanEqualsToken, "<=", _tokenStartPos);
+					return new(TokenKind.LessThanEqualsToken, "<=", _tokenStartPos);
 				}
 
 				if (_reader.Peek() == '<')
@@ -295,22 +295,22 @@ internal struct Lexer
 					if (_reader.Peek() == '=')
 					{
 						_reader.Move();
-						return new(SyntaxKind.LessThanLessThanEqualsToken, "<<=", _tokenStartPos);
+						return new(TokenKind.LessThanLessThanEqualsToken, "<<=", _tokenStartPos);
 					}
 
-					return new(SyntaxKind.LessThanLessThanToken, "<<", _tokenStartPos);
+					return new(TokenKind.LessThanLessThanToken, "<<", _tokenStartPos);
 				}
 
-				return new(SyntaxKind.LessThanToken, "<", _tokenStartPos);
+				return new(TokenKind.LessThanToken, "<", _tokenStartPos);
 
 			case '?':
 				_reader.Move();
-				return new(SyntaxKind.QuestionToken, "?", _tokenStartPos);
+				return new(TokenKind.QuestionToken, "?", _tokenStartPos);
 
 			case '.':
 				if (SyntaxFacts.IsDigit(_reader.Peek(1)))
 				{
-					return new(SyntaxKind.NumericLiteralToken, ReadNumericLiteral(out object? decimalValue), _tokenStartPos, decimalValue);
+					return new(TokenKind.NumericLiteralToken, ReadNumericLiteral(out object? decimalValue), _tokenStartPos, decimalValue);
 				}
 
 				_reader.Move();
@@ -318,48 +318,48 @@ internal struct Lexer
 				if (_reader.Peek() == '.')
 				{
 					_reader.Move();
-					return new(SyntaxKind.DotDotToken, "..", _tokenStartPos);
+					return new(TokenKind.DotDotToken, "..", _tokenStartPos);
 				}
 
-				return new(SyntaxKind.DotToken, ".", _tokenStartPos);
+				return new(TokenKind.DotToken, ".", _tokenStartPos);
 
 			case '\"':
-				return new(SyntaxKind.StringLiteralToken, ReadStringLiteral(out string? stringValue), _tokenStartPos, stringValue);
+				return new(TokenKind.StringLiteralToken, ReadStringLiteral(out string? stringValue), _tokenStartPos, stringValue);
 
 			case '\'':
-				return new(SyntaxKind.CharLiteralToken, ReadCharLiteral(out char charValue), _tokenStartPos, charValue);
+				return new(TokenKind.CharLiteralToken, ReadCharLiteral(out char charValue), _tokenStartPos, charValue);
 
 			case >= '0' and <= '9':
-				return new(SyntaxKind.NumericLiteralToken, ReadNumericLiteral(out object? numericValue), _tokenStartPos, numericValue);
+				return new(TokenKind.NumericLiteralToken, ReadNumericLiteral(out object? numericValue), _tokenStartPos, numericValue);
 
 			case '_':
 			case (>= 'a' and <= 'z') or (>= 'A' and <= 'Z'):
 				return ReadIdentifierOrKeyword();
 
 			case SourceReader.InvalidChar:
-				return new(SyntaxKind.EOF, string.Empty, _tokenStartPos);
+				return new(TokenKind.EOF, string.Empty, _tokenStartPos);
 
 			default:
 				_reader.Move();
 				AddError(ErrorCode.ERR_UnexpectedCharacter);
-				return new(SyntaxKind.None, string.Empty, _tokenStartPos);
+				return new(TokenKind.None, string.Empty, _tokenStartPos);
 		}
 	}
 
-	private readonly SyntaxToken ReadIdentifierOrKeyword()
+	private readonly Token ReadIdentifierOrKeyword()
 	{
 		string identifier = ReadIdentifier();
 
-		SyntaxKind keyword = SyntaxFacts.GetKeywordKind(identifier);
+		TokenKind keyword = SyntaxFacts.GetKeywordKind(identifier);
 
-		if (keyword != SyntaxKind.None)
+		if (keyword != TokenKind.None)
 		{
-			if (keyword == SyntaxKind.TrueKeyword)
+			if (keyword == TokenKind.TrueKeyword)
 			{
 				return new(keyword, identifier, _tokenStartPos, true);
 			}
 
-			if (keyword == SyntaxKind.FalseKeyword)
+			if (keyword == TokenKind.FalseKeyword)
 			{
 				return new(keyword, identifier, _tokenStartPos, false);
 			}
@@ -367,7 +367,7 @@ internal struct Lexer
 			return new(keyword, identifier, _tokenStartPos);
 		}
 
-		return new(SyntaxKind.IdentifierToken, identifier, _tokenStartPos);
+		return new(TokenKind.IdentifierToken, identifier, _tokenStartPos);
 	}
 
 	private readonly string ReadIdentifier()

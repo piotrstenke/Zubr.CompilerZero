@@ -8,11 +8,11 @@ public sealed class BinaryExpressionSyntax : ExpressionSyntax
 
 	public ExpressionSyntax Left { get; }
 
-	public SyntaxToken OperatorToken { get; }
+	public Token OperatorToken { get; }
 
 	public ExpressionSyntax Right { get; }
 
-	internal BinaryExpressionSyntax(SyntaxKind kind, ExpressionSyntax left, SyntaxToken operatorToken, ExpressionSyntax right)
+	internal BinaryExpressionSyntax(SyntaxKind kind, ExpressionSyntax left, Token operatorToken, ExpressionSyntax right)
 	{
 		Kind = kind;
 		Left = left;

@@ -5,12 +5,16 @@ using System.Diagnostics;
 using System.Linq;
 using Zubr.Compiler.Syntax;
 using Zubr.Compiler.Syntax.Abstractions;
+
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+
+using Sharp = Microsoft.CodeAnalysis.CSharp.Syntax; 
+
 using CSyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 using CSyntaxToken = Microsoft.CodeAnalysis.SyntaxToken;
 using CSyntaxTokenList = Microsoft.CodeAnalysis.SyntaxTokenList;
-using Sharp = Microsoft.CodeAnalysis.CSharp.Syntax;
-using SyntaxTokenList = Zubr.Compiler.Syntax.Abstractions.SyntaxTokenList;
+
+using TokenList = Zubr.Compiler.Syntax.Abstractions.TokenList;
 
 namespace Zubr.Compiler.CSharp;
 
@@ -173,7 +177,7 @@ internal sealed partial class CSharpTranslator
 
 		private static CSyntaxTokenList GetModifiers(MemberDeclarationSyntax node)
 		{
-			SyntaxTokenList currentModifiers = node.Modifiers;
+			TokenList currentModifiers = node.Modifiers;
 			List<CSyntaxToken> targetModifiers = new(currentModifiers.Count);
 
 			bool isOpen = false;
@@ -181,13 +185,13 @@ internal sealed partial class CSharpTranslator
 
 			for (int i = 0; i < currentModifiers.Count; i++)
 			{
-				if (currentModifiers[i].IsKind(SyntaxKind.OpenKeyword))
+				if (currentModifiers[i].IsKind(TokenKind.OpenKeyword))
 				{
 					isOpen = true;
 					continue;
 				}
 
-				if (currentModifiers[i].IsKind(SyntaxKind.PrivKeyword) && node.Parent is not TypeDeclarationSyntax)
+				if (currentModifiers[i].IsKind(TokenKind.PrivKeyword) && node.Parent is not TypeDeclarationSyntax)
 				{
 					changePrivateToInternal = true;
 					continue;
@@ -226,14 +230,14 @@ internal sealed partial class CSharpTranslator
 			return TokenList(targetModifiers.ToArray());
 		}
 
-		private static CSyntaxKind GetAccessModifierKind(SyntaxKind value)
+		private static CSyntaxKind GetAccessModifierKind(TokenKind value)
 		{
 			return value switch
 			{
-				SyntaxKind.PubKeyword => CSyntaxKind.PublicKeyword,
-				SyntaxKind.ProtKeyword => CSyntaxKind.ProtectedKeyword,
-				SyntaxKind.PrivKeyword => CSyntaxKind.PrivateKeyword,
-				SyntaxKind.ScopedKeyword => CSyntaxKind.InternalKeyword,
+				TokenKind.PubKeyword => CSyntaxKind.PublicKeyword,
+				TokenKind.ProtKeyword => CSyntaxKind.ProtectedKeyword,
+				TokenKind.PrivKeyword => CSyntaxKind.PrivateKeyword,
+				TokenKind.ScopedKeyword => CSyntaxKind.InternalKeyword,
 				_ => default
 			};
 		}

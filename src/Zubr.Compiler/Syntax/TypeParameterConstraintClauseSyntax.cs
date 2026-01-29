@@ -6,13 +6,13 @@ public sealed class TypeParameterConstraintClauseSyntax : SyntaxNode
 {
 	public override SyntaxKind Kind => SyntaxKind.TypeParameterConstraintClause;
 
-	public SyntaxToken Identifier { get; }
+	public Token Identifier { get; }
 
-	public SyntaxToken ColonToken { get; }
+	public Token ColonToken { get; }
 
 	public SeparatedSyntaxList<TypeParameterConstraintSyntax> Constraints { get; }
 
-	internal TypeParameterConstraintClauseSyntax(SyntaxToken identifier, SyntaxToken colonToken, SeparatedSyntaxList<TypeParameterConstraintSyntax> constraints)
+	internal TypeParameterConstraintClauseSyntax(Token identifier, Token colonToken, SeparatedSyntaxList<TypeParameterConstraintSyntax> constraints)
 	{
 		Identifier = identifier;
 		ColonToken = colonToken;

@@ -6,9 +6,9 @@ public sealed class IdentifierNameSyntax : SimpleNameSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.IdentifierName;
 
-	public override SyntaxToken Identifier { get; }
+	public override Token Identifier { get; }
 
-	internal IdentifierNameSyntax(SyntaxToken identifier)
+	internal IdentifierNameSyntax(Token identifier)
 	{
 		Identifier = identifier;
 	}

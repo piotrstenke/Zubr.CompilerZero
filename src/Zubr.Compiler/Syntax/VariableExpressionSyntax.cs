@@ -8,9 +8,9 @@ public sealed class VariableExpressionSyntax : ExpressionSyntax
 
 	public TypeSyntax? Type { get; }
 
-	public SyntaxToken Identifier { get; }
+	public Token Identifier { get; }
 
-	internal VariableExpressionSyntax(TypeSyntax? type, SyntaxToken identifier)
+	internal VariableExpressionSyntax(TypeSyntax? type, Token identifier)
 	{
 		Type = type;
 		Identifier = identifier;

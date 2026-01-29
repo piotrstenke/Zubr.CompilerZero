@@ -6,9 +6,9 @@ public sealed class SelfExpressionSyntax : ExpressionSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.SelfExpression;
 
-	public SyntaxToken SelfKeyword { get; }
+	public Token SelfKeyword { get; }
 
-	internal SelfExpressionSyntax(SyntaxToken selfKeyword)
+	internal SelfExpressionSyntax(Token selfKeyword)
 	{
 		SelfKeyword = selfKeyword;
 	}

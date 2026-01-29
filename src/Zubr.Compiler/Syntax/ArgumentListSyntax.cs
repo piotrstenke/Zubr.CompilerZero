@@ -6,13 +6,13 @@ public sealed class ArgumentListSyntax : SyntaxNode
 {
 	public override SyntaxKind Kind => SyntaxKind.ArgumentList;
 
-	public SyntaxToken OpenParenToken { get; }
+	public Token OpenParenToken { get; }
 
 	public SeparatedSyntaxList<ArgumentSyntax> Arguments { get; }
 
-	public SyntaxToken CloseParenToken { get; }
+	public Token CloseParenToken { get; }
 
-	internal ArgumentListSyntax(SyntaxToken openParenToken, SeparatedSyntaxList<ArgumentSyntax> arguments, SyntaxToken closeParenToken)
+	internal ArgumentListSyntax(Token openParenToken, SeparatedSyntaxList<ArgumentSyntax> arguments, Token closeParenToken)
 	{
 		OpenParenToken = openParenToken;
 		Arguments = arguments;

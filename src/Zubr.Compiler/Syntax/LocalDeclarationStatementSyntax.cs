@@ -6,13 +6,13 @@ public sealed class LocalDeclarationStatementSyntax : StatementSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.LocalDeclarationStatement;
 
-	public SyntaxTokenList Modifiers { get; }
+	public TokenList Modifiers { get; }
 
 	public VariableDeclarationSyntax Declaration { get; }
 
-	public SyntaxToken SemicolonToken { get; }
+	public Token SemicolonToken { get; }
 
-	internal LocalDeclarationStatementSyntax(SyntaxTokenList modifiers, VariableDeclarationSyntax declaration, SyntaxToken semicolonToken)
+	internal LocalDeclarationStatementSyntax(TokenList modifiers, VariableDeclarationSyntax declaration, Token semicolonToken)
 	{
 		Modifiers = modifiers;
 		Declaration = declaration;

@@ -6,11 +6,11 @@ public sealed class ElseClauseSyntax : SyntaxNode
 {
 	public override SyntaxKind Kind => SyntaxKind.ElseClause;
 
-	public SyntaxToken ElseKeyword { get; }
+	public Token ElseKeyword { get; }
 
 	public StatementSyntax Statement { get; }
 
-	internal ElseClauseSyntax(SyntaxToken elseKeyword, StatementSyntax statement)
+	internal ElseClauseSyntax(Token elseKeyword, StatementSyntax statement)
 	{
 		ElseKeyword = elseKeyword;
 		Statement = statement;

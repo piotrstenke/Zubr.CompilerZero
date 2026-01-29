@@ -6,13 +6,13 @@ public sealed class ReturnStatementSyntax : StatementSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.ReturnStatement;
 
-	public SyntaxToken ReturnKeyword { get; }
+	public Token ReturnKeyword { get; }
 
 	public ExpressionSyntax? Expression { get; }
 
-	public SyntaxToken SemicolonToken { get; }
+	public Token SemicolonToken { get; }
 
-	internal ReturnStatementSyntax(SyntaxToken returnKeyword, ExpressionSyntax? expression, SyntaxToken semicolonToken)
+	internal ReturnStatementSyntax(Token returnKeyword, ExpressionSyntax? expression, Token semicolonToken)
 	{
 		ReturnKeyword = returnKeyword;
 		Expression = expression;

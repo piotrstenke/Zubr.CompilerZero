@@ -10,7 +10,7 @@ namespace Zubr.Compiler.Syntax.Abstractions;
 [DebuggerTypeProxy(typeof(SeparatedSyntaxList<>.DebuggerProxy))]
 public readonly struct SeparatedSyntaxList<TNode> : IReadOnlyList<TNode> where TNode : SyntaxNode
 {
-	private readonly (TNode node, SyntaxToken separator)[] _nodes;
+	private readonly (TNode node, Token separator)[] _nodes;
 
 	public int Count => _nodes.Length;
 
@@ -24,7 +24,7 @@ public readonly struct SeparatedSyntaxList<TNode> : IReadOnlyList<TNode> where T
 
 	public TNode this[int index] => _nodes[index].node;
 
-	internal SeparatedSyntaxList((TNode node, SyntaxToken separator)[] nodes)
+	internal SeparatedSyntaxList((TNode node, Token separator)[] nodes)
 	{
 		_nodes = nodes;
 	}
@@ -50,28 +50,28 @@ public readonly struct SeparatedSyntaxList<TNode> : IReadOnlyList<TNode> where T
 		return sb.ToString();
 	}
 
-	public SyntaxToken GetSeparator(int index)
+	public Token GetSeparator(int index)
 	{
 		return _nodes[index].separator;
 	}
 
-	public SyntaxTokenList GetSeparators()
+	public TokenList GetSeparators()
 	{
-		SyntaxToken[] separators = new SyntaxToken[_nodes.Length - 1];
+		Token[] separators = new Token[_nodes.Length - 1];
 
 		for (int i = 0; i < separators.Length; i++)
 		{
 			separators[i] = _nodes[i].separator;
 		}
 
-		return new SyntaxTokenList(separators);
+		return new TokenList(separators);
 	}
 
 	public Enumerator GetEnumerator()
 	{
 		if (IsDefault)
 		{
-			return new(Array.Empty<(TNode, SyntaxToken)>());
+			return new(Array.Empty<(TNode, Token)>());
 		}
 
 		return new(_nodes);
@@ -89,14 +89,14 @@ public readonly struct SeparatedSyntaxList<TNode> : IReadOnlyList<TNode> where T
 
 	public struct Enumerator : IEnumerator<TNode>
 	{
-		private readonly (TNode node, SyntaxToken)[] _nodes;
+		private readonly (TNode node, Token)[] _nodes;
 		private int _index;
 
 		public readonly TNode Current => _nodes[_index].node;
 
 		readonly object IEnumerator.Current => Current;
 
-		internal Enumerator((TNode node, SyntaxToken separator)[] nodes)
+		internal Enumerator((TNode node, Token separator)[] nodes)
 		{
 			_nodes = nodes;
 			_index = -1;

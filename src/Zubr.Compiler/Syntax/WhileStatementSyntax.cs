@@ -6,17 +6,17 @@ public sealed class WhileStatementSyntax : StatementSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.WhileStatement;
 
-	public SyntaxToken WhileKeyword { get; }
+	public Token WhileKeyword { get; }
 
-	public SyntaxToken OpenParenToken { get; }
+	public Token OpenParenToken { get; }
 
 	public ExpressionSyntax Condition { get; }
 
-	public SyntaxToken CloseParenToken { get; }
+	public Token CloseParenToken { get; }
 
 	public StatementSyntax Statement { get; }
 
-	internal WhileStatementSyntax(SyntaxToken whileKeyword, SyntaxToken openParenToken, ExpressionSyntax condition, SyntaxToken closeParenToken, StatementSyntax statement)
+	internal WhileStatementSyntax(Token whileKeyword, Token openParenToken, ExpressionSyntax condition, Token closeParenToken, StatementSyntax statement)
 	{
 		WhileKeyword = whileKeyword;
 		OpenParenToken = openParenToken;

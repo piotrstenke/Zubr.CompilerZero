@@ -6,13 +6,13 @@ public sealed class ParenthesizedExpressionSyntax : ExpressionSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.ParenthesizedExpression;
 
-	public SyntaxToken OpenParenToken { get; }
+	public Token OpenParenToken { get; }
 
 	public ExpressionSyntax Expression { get; }
 
-	public SyntaxToken CloseParenToken { get; }
+	public Token CloseParenToken { get; }
 
-	internal ParenthesizedExpressionSyntax(SyntaxToken openParenToken, ExpressionSyntax expression, SyntaxToken closeParenToken)
+	internal ParenthesizedExpressionSyntax(Token openParenToken, ExpressionSyntax expression, Token closeParenToken)
 	{
 		OpenParenToken = openParenToken;
 		Expression = expression;

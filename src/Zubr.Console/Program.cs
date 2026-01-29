@@ -1,12 +1,12 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
 using System.Text;
+using Zubr;
 using Zubr.Compiler;
 using Zubr.Compiler.CSharp;
 using Zubr.Compiler.Diagnostics;
 using Zubr.Compiler.Parser;
 using Zubr.Compiler.Syntax;
-using Zubr.Console;
 
 Console.WriteLine();
 Console.WriteLine("------------------------------------------------");
@@ -46,13 +46,13 @@ watch.Start();
 Lexer lexer = new(source.GetSourceReader());
 
 int count = 0;
-SyntaxToken token;
+Token token;
 
-List<SyntaxToken> tokens = new();
+List<Token> tokens = new();
 
-while ((token = lexer.Lex()).Kind != SyntaxKind.EOF)
+while ((token = lexer.Lex()).Kind != TokenKind.EOF)
 {
-	if (token.Kind == SyntaxKind.None)
+	if (token.Kind == TokenKind.None)
 	{
 		continue;
 	}
@@ -128,7 +128,8 @@ var compilation = RoslynUtilities.CreateCompilation(tree);
 
 using MemoryStream stream = new();
 
-var result = compilation.Emit(stream);
+var result = compilation.Emit(stream, options: new()
+{});
 
 if (!result.Success)
 {

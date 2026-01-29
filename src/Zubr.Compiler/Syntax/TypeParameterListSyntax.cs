@@ -6,13 +6,13 @@ public sealed class TypeParameterListSyntax : SyntaxNode
 {
 	public override SyntaxKind Kind => SyntaxKind.TypeParameterList;
 
-	public SyntaxToken LessThanToken { get; }
+	public Token LessThanToken { get; }
 
 	public SeparatedSyntaxList<TypeParameterSyntax> Parameters { get; }
 
-	public SyntaxToken GreaterThanToken { get; }
+	public Token GreaterThanToken { get; }
 
-	internal TypeParameterListSyntax(SyntaxToken lessThanToken, SeparatedSyntaxList<TypeParameterSyntax> parameters, SyntaxToken greaterThanToken)
+	internal TypeParameterListSyntax(Token lessThanToken, SeparatedSyntaxList<TypeParameterSyntax> parameters, Token greaterThanToken)
 	{
 		LessThanToken = lessThanToken;
 		Parameters = parameters;

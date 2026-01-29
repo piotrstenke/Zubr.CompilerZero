@@ -6,9 +6,9 @@ public sealed class StructConstraintSyntax : TypeParameterConstraintSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.StructConstraint;
 
-	public SyntaxToken StructKeyword { get; }
+	public Token StructKeyword { get; }
 
-	internal StructConstraintSyntax(SyntaxToken structKeyword)
+	internal StructConstraintSyntax(Token structKeyword)
 	{
 		StructKeyword = structKeyword;
 	}

@@ -8,9 +8,9 @@ namespace Zubr.Compiler.Syntax.Abstractions;
 
 [DebuggerDisplay("Count = {CountWithCheck,nq}")]
 [DebuggerTypeProxy(typeof(DebuggerProxy))]
-public readonly struct SyntaxTokenList : IReadOnlyCollection<SyntaxToken>
+public readonly struct TokenList : IReadOnlyCollection<Token>
 {
-	private readonly SyntaxToken[] _tokens;
+	private readonly Token[] _tokens;
 
 	public int Count => _tokens.Length;
 
@@ -22,11 +22,11 @@ public readonly struct SyntaxTokenList : IReadOnlyCollection<SyntaxToken>
 
 	private int CountWithCheck => _tokens is null ? 0 : _tokens.Length;
 
-	public SyntaxToken this[int index] => _tokens[index];
+	public Token this[int index] => _tokens[index];
 
-	public static SyntaxTokenList Empty => new(Array.Empty<SyntaxToken>());
+	public static TokenList Empty => new(Array.Empty<Token>());
 
-	internal SyntaxTokenList(SyntaxToken[] tokens)
+	internal TokenList(Token[] tokens)
 	{
 		_tokens = tokens;
 	}
@@ -56,7 +56,7 @@ public readonly struct SyntaxTokenList : IReadOnlyCollection<SyntaxToken>
 		return sb.ToString();
 	}
 
-	public bool HasKind(SyntaxKind kind)
+	public bool HasKind(TokenKind kind)
 	{
 		for (int i = 0; i < _tokens.Length; i++)
 		{
@@ -73,13 +73,13 @@ public readonly struct SyntaxTokenList : IReadOnlyCollection<SyntaxToken>
 	{
 		if (IsDefault)
 		{
-			return new(Array.Empty<SyntaxToken>());
+			return new(Array.Empty<Token>());
 		}
 
 		return new(_tokens);
 	}
 
-	IEnumerator<SyntaxToken> IEnumerable<SyntaxToken>.GetEnumerator()
+	IEnumerator<Token> IEnumerable<Token>.GetEnumerator()
 	{
 		return GetEnumerator();
 	}
@@ -89,16 +89,16 @@ public readonly struct SyntaxTokenList : IReadOnlyCollection<SyntaxToken>
 		return GetEnumerator();
 	}
 
-	public struct Enumerator : IEnumerator<SyntaxToken>
+	public struct Enumerator : IEnumerator<Token>
 	{
-		private readonly SyntaxToken[] _tokens;
+		private readonly Token[] _tokens;
 		private int _index;
 
-		public readonly SyntaxToken Current => _tokens[_index];
+		public readonly Token Current => _tokens[_index];
 
 		readonly object IEnumerator.Current => Current;
 
-		internal Enumerator(SyntaxToken[] tokens)
+		internal Enumerator(Token[] tokens)
 		{
 			_tokens = tokens;
 			_index = -1;
@@ -128,20 +128,20 @@ public readonly struct SyntaxTokenList : IReadOnlyCollection<SyntaxToken>
 
 	private sealed class DebuggerProxy
 	{
-		private readonly SyntaxTokenList _list;
+		private readonly TokenList _list;
 
 		[DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-		public SyntaxToken[] Items
+		public Token[] Items
 		{
 			get
 			{
-				SyntaxToken[] items = new SyntaxToken[_list.Count];
+				Token[] items = new Token[_list.Count];
 				_list._tokens.CopyTo(items, 0);
 				return items;
 			}
 		}
 
-		public DebuggerProxy(SyntaxTokenList list)
+		public DebuggerProxy(TokenList list)
 		{
 			_list = list;
 		}

@@ -8,11 +8,11 @@ public sealed class MemberAccessExpressionSyntax : ExpressionSyntax
 
 	public ExpressionSyntax Expression { get; }
 
-	public SyntaxToken OperatorToken { get; }
+	public Token OperatorToken { get; }
 
 	public SimpleNameSyntax Name { get; }
 
-	internal MemberAccessExpressionSyntax(ExpressionSyntax expression, SyntaxToken operatorToken, SimpleNameSyntax name)
+	internal MemberAccessExpressionSyntax(ExpressionSyntax expression, Token operatorToken, SimpleNameSyntax name)
 	{
 		Expression = expression;
 		OperatorToken = operatorToken;

@@ -6,9 +6,9 @@ public sealed class PredefinedTypeSyntax : TypeSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.PredefinedType;
 
-	public SyntaxToken Keyword { get; }
+	public Token Keyword { get; }
 
-	internal PredefinedTypeSyntax(SyntaxToken keyword)
+	internal PredefinedTypeSyntax(Token keyword)
 	{
 		Keyword = keyword;
 	}

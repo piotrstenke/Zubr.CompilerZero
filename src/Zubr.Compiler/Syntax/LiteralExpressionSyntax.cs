@@ -6,9 +6,9 @@ public sealed class LiteralExpressionSyntax : ExpressionSyntax
 {
 	public override SyntaxKind Kind { get; }
 
-	public SyntaxToken Value { get; }
+	public Token Value { get; }
 
-	internal LiteralExpressionSyntax(SyntaxKind kind, SyntaxToken value)
+	internal LiteralExpressionSyntax(SyntaxKind kind, Token value)
 	{
 		Kind = kind;
 		Value = value;

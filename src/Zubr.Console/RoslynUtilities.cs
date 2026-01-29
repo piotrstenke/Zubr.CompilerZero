@@ -2,7 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using System.Numerics;
 
-namespace Zubr.Console;
+namespace Zubr;
 
 public static class RoslynUtilities
 {
@@ -24,7 +24,7 @@ public static class RoslynUtilities
 
 		string[] locations = new string[]
 		{
-			typeof(System.Console).Assembly.Location,
+			typeof(Console).Assembly.Location,
 			typeof(object).Assembly.Location,
 			typeof(File).Assembly.Location,
 			typeof(BigInteger).Assembly.Location,

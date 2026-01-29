@@ -6,11 +6,11 @@ public sealed class PrefixUnaryExpression : ExpressionSyntax
 {
 	public override SyntaxKind Kind { get; }
 
-	public SyntaxToken OperatorToken { get; }
+	public Token OperatorToken { get; }
 
 	public ExpressionSyntax Operand { get; }
 
-	internal PrefixUnaryExpression(SyntaxKind kind, SyntaxToken operatorToken, ExpressionSyntax operand)
+	internal PrefixUnaryExpression(SyntaxKind kind, Token operatorToken, ExpressionSyntax operand)
 	{
 		Kind = kind;
 		OperatorToken = operatorToken;

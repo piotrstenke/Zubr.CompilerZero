@@ -6,9 +6,9 @@ public sealed class ClassConstraintSyntax : TypeParameterConstraintSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.ClassConstraint;
 
-	public SyntaxToken ClassKeyword { get; }
+	public Token ClassKeyword { get; }
 
-	internal ClassConstraintSyntax(SyntaxToken classKeyword)
+	internal ClassConstraintSyntax(Token classKeyword)
 	{
 		ClassKeyword = classKeyword;
 	}

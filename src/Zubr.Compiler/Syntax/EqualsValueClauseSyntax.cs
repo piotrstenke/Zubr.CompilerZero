@@ -6,11 +6,11 @@ public sealed class EqualsValueClauseSyntax : SyntaxNode
 {
 	public override SyntaxKind Kind => SyntaxKind.EqualsValue;
 
-	public SyntaxToken EqualsToken { get; }
+	public Token EqualsToken { get; }
 
 	public ExpressionSyntax Value { get; }
 
-	internal EqualsValueClauseSyntax(SyntaxToken equalsToken, ExpressionSyntax value)
+	internal EqualsValueClauseSyntax(Token equalsToken, ExpressionSyntax value)
 	{
 		EqualsToken = equalsToken;
 		Value = value;

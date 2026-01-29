@@ -10,9 +10,9 @@ public sealed class CompilationUnitSyntax : SyntaxNode
 
 	public SyntaxList<MemberDeclarationSyntax> Members { get; }
 
-	public SyntaxToken EndOfFileToken { get; }
+	public Token EndOfFileToken { get; }
 
-	internal CompilationUnitSyntax(SyntaxList<UseDirectiveSyntax> uses, SyntaxList<MemberDeclarationSyntax> members, SyntaxToken endOfFileToken)
+	internal CompilationUnitSyntax(SyntaxList<UseDirectiveSyntax> uses, SyntaxList<MemberDeclarationSyntax> members, Token endOfFileToken)
 	{
 		Uses = uses;
 		Members = members;

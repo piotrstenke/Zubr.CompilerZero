@@ -2,17 +2,17 @@
 
 public abstract class TypeDeclarationSyntax : MemberDeclarationSyntax
 {
-	public abstract SyntaxToken Keyword { get; }
+	public abstract Token Keyword { get; }
 
-	public abstract SyntaxToken Identifier { get; }
+	public abstract Token Identifier { get; }
 
 	public abstract TypeParameterListSyntax? TypeParameterList { get; }
 
 	public abstract TypeParameterConstraintListSyntax? ConstraintList { get; }
 
-	public abstract SyntaxToken OpenBraceToken { get; }
+	public abstract Token OpenBraceToken { get; }
 
-	public abstract SyntaxToken CloseBraceToken { get; }
+	public abstract Token CloseBraceToken { get; }
 
 	public abstract SyntaxList<MemberDeclarationSyntax> Members { get; }
 }

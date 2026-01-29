@@ -6,11 +6,11 @@ public sealed class FunctionDeclarationSyntax : MemberDeclarationSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.FunctionDeclaration;
 
-	public override SyntaxTokenList Modifiers { get; }
+	public override TokenList Modifiers { get; }
 
 	public TypeSyntax ReturnType { get; }
 
-	public SyntaxToken Identifier { get; }
+	public Token Identifier { get; }
 
 	public TypeParameterListSyntax? TypeParameterList { get; }
 
@@ -20,7 +20,7 @@ public sealed class FunctionDeclarationSyntax : MemberDeclarationSyntax
 
 	public BlockSyntax Body { get; }
 
-	internal FunctionDeclarationSyntax(SyntaxTokenList modifiers, TypeSyntax returnType, SyntaxToken identifier, TypeParameterListSyntax? typeParameterList, ParameterListSyntax parameterList, TypeParameterConstraintListSyntax? constraintList, BlockSyntax body)
+	internal FunctionDeclarationSyntax(TokenList modifiers, TypeSyntax returnType, Token identifier, TypeParameterListSyntax? typeParameterList, ParameterListSyntax parameterList, TypeParameterConstraintListSyntax? constraintList, BlockSyntax body)
 	{
 		Modifiers = modifiers;
 		ReturnType = returnType;

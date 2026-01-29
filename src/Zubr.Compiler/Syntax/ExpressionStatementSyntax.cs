@@ -8,9 +8,9 @@ public sealed class ExpressionStatementSyntax : StatementSyntax
 
 	public ExpressionSyntax Expression { get; }
 
-	public SyntaxToken SemicolonToken { get; }
+	public Token SemicolonToken { get; }
 
-	internal ExpressionStatementSyntax(ExpressionSyntax expression, SyntaxToken semicolonToken)
+	internal ExpressionStatementSyntax(ExpressionSyntax expression, Token semicolonToken)
 	{
 		Expression = expression;
 		SemicolonToken = semicolonToken;
