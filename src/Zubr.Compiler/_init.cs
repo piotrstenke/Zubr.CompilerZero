@@ -1,4 +1,3 @@
 ﻿using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("Zubr.Console")]
-
+[assembly: InternalsVisibleTo("Zubr.Compiler.CSharp")]

@@ -11,34 +11,32 @@ internal struct Lexer
 {
 	private readonly SourceReader _reader;
 	private readonly StringBuilder _builder;
-	private List<Diagnostic>? _errors;
+	private List<InternalDiagnostic>? _errors;
 
 	private int _tokenStartPos;
 
 	internal readonly bool HasErrors => _errors?.Count > 0;
 
-	internal Lexer(SourceReader reader)
+	internal Lexer(SourceReader reader) : this(reader, null)
+	{
+	}
+
+	internal Lexer(SourceReader reader, List<InternalDiagnostic>? errors)
 	{
 		_reader = reader;
 		_builder = new(32);
-	}
-
-	internal readonly Diagnostic[]? GetErrors()
-	{
-		return _errors?.ToArray();
-	}
-
-	private void AddError(ErrorCode code)
-	{
-		_errors ??= new();
-
-		_errors.Add(new Diagnostic(code, _tokenStartPos));
+		_errors = errors;
 	}
 
 	public Token Lex()
 	{
 		ReadTrivia();
 		return ReadToken();
+	}
+
+	internal readonly List<InternalDiagnostic>? GetErrors()
+	{
+		return _errors;
 	}
 
 	private Token ReadToken()
@@ -973,6 +971,13 @@ internal struct Lexer
 				return;
 			}
 		}
+	}
+
+	private void AddError(ErrorCode code)
+	{
+		_errors ??= new();
+
+		_errors.Add(new InternalDiagnostic(code, _tokenStartPos));
 	}
 
 	private enum NumberType : byte

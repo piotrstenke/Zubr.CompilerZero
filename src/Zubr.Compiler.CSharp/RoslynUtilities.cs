@@ -1,24 +1,31 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Numerics;
 
-namespace Zubr;
+namespace Zubr.Compiler.CSharp;
 
-public static class RoslynUtilities
+internal static class RoslynUtilities
 {
-	public static CSharpCompilation CreateCompilation(params SyntaxTree[]? syntaxTrees)
+	public static CSharpCompilation CreateCompilation(
+		string assemblyName,
+		Microsoft.CodeAnalysis.OutputKind outputKind,
+		params Microsoft.CodeAnalysis.SyntaxTree[]? syntaxTrees)
 	{
 		MetadataReference[] references = GetBaseReferences();
 
 		return CSharpCompilation.Create(
-			assemblyName: "Zubr.dll",
+			assemblyName: assemblyName,
 			syntaxTrees: syntaxTrees,
 			references: references,
-			options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+			options: new CSharpCompilationOptions(outputKind)
 		);
 	}
 
-	static MetadataReference[] GetBaseReferences()
+	private static MetadataReference[] GetBaseReferences()
 	{
 		string directory = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
 

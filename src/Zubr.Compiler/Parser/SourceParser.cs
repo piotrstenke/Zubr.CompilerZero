@@ -12,16 +12,16 @@ internal sealed class SourceParser
 	private readonly Token[] _tokens;
 	private int _current;
 
-	private List<Diagnostic>? _errors;
+	private List<InternalDiagnostic>? _errors;
 
-	public SourceParser(Token[] tokens)
+	public SourceParser(Token[] tokens) : this(tokens, null)
 	{
-		_tokens = tokens;
 	}
 
-	internal Diagnostic[]? GetDiagnostics()
+	public SourceParser(Token[] tokens, List<InternalDiagnostic>? errors)
 	{
-		return _errors?.ToArray();
+		_tokens = tokens;
+		_errors = errors;
 	}
 
 	public CompilationUnitSyntax ParseCompilationUnit()
@@ -57,6 +57,11 @@ internal sealed class SourceParser
 		}
 
 		return new(List(uses), List(members), token);
+	}
+
+	internal List<InternalDiagnostic>? GetDiagnostics()
+	{
+		return _errors;
 	}
 
 	private ModuleDeclarationSyntax ParseModuleDeclaration()
