@@ -18,12 +18,14 @@ public sealed class FieldDeclarationSyntax : MemberDeclarationSyntax
 
 	internal FieldDeclarationSyntax(
 		SyntaxList<AttributeSyntax> attributes,
+		TokenList modifiers,
 		Token fieldKeyword,
 		VariableDeclarationSyntax variable,
 		Token semicolonToken
 	)
 	{
 		Attributes = attributes;
+		Modifiers = modifiers;
 		FieldKeyword = fieldKeyword;
 		Variable = variable;
 		SemicolonToken = semicolonToken;

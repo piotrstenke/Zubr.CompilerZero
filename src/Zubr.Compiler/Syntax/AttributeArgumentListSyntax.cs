@@ -8,13 +8,13 @@ public sealed class AttributeArgumentListSyntax : SyntaxNode
 
 	public Token OpenParenToken { get; }
 
-	public SyntaxList<AttributeArgumentSyntax> Arguments { get; }
+	public SeparatedSyntaxList<AttributeArgumentSyntax> Arguments { get; }
 
 	public Token CloseParenToken { get; }
 
 	internal AttributeArgumentListSyntax(
 		Token openParenToken,
-		SyntaxList<AttributeArgumentSyntax> arguments,
+		SeparatedSyntaxList<AttributeArgumentSyntax> arguments,
 		Token closeParenToken
 	)
 	{

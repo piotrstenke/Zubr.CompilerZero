@@ -56,6 +56,16 @@ public readonly struct TokenList : IReadOnlyCollection<Token>
 		return sb.ToString();
 	}
 
+	public int GetPosition()
+	{
+		if(IsDefaultOrEmpty)
+		{
+			return default;
+		}
+
+		return _tokens[0].Position;
+	}
+
 	public bool Any()
 	{
 		return !IsDefaultOrEmpty;

@@ -56,11 +56,12 @@ public static class SyntaxFacts
 
 	public static bool IsTypeDeclarationKeyword(TokenKind value)
 	{
-		return
-			value == TokenKind.ClassKeyword ||
-			value == TokenKind.StructKeyword ||
-			value == TokenKind.EnumKeyword ||
-			value == TokenKind.TraitKeyword;
+		return value is
+			TokenKind.ClassKeyword or
+			TokenKind.StructKeyword or
+			TokenKind.EnumKeyword or
+			TokenKind.TraitKeyword or
+			TokenKind.AttrKeyword;
 	}
 
 	public static bool IsAssignmentOperator(this in Token token)
@@ -85,6 +86,18 @@ public static class SyntaxFacts
 			value == TokenKind.GreaterThanGreaterThanGreaterThanEqualsToken;
 	}
 
+	public static bool IsAccessor(this in Token token)
+	{
+		return IsAccessor(token.Kind);
+	}
+
+	public static bool IsAccessor(TokenKind value)
+	{
+		return value is
+			TokenKind.GetKeyword or
+			TokenKind.SetKeyword;
+	}
+
 	public static bool IsAccessModifier(this in Token token)
 	{
 		return IsAccessModifier(token.Kind);
@@ -106,7 +119,23 @@ public static class SyntaxFacts
 
 	public static bool IsModifier(TokenKind value)
 	{
-		return IsAccessModifier(value) || value == TokenKind.OpenKeyword;
+		if(IsAccessModifier(value))
+		{
+			return true;
+		}
+
+		return value is
+			TokenKind.OpenKeyword or
+			TokenKind.MutKeyword or
+			TokenKind.InitKeyword or
+			TokenKind.FinalKeyword or
+			TokenKind.FlagKeyword or
+			TokenKind.DataKeyword or
+			TokenKind.ConstKeyword or
+			TokenKind.BaseKeyword or
+			TokenKind.LimitKeyword or
+			TokenKind.OverKeyword or
+			TokenKind.ReqKeyword;
 	}
 
 	public static bool IsValid(this in Token token)

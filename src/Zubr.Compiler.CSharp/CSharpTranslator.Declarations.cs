@@ -63,8 +63,39 @@ internal sealed partial class CSharpTranslator
 				BaseFunctionDeclarationSyntax f => Method(f),
 				PropertyDeclarationSyntax p => Property(p),
 				SimpleEnumDeclarationSyntax e => Enum(e),
+				AttributeDeclarationSyntax a => AttributeClass(a),
 				_ => throw new UnreachableException()
 			};
+		}
+
+		public static Sharp.ClassDeclarationSyntax AttributeClass(AttributeDeclarationSyntax node)
+		{
+			CSyntaxTokenList modifiers = GetModifiers(node, out ModifierFlags flags);
+
+			Sharp.TypeParameterListSyntax? typeParameterList = TypeParameterList(node.TypeParameterList);
+			var constraints = ConstraintList(node.ConstraintList);
+
+			Sharp.ParameterListSyntax? parameters = node.ParameterList is null
+				? null
+				: ParameterList(node.ParameterList);
+
+			var attributes = Attributes(node.Attributes);
+
+			if (flags.HasFlag(ModifierFlags.Limit))
+			{
+				attributes = attributes.Add(Interop.InternalInheritAttribute());
+			}
+
+			return SyntaxFactory.ClassDeclaration(
+				attributes,
+				modifiers,
+				SyntaxFactory.Identifier(node.Identifier.Text + "Attribute"),
+				typeParameterList,
+				parameters,
+				BaseTypeList(node.BaseTypeList),
+				constraints,
+				SyntaxFactory.List(node.Members.Select(Member))
+			);
 		}
 
 		public static Sharp.TypeDeclarationSyntax Class(ClassDeclarationSyntax node)

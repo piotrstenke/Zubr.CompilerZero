@@ -54,6 +54,16 @@ public readonly struct SyntaxList<TNode> : IReadOnlyList<TNode> where TNode : Sy
 		return sb.ToString();
 	}
 
+	public int GetPosition()
+	{
+		if(IsDefaultOrEmpty)
+		{
+			return default;
+		}
+
+		return _nodes[0].Position;
+	}
+
 	public bool Any()
 	{
 		return !IsDefaultOrEmpty;

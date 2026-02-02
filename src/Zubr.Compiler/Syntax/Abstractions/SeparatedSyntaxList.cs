@@ -50,6 +50,16 @@ public readonly struct SeparatedSyntaxList<TNode> : IReadOnlyList<TNode> where T
 		return sb.ToString();
 	}
 
+	public int GetPosition()
+	{
+		if (IsDefaultOrEmpty)
+		{
+			return default;
+		}
+
+		return _nodes[0].node.Position;
+	}
+
 	public bool Any()
 	{
 		return !IsDefaultOrEmpty;
