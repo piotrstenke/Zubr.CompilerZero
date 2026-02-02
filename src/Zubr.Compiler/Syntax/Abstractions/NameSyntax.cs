@@ -2,4 +2,7 @@
 
 public abstract class NameSyntax : TypeSyntax
 {
+	internal NameSyntax()
+	{
+	}
 }

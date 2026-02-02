@@ -95,6 +95,13 @@ internal struct Lexer
 					return new(TokenKind.EqualsEqualsToken, "==", _tokenStartPos);
 				}
 
+				if(_reader.Peek() == '>')
+				{
+					_reader.Move();
+
+					return new(TokenKind.EqualsGreaterThanToken, "=>", _tokenStartPos);
+				}
+
 				return new(TokenKind.EqualsToken, "=", _tokenStartPos);
 
 			case '&':

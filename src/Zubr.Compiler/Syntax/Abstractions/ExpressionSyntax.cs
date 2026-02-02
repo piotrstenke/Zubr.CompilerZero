@@ -2,4 +2,7 @@
 
 public abstract class ExpressionSyntax : SyntaxNode
 {
+	internal ExpressionSyntax()
+	{
+	}
 }

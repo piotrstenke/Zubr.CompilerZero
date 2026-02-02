@@ -6,6 +6,8 @@ public sealed class ParameterSyntax : SyntaxNode
 {
 	public override SyntaxKind Kind => SyntaxKind.Parameter;
 
+	public SyntaxList<AttributeSyntax> Attributes { get; }
+
 	public TokenList Modifiers { get; }
 
 	public TypeSyntax Type { get; }
@@ -14,19 +16,27 @@ public sealed class ParameterSyntax : SyntaxNode
 
 	public EqualsValueClauseSyntax? Default { get; }
 
-	internal ParameterSyntax(TokenList modifiers, TypeSyntax type, Token identifier, EqualsValueClauseSyntax? @default)
+	internal ParameterSyntax(
+		SyntaxList<AttributeSyntax> attributes,
+		TokenList modifiers,
+		TypeSyntax type,
+		Token identifier,
+		EqualsValueClauseSyntax? @default
+	)
 	{
+		Attributes = attributes;
 		Modifiers = modifiers;
 		Identifier = identifier;
 		Type = type;
 		Default = @default;
 
+		SetParent(attributes);
 		SetParent(type);
 		SetParentIfNotNull(@default);
 	}
 
 	public override string ToString()
 	{
-		return $"{Modifiers} {Type} {Identifier}{(Default is null ? "" : $" {Default}")}";
+		return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{Type} {Identifier}{(Default is null ? "" : $" {Default}")}";
 	}
 }

@@ -6,6 +6,8 @@ public sealed class StructDeclarationSyntax : TypeDeclarationSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.StructDeclaration;
 
+	public override SyntaxList<AttributeSyntax> Attributes { get; }
+
 	public override TokenList Modifiers { get; }
 
 	public override Token Keyword { get; }
@@ -14,32 +16,62 @@ public sealed class StructDeclarationSyntax : TypeDeclarationSyntax
 
 	public override TypeParameterListSyntax? TypeParameterList { get; }
 
+	public override ParameterListSyntax? ParameterList { get; }
+
+	public override BaseTypeListSyntax? BaseTypeList { get; }
+
 	public override TypeParameterConstraintListSyntax? ConstraintList { get; }
+
+	public override Token SemicolonToken { get; }
 
 	public override Token OpenBraceToken { get; }
 
-	public override Token CloseBraceToken { get; }
-
 	public override SyntaxList<MemberDeclarationSyntax> Members { get; }
 
-	internal StructDeclarationSyntax(TokenList modifiers, Token keyword, Token identifier, TypeParameterListSyntax? typeParameterList, TypeParameterConstraintListSyntax? constraintList, Token openBraceToken, SyntaxList<MemberDeclarationSyntax> members, Token closeBraceToken)
+	public override Token CloseBraceToken { get; }
+
+	internal StructDeclarationSyntax(
+		SyntaxList<AttributeSyntax> attributes,
+		TokenList modifiers,
+		Token keyword,
+		Token identifier,
+		TypeParameterListSyntax? typeParameterList,
+		ParameterListSyntax? parameterList,
+		BaseTypeListSyntax? baseTypeList,
+		TypeParameterConstraintListSyntax? constraintList,
+		Token semicolonToken,
+		Token openBraceToken,
+		SyntaxList<MemberDeclarationSyntax> members,
+		Token closeBraceToken
+	)
 	{
 		Modifiers = modifiers;
 		Keyword = keyword;
 		Identifier = identifier;
 		TypeParameterList = typeParameterList;
+		ParameterList = parameterList;
+		BaseTypeList = baseTypeList;
 		ConstraintList = constraintList;
+		SemicolonToken = semicolonToken;
 		OpenBraceToken = openBraceToken;
 		Members = members;
 		CloseBraceToken = closeBraceToken;
 
-		SetParent(members);
+		SetParent(attributes);
 		SetParentIfNotNull(typeParameterList);
+		SetParentIfNotNull(parameterList);
+		SetParentIfNotNull(baseTypeList);
 		SetParentIfNotNull(constraintList);
+		SetParent(members);
 	}
 
 	public override string ToString()
 	{
-		return $"{Modifiers} {Keyword} {Identifier}{TypeParameterList}{(ConstraintList is null ? "" : $" {ConstraintList}")} {OpenBraceToken} ... {CloseBraceToken}";
+		if (SemicolonToken.IsFound)
+		{
+			return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{Keyword} {Identifier}{TypeParameterList}{ParameterList}{(BaseTypeList is null ? "" : $" {BaseTypeList}")}{(ConstraintList is null ? "" : $" {ConstraintList}")}{SemicolonToken}";
+		}
+
+		return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{Keyword} {Identifier}{TypeParameterList}{ParameterList}{(BaseTypeList is null ? "" : $" {BaseTypeList}")}{(ConstraintList is null ? "" : $" {ConstraintList}")} {OpenBraceToken} ... {CloseBraceToken}";
 	}
 }

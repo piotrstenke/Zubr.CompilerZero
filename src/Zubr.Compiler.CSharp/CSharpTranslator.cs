@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Zubr.Compiler.CSharp;
 
@@ -23,11 +24,12 @@ internal sealed partial class CSharpTranslator
 
 	public CSharpSyntaxTree Translate(SyntaxTree syntaxTree)
 	{
-		return (CSharpSyntaxTree)CSharpSyntaxTree.Create(Translate(syntaxTree.Root), encoding: syntaxTree.Encoding);
-	}
+		CompilationUnitSyntax root = Translate(syntaxTree.Root);
 
-	private static Microsoft.CodeAnalysis.SyntaxToken Token(Microsoft.CodeAnalysis.CSharp.SyntaxKind kind)
-	{
-		return SyntaxFactory.Token(kind);
+		return (CSharpSyntaxTree)CSharpSyntaxTree.Create(
+			root,
+			encoding: syntaxTree.Encoding,
+			options: new CSharpParseOptions(languageVersion: Options.LanguageVersion)
+		);
 	}
 }

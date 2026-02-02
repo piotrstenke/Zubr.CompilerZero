@@ -24,6 +24,11 @@ public abstract class SyntaxNode
 
 	private protected void SetParent<TNode>(SyntaxList<TNode> list) where TNode : SyntaxNode
 	{
+		if(list.IsDefaultOrEmpty)
+		{
+			return;
+		}
+
 		foreach (TNode node in list)
 		{
 			node.Parent = this;
@@ -32,6 +37,11 @@ public abstract class SyntaxNode
 
 	private protected void SetParent<TNode>(SeparatedSyntaxList<TNode> list) where TNode : SyntaxNode
 	{
+		if (list.IsDefaultOrEmpty)
+		{
+			return;
+		}
+
 		foreach (TNode node in list)
 		{
 			node.Parent = this;

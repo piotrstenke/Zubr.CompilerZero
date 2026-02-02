@@ -8,6 +8,8 @@ public sealed class ModuleDeclarationSyntax : MemberDeclarationSyntax
 
 	public override TokenList Modifiers => TokenList.Empty;
 
+	public override SyntaxList<AttributeSyntax> Attributes => default;
+
 	public Token ModuleKeyword { get; }
 
 	public Token TopKeyword { get; }

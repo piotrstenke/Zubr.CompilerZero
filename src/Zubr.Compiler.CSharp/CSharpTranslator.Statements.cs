@@ -1,8 +1,12 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection.Metadata;
 using Zubr.Compiler.Syntax;
 using Zubr.Compiler.Syntax.Abstractions;
+
+using CSyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
 using Sharp = Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -27,6 +31,7 @@ internal sealed partial class CSharpTranslator
 				DoStatementSyntax d => Do(d),
 				ForStatementSyntax f => ForEach(f),
 				ExpressionStatementSyntax expr => Expression(expr),
+				LocalFunctionStatementSyntax lf => LocalFunction(lf),
 				_ => throw new UnreachableException()
 			};
 		}
@@ -123,14 +128,27 @@ internal sealed partial class CSharpTranslator
 
 		public static Sharp.LocalDeclarationStatementSyntax Local(LocalDeclarationStatementSyntax node)
 		{
-			return SyntaxFactory.LocalDeclarationStatement(
-				SyntaxFactory.VariableDeclaration(Expressions.Type(node.Declaration.Type),
-				SyntaxFactory.SingletonSeparatedList(
-					SyntaxFactory.VariableDeclarator(
-						SyntaxFactory.Identifier(node.Declaration.Variable.Identifier.Text),
-						null,
-						SyntaxFactory.EqualsValueClause(Expressions.Expression(node.Declaration.Variable.Initializer.Value))
-				)))
+			return SyntaxFactory.LocalDeclarationStatement(Declarations.Variable(node.Variable));
+		}
+
+		public static Sharp.LocalFunctionStatementSyntax LocalFunction(LocalFunctionStatementSyntax node)
+		{
+			Sharp.TypeParameterListSyntax? typeParameterList = Declarations.TypeParameterList(node.TypeParameterList);
+			Sharp.ParameterListSyntax parameters = SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(node.ParameterList.Parameters.Select(Declarations.Parameter)));
+
+			var constraints = Declarations.ConstraintList(node.ConstraintList);
+
+			return SyntaxFactory.LocalFunctionStatement(
+				Declarations.Attributes(node.Attributes),
+				Declarations.GetModifiers(node, node.Modifiers, out _),
+				Expressions.Type(node.ReturnType),
+				SyntaxFactory.Identifier(node.Identifier.Text),
+				typeParameterList,
+				parameters,
+				constraints,
+				node.Body is null ? null : Block(node.Body),
+				node.ExpressionBody is null ? null : ExpressionBody(node.ExpressionBody),
+				node.Body is null && node.ExpressionBody is null ? SyntaxFactory.Token(CSyntaxKind.SemicolonToken) : default
 			);
 		}
 
@@ -157,6 +175,11 @@ internal sealed partial class CSharpTranslator
 			}
 
 			return SyntaxFactory.ReturnStatement(Expressions.Expression(node.Expression));
+		}
+
+		public static Sharp.ArrowExpressionClauseSyntax ExpressionBody(ArrowExpressionClauseSyntax node)
+		{
+			return SyntaxFactory.ArrowExpressionClause(Expressions.Expression(node.Expression));
 		}
 	}
 }

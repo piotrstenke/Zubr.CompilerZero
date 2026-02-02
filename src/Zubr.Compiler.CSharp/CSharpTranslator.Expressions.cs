@@ -1,6 +1,9 @@
 ﻿using Microsoft.CodeAnalysis.CSharp;
+using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Xml.Linq;
 using Zubr.Compiler.Syntax;
 using Zubr.Compiler.Syntax.Abstractions;
 
@@ -16,6 +19,7 @@ internal sealed partial class CSharpTranslator
 	{
 		public static Sharp.ExpressionSyntax Expression(ExpressionSyntax node)
 		{
+			// TODO: Handle ConstructorInvocationExpression and SpreadExpression
 			return node switch
 			{
 				TypeSyntax t => Type(t),
@@ -30,6 +34,10 @@ internal sealed partial class CSharpTranslator
 				ParenthesizedExpressionSyntax p => Parenthesized(p),
 				ConditionalExpressionSyntax conditional => Conditional(conditional),
 				AssignmentExpressionSyntax a => Assignment(a),
+				ObjectCreationExpressionSyntax o => ObjectCreation(o),
+				ArrayCreationExpressionSyntax arr => ArrayCreation(arr),
+				RangeExpressionSyntax r => Range(r),
+				CollectionExpressionSyntax co => Collection(co),
 				_ => throw new UnreachableException()
 			};
 		}
@@ -48,9 +56,69 @@ internal sealed partial class CSharpTranslator
 			);
 		}
 
+		public static Sharp.ExpressionSyntax ObjectCreation(ObjectCreationExpressionSyntax node)
+		{
+			Sharp.ArgumentListSyntax argumentList = node.ArgumentList is null
+				? SyntaxFactory.ArgumentList()
+				: ArgumentList(node.ArgumentList);
+
+			Sharp.InitializerExpressionSyntax? initializer = Initializer(node.Initializer, CSyntaxKind.ObjectInitializerExpression);
+
+			if (node.Type is null)
+			{
+				return SyntaxFactory.ImplicitObjectCreationExpression(
+					argumentList,
+					initializer
+				);
+			}
+
+			return SyntaxFactory.ObjectCreationExpression(
+				Type(node.Type),
+				argumentList,
+				initializer
+			);
+		}
+
+		public static Sharp.ArrayCreationExpressionSyntax ArrayCreation(ArrayCreationExpressionSyntax node)
+		{
+			if(node.ElementType is null)
+			{
+				// TODO: Handle array creation with implicit type.
+				// Returning int[] for now.
+				return SyntaxFactory.ArrayCreationExpression(
+					ArrayType(PredefinedType(CSyntaxKind.IntKeyword), node.Ranks),
+					Initializer(node.Initializer, CSyntaxKind.ArrayInitializerExpression)
+				);
+			}
+
+			return SyntaxFactory.ArrayCreationExpression(
+				ArrayType(node.ElementType, node.Ranks),
+				Initializer(node.Initializer, CSyntaxKind.ArrayInitializerExpression)
+			);
+		}
+
+		public static Sharp.RangeExpressionSyntax Range(RangeExpressionSyntax node)
+		{
+			return SyntaxFactory.RangeExpression(Expression(node.Left), Expression(node.Right));
+		}
+
+		public static Sharp.CollectionExpressionSyntax Collection(CollectionExpressionSyntax node)
+		{
+			return SyntaxFactory.CollectionExpression(SyntaxFactory.SeparatedList(node.Elements.Select<ExpressionSyntax, Sharp.CollectionElementSyntax>(x => x switch
+			{
+				SpreadExpressionSyntax s => SyntaxFactory.SpreadElement(Expression(s.Expression)),
+				_ => SyntaxFactory.ExpressionElement(Expression(x))
+			})));
+		}
+
 		public static Sharp.ParenthesizedExpressionSyntax Parenthesized(ParenthesizedExpressionSyntax node)
 		{
 			return SyntaxFactory.ParenthesizedExpression(Expression(node.Expression));
+		}
+
+		public static Sharp.BaseExpressionSyntax Base(BaseExpressionSyntax node)
+		{
+			return SyntaxFactory.BaseExpression();
 		}
 
 		public static Sharp.ThisExpressionSyntax This(SelfExpressionSyntax node)
@@ -62,9 +130,14 @@ internal sealed partial class CSharpTranslator
 		{
 			return SyntaxFactory.InvocationExpression(
 				Expression(node.Expression),
-				SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(
-					node.ArgumentList.Arguments.Select(x => SyntaxFactory.Argument(Expression(x.Expression)))))
+				ArgumentList(node.ArgumentList)
 			);
+		}
+
+		public static Sharp.ArgumentListSyntax ArgumentList(ArgumentListSyntax node)
+		{
+			return SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(
+					node.Arguments.Select(x => SyntaxFactory.Argument(Expression(x.Expression)))));
 		}
 
 		public static Sharp.MemberAccessExpressionSyntax MemberAccess(MemberAccessExpressionSyntax node)
@@ -127,19 +200,46 @@ internal sealed partial class CSharpTranslator
 			{
 				NameSyntax n => Name(n),
 				PredefinedTypeSyntax p => PredefinedType(p),
+				NullableTypeSyntax n => NullableType(n),
+				ArrayTypeSyntax a => ArrayType(a),
 				_ => throw new UnreachableException()
 			};
 		}
 
-		public static Sharp.PredefinedTypeSyntax PredefinedType(PredefinedTypeSyntax node)
+		public static Sharp.NullableTypeSyntax NullableType(NullableTypeSyntax node)
+		{
+			return SyntaxFactory.NullableType(Type(node.ElementType));
+		}
+
+		public static Sharp.ArrayTypeSyntax ArrayType(ArrayTypeSyntax node)
+		{
+			return ArrayType(node.ElementType, node.Ranks);
+		}
+
+		public static Sharp.TypeSyntax PredefinedType(PredefinedTypeSyntax node)
 		{
 			return node.Keyword.Kind switch
 			{
-				TokenKind.IntKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.IntKeyword)),
-				TokenKind.StrKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.StringKeyword)),
-				TokenKind.BoolKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.BoolKeyword)),
-				TokenKind.VoidKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.VoidKeyword)),
-				TokenKind.CharKeyword => SyntaxFactory.PredefinedType(Token(CSyntaxKind.CharKeyword)),
+				TokenKind.AnyKeyword => PredefinedType(CSyntaxKind.ObjectKeyword),
+				TokenKind.IntKeyword => PredefinedType(CSyntaxKind.IntKeyword),
+				TokenKind.UIntKeyword => PredefinedType(CSyntaxKind.UIntKeyword),
+				TokenKind.LongKeyword => PredefinedType(CSyntaxKind.LongKeyword),
+				TokenKind.ULongKeyword => PredefinedType(CSyntaxKind.ULongKeyword),
+				TokenKind.ByteKeyword => PredefinedType(CSyntaxKind.ByteKeyword),
+				TokenKind.SByteKeyword => PredefinedType(CSyntaxKind.SByteKeyword),
+				TokenKind.ShortKeyword => PredefinedType(CSyntaxKind.ShortKeyword),
+				TokenKind.UShortKeyword => PredefinedType(CSyntaxKind.UShortKeyword),
+				TokenKind.StringKeyword => PredefinedType(CSyntaxKind.StringKeyword),
+				TokenKind.BoolKeyword => PredefinedType(CSyntaxKind.BoolKeyword),
+				TokenKind.VoidKeyword => PredefinedType(CSyntaxKind.VoidKeyword),
+				TokenKind.CharKeyword => PredefinedType(CSyntaxKind.CharKeyword),
+				TokenKind.FloatKeyword => PredefinedType(CSyntaxKind.FloatKeyword),
+				TokenKind.DoubleKeyword => PredefinedType(CSyntaxKind.DoubleKeyword),
+				TokenKind.DecimalKeyword => PredefinedType(CSyntaxKind.DecimalKeyword),
+				TokenKind.HalfKeyword => GlobalQualifiedName("System", "Half"),
+				TokenKind.NIntKeyword => IdentifierName("nint"),
+				TokenKind.NUIntKeyword => IdentifierName("nuint"),
+
 				_ => throw new UnreachableException()
 			};
 		}
@@ -174,6 +274,51 @@ internal sealed partial class CSharpTranslator
 			return SyntaxFactory.IdentifierName(node.Identifier.Text);
 		}
 
+		public static Sharp.IdentifierNameSyntax IdentifierName(Token token)
+		{
+			return SyntaxFactory.IdentifierName(token.Text);
+		}
+
+		public static Sharp.IdentifierNameSyntax IdentifierName(string name)
+		{
+			return SyntaxFactory.IdentifierName(name);
+		}
+
+		internal static Sharp.NameSyntax GlobalQualifiedName(params ReadOnlySpan<string> identifiers)
+		{
+			Sharp.NameSyntax name = SyntaxFactory.AliasQualifiedName(
+				SyntaxFactory.IdentifierName(SyntaxFactory.Token(CSyntaxKind.GlobalKeyword)),
+				SyntaxFactory.IdentifierName(identifiers[0])
+			);
+
+			for (int i = 1; i < identifiers.Length; i++)
+			{
+				name = SyntaxFactory.QualifiedName(name, SyntaxFactory.IdentifierName(identifiers[i]));
+			}
+
+			return name;
+		}
+
+		private static Sharp.ArrayTypeSyntax ArrayType(TypeSyntax elementType, SyntaxList<ArrayRankSyntax> ranks)
+		{
+			return ArrayType(Type(elementType), ranks);
+		}
+
+		private static Sharp.ArrayTypeSyntax ArrayType(Sharp.TypeSyntax elementType, SyntaxList<ArrayRankSyntax> ranks)
+		{
+			return SyntaxFactory.ArrayType(
+				elementType,
+				SyntaxFactory.List(ranks.Select(x =>
+					SyntaxFactory.ArrayRankSpecifier(SyntaxFactory.SeparatedList(x.Sizes.Select(x =>
+						Expression(x)
+			))))));
+		}
+
+		private static Sharp.PredefinedTypeSyntax PredefinedType(CSyntaxKind kind)
+		{
+			return SyntaxFactory.PredefinedType(SyntaxFactory.Token(kind));
+		}
+
 		private static Sharp.LiteralExpressionSyntax NumericLiteral(LiteralExpressionSyntax node)
 		{
 			Token current = node.Value;
@@ -195,6 +340,17 @@ internal sealed partial class CSharpTranslator
 			};
 
 			return SyntaxFactory.LiteralExpression(CSyntaxKind.NumericLiteralExpression, token);
+		}
+
+		[return: NotNullIfNotNull(nameof(node))]
+		private static Sharp.InitializerExpressionSyntax? Initializer(InitializerExpressionSyntax? node, CSyntaxKind kind)
+		{
+			if(node is null)
+			{
+				return null;
+			}
+
+			return SyntaxFactory.InitializerExpression(kind, SyntaxFactory.SeparatedList(node.Expressions.Select(Expression)));
 		}
 
 		private static CSyntaxKind GetAssignmentKind(SyntaxKind kind)

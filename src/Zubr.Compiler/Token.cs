@@ -17,7 +17,9 @@ public readonly struct Token
 
 	public bool IsNone => Kind == TokenKind.None;
 
-	public bool Exists => !IsNone;
+	public bool IsFound => !IsNone;
+
+	public bool IsEmpty => Text.Length == 0;
 
 	internal Token(TokenKind kind, string text, int position)
 	{

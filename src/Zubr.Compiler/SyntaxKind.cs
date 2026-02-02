@@ -9,11 +9,26 @@ public enum SyntaxKind : uint
 	CompilationUnit = 1,
 
 	// -----------------------------
-	// Directives
+	// Directives & Attributes
 	// -----------------------------
 
 	// use Module as M;
 	UseDirective,
+
+	// pub alias Test = LongTestName;
+	AliasDirective,
+
+	// [assembly: Value(2)]
+	Attribute,
+
+	// the 'assembly' in '[assembly: Value(2)]'
+	AttributeTarget,
+
+	// the '(2)' in '[assembly: Value(2)]'
+	AttributeArgumentList,
+
+	// the '2' in '[assembly: Value(2)]'
+	AttributeArgument,
 
 	// -----------------------------
 	// Declarations
@@ -28,8 +43,47 @@ public enum SyntaxKind : uint
 	// struct Test { }
 	StructDeclaration,
 
+	// trait Test { }
+	TraitDeclaration,
+
+	// impl Test<T> { }, impl Test<T> : Stringable { }
+	ImplementationDeclaration,
+
+	// union Result<T> = T | Error
+	UnionDeclaration,
+
+	// enum Test { A, B, C }
+	EnumDeclaration,
+
+	// enum struct Test(int value) { A(5), A(3), C }
+	EnumStructDeclaration,
+
+	// enum class Test(int value) { A(5) { ... }, A(3), C }
+	EnumClassDeclaration,
+
+	// attr Test { }
+	AttributeDeclaration,
+
 	// void main() { }
 	FunctionDeclaration,
+
+	// new(int a) { }
+	ConstructorDeclaration,
+
+	// free() { } or gcfree() { }
+	DestructorDeclaration,
+
+	// pub int a = 1;, pub int a => 1;, pub int a { get => 1; } etc.
+	PropertyDeclaration,
+
+	// field int a = 2;
+	FieldDeclaration,
+
+	// { get => 1; priv set => field = value }
+	AccessorList,
+
+	// get; get => 1; get { } etc.
+	AccessorDeclaration,
 
 	// the '(int a, bool b)' in 'foo(int a, bool b)'
 	ParameterList,
@@ -57,6 +111,21 @@ public enum SyntaxKind : uint
 
 	// the 'X' in 'where T : X'
 	TypeConstraint,
+
+	// the ': X, Y' in 'class Type : X, Y'
+	BaseTypeList,
+
+	// the 'X' and 'Y' in 'class Type : X, Y'
+	SimpleBaseType,
+
+	// the 'X(a, b)' om 'class Type(int a, int b) : X(a, b)'
+	PrimaryBaseType,
+
+	// A, B, C in 'enum Test { A, B, C }'
+	SimpleEnumMemberDeclaration,
+
+	// A(2), B(4) in 'enum struct Test { A(2), B(4) }'
+	ComplexEnumMemberDeclaration,
 
 	// -----------------------------
 	// Expressions
@@ -209,11 +278,41 @@ public enum SyntaxKind : uint
 	// self
 	SelfExpression,
 
+	// base
+	BaseExpression,
+
+	// new { ... }, new(), new Test() { } etc.
+	ObjectCreationExpression,
+
+	// new int[] { }, new[5] etc.
+	ArrayCreationExpression,
+
+	// placeholder for expression when array type has no specified size (e.g. int[])
+	SkippedArraySizeExpression,
+
+	// { "text", 1, new() { } }
+	InitializerExpression,
+
+	// 1..array.length
+	RangeExpression,
+
+	// [], [1, 2, 3], [1, a.., 2] etc.
+	CollectionExpression,
+
+	// ..array
+	SpreadExpression,
+
 	// a.b
 	MemberAccessExpression,
 
 	// a(1, 2)
 	InvocationExpression,
+
+	// base(1, 2)
+	BaseConstructorInvocationExpression,
+
+	// self(1, 2)
+	SelfConstructorInvocationExpression,
 
 	// the '(1, 2)' in 'a(1, 2)'
 	ArgumentList,
@@ -222,7 +321,7 @@ public enum SyntaxKind : uint
 	Argument,
 
 	// -----------------------------
-	// Names
+	// Types & Names
 	// -----------------------------
 
 	// Test
@@ -239,6 +338,15 @@ public enum SyntaxKind : uint
 
 	// int, string, bool etc.
 	PredefinedType,
+
+	// int?
+	NullableType,
+
+	// float[], int[,] etc.
+	ArrayType,
+
+	// the '[,]' in 'int[,]' 
+	ArrayRank,
 
 	// -----------------------------
 	// Statements
@@ -283,16 +391,22 @@ public enum SyntaxKind : uint
 	// else { }
 	ElseClause,
 
-	// int x = 1;
+	// x = 1
 	VariableDeclaration,
 
-	// x = 1;
-	VariableDeclarator,
+	// int main() { int test() { } }
+	LocalFunctionStatement,
 
 	// -----------------------------
 	// Clauses
 	// -----------------------------
 
 	// = value
-	EqualsValue,
+	EqualsValueClause,
+
+	// => 1 + 1
+	ArrowExpressionClause,
+
+	// Value = 
+	NameEqualsClause
 }

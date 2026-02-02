@@ -3,4 +3,8 @@
 public abstract class SimpleNameSyntax : NameSyntax
 {
 	public abstract Token Identifier { get; }
+
+	internal SimpleNameSyntax()
+	{
+	}
 }

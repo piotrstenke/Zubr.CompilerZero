@@ -56,8 +56,18 @@ public readonly struct TokenList : IReadOnlyCollection<Token>
 		return sb.ToString();
 	}
 
+	public bool Any()
+	{
+		return !IsDefaultOrEmpty;
+	}
+
 	public bool HasKind(TokenKind kind)
 	{
+		if(IsDefaultOrEmpty)
+		{
+			return false;
+		}
+
 		for (int i = 0; i < _tokens.Length; i++)
 		{
 			if (_tokens[i].Kind == kind)

@@ -50,6 +50,11 @@ public readonly struct SeparatedSyntaxList<TNode> : IReadOnlyList<TNode> where T
 		return sb.ToString();
 	}
 
+	public bool Any()
+	{
+		return !IsDefaultOrEmpty;
+	}
+
 	public Token GetSeparator(int index)
 	{
 		return _nodes[index].separator;

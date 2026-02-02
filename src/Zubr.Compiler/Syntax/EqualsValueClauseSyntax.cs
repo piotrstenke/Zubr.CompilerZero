@@ -4,7 +4,7 @@ namespace Zubr.Compiler.Syntax;
 
 public sealed class EqualsValueClauseSyntax : SyntaxNode
 {
-	public override SyntaxKind Kind => SyntaxKind.EqualsValue;
+	public override SyntaxKind Kind => SyntaxKind.EqualsValueClause;
 
 	public Token EqualsToken { get; }
 

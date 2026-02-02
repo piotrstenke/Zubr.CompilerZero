@@ -14,6 +14,9 @@ public enum TokenKind : uint
 	// ===
 	EqulasEqualsEqualsToken,
 
+	// =>
+	EqualsGreaterThanToken,
+
 	// !
 	ExclamationToken,
 
@@ -191,6 +194,12 @@ public enum TokenKind : uint
 	// impl
 	ImplKeyword,
 
+	// union
+	UnionKeyword,
+
+	// alias
+	AliasKeyword,
+
 	// enum
 	EnumKeyword,
 
@@ -233,6 +242,12 @@ public enum TokenKind : uint
 	// over
 	OverKeyword,
 
+	// final
+	FinalKeyword,
+
+	// field
+	FieldKeyword,
+
 	// // extern
 	// ExternKeyword,
 
@@ -248,8 +263,8 @@ public enum TokenKind : uint
 	// hold
 	HoldKeyword,
 
-	// field
-	FieldKeyword,
+	// flag
+	FlagKeyword,
 
 	// new
 	NewKeyword,
@@ -353,14 +368,53 @@ public enum TokenKind : uint
 	// void
 	VoidKeyword,
 
+	// sbyte
+	SByteKeyword,
+
+	// short
+	ShortKeyword,
+
 	// int
 	IntKeyword,
+
+	// long
+	LongKeyword,
+
+	// byte
+	ByteKeyword,
+
+	// ushort
+	UShortKeyword,
+
+	// uint
+	UIntKeyword,
+
+	// ulong
+	ULongKeyword,
+
+	// nint
+	NIntKeyword,
+
+	// nuint
+	NUIntKeyword,
+
+	// half
+	HalfKeyword,
+
+	// float
+	FloatKeyword,
+
+	// double
+	DoubleKeyword,
+
+	// decimal
+	DecimalKeyword,
 
 	// char
 	CharKeyword,
 
-	// str
-	StrKeyword,
+	// string
+	StringKeyword,
 
 	// A token that was expected but is missing.
 	MissingToken,

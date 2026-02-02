@@ -8,21 +8,21 @@ public sealed class LocalDeclarationStatementSyntax : StatementSyntax
 
 	public TokenList Modifiers { get; }
 
-	public VariableDeclarationSyntax Declaration { get; }
+	public VariableDeclarationSyntax Variable { get; }
 
 	public Token SemicolonToken { get; }
 
-	internal LocalDeclarationStatementSyntax(TokenList modifiers, VariableDeclarationSyntax declaration, Token semicolonToken)
+	internal LocalDeclarationStatementSyntax(TokenList modifiers, VariableDeclarationSyntax variable, Token semicolonToken)
 	{
 		Modifiers = modifiers;
-		Declaration = declaration;
+		Variable = variable;
 		SemicolonToken = semicolonToken;
 
-		SetParent(declaration);
+		SetParent(variable);
 	}
 
 	public override string ToString()
 	{
-		return $"{Modifiers} {Declaration}{SemicolonToken}";
+		return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{Variable}{SemicolonToken}";
 	}
 }

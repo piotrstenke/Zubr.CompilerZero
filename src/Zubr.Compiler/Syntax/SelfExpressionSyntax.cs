@@ -2,19 +2,19 @@
 
 namespace Zubr.Compiler.Syntax;
 
-public sealed class SelfExpressionSyntax : ExpressionSyntax
+public sealed class SelfExpressionSyntax : InstanceExpressionSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.SelfExpression;
 
-	public Token SelfKeyword { get; }
+	public Token Keyword { get; }
 
-	internal SelfExpressionSyntax(Token selfKeyword)
+	internal SelfExpressionSyntax(Token keyword)
 	{
-		SelfKeyword = selfKeyword;
+		Keyword = keyword;
 	}
 
 	public override string ToString()
 	{
-		return $"{SelfKeyword}";
+		return $"{Keyword}";
 	}
 }

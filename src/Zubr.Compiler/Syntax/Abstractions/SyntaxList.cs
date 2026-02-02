@@ -54,6 +54,11 @@ public readonly struct SyntaxList<TNode> : IReadOnlyList<TNode> where TNode : Sy
 		return sb.ToString();
 	}
 
+	public bool Any()
+	{
+		return !IsDefaultOrEmpty;
+	}
+
 	public Enumerator GetEnumerator()
 	{
 		if (IsDefault)

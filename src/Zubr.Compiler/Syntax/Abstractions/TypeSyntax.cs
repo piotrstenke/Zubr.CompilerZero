@@ -2,4 +2,7 @@
 
 public abstract class TypeSyntax : ExpressionSyntax
 {
+	internal TypeSyntax()
+	{
+	}
 }

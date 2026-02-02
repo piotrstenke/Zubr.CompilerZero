@@ -2,4 +2,7 @@
 
 public abstract class TypeParameterConstraintSyntax : SyntaxNode
 {
+	internal TypeParameterConstraintSyntax()
+	{
+	}
 }

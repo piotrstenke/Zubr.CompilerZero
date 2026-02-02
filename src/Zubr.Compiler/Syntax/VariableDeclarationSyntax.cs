@@ -8,19 +8,22 @@ public sealed class VariableDeclarationSyntax : SyntaxNode
 
 	public TypeSyntax Type { get; }
 
-	public VariableDeclaratorSyntax Variable { get; }
+	public Token Identifier { get; }
 
-	internal VariableDeclarationSyntax(TypeSyntax type, VariableDeclaratorSyntax variable)
+	public EqualsValueClauseSyntax? Initializer { get; }
+
+	internal VariableDeclarationSyntax(TypeSyntax type, Token identifier, EqualsValueClauseSyntax? initializer)
 	{
 		Type = type;
-		Variable = variable;
+		Identifier = identifier;
+		Initializer = initializer;
 
 		SetParent(type);
-		SetParent(variable);
+		SetParentIfNotNull(initializer);
 	}
 
 	public override string ToString()
 	{
-		return $"{Type} {Variable}";
+		return $"{Type} {Identifier}{(Initializer is null ? "" : $" {Initializer}")}";
 	}
 }

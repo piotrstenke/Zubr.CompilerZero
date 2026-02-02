@@ -6,8 +6,6 @@ public enum LanguageVersion
 
 	Alpha = 1,
 
-	LatestMajor = int.MaxValue - 2,
-
 	Latest = int.MaxValue - 1,
 
 	Preview = int.MaxValue,

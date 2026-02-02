@@ -2,9 +2,11 @@
 
 namespace Zubr.Compiler.Syntax;
 
-public sealed class FunctionDeclarationSyntax : MemberDeclarationSyntax
+public sealed class FunctionDeclarationSyntax : BaseFunctionDeclarationSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.FunctionDeclaration;
+
+	public override SyntaxList<AttributeSyntax> Attributes { get; }
 
 	public override TokenList Modifiers { get; }
 
@@ -14,14 +16,30 @@ public sealed class FunctionDeclarationSyntax : MemberDeclarationSyntax
 
 	public TypeParameterListSyntax? TypeParameterList { get; }
 
-	public ParameterListSyntax ParameterList { get; }
+	public override ParameterListSyntax ParameterList { get; }
 
 	public TypeParameterConstraintListSyntax? ConstraintList { get; }
 
-	public BlockSyntax Body { get; }
+	public override BlockSyntax? Body { get; }
 
-	internal FunctionDeclarationSyntax(TokenList modifiers, TypeSyntax returnType, Token identifier, TypeParameterListSyntax? typeParameterList, ParameterListSyntax parameterList, TypeParameterConstraintListSyntax? constraintList, BlockSyntax body)
+	public override ArrowExpressionClauseSyntax? ExpressionBody { get; }
+
+	public override Token SemicolonToken { get; }
+
+	internal FunctionDeclarationSyntax(
+		SyntaxList<AttributeSyntax> attributes,
+		TokenList modifiers,
+		TypeSyntax returnType,
+		Token identifier,
+		TypeParameterListSyntax? typeParameterList,
+		ParameterListSyntax parameterList,
+		TypeParameterConstraintListSyntax? constraintList,
+		BlockSyntax? body,
+		ArrowExpressionClauseSyntax? expressionBody,
+		Token semicolonToken
+	)
 	{
+		Attributes = attributes;
 		Modifiers = modifiers;
 		ReturnType = returnType;
 		Identifier = identifier;
@@ -29,16 +47,30 @@ public sealed class FunctionDeclarationSyntax : MemberDeclarationSyntax
 		TypeParameterList = typeParameterList;
 		ConstraintList = constraintList;
 		Body = body;
+		ExpressionBody = expressionBody;
+		SemicolonToken = semicolonToken;
 
+		SetParent(attributes);
 		SetParent(returnType);
 		SetParent(parameterList);
 		SetParentIfNotNull(typeParameterList);
 		SetParentIfNotNull(constraintList);
-		SetParent(body);
+		SetParentIfNotNull(body);
+		SetParentIfNotNull(expressionBody);
 	}
 
 	public override string ToString()
 	{
-		return $"{Modifiers} {ReturnType} {Identifier}{TypeParameterList}{ParameterList}{(ConstraintList is null ? "" : $" {ConstraintList}")} {Body}";
+		if (Body is not null)
+		{
+			return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{ReturnType} {Identifier}{TypeParameterList}{ParameterList}{(ConstraintList is null ? "" : $" {ConstraintList}")} {Body}";
+		}
+
+		if(ExpressionBody is not null)
+		{
+			return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{ReturnType} {Identifier}{TypeParameterList}{ParameterList}{(ConstraintList is null ? "" : $" {ConstraintList}")} {ExpressionBody}{SemicolonToken}";
+		}
+
+		return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{ReturnType} {Identifier}{TypeParameterList}{ParameterList}{(ConstraintList is null ? "" : $" {ConstraintList}")}{SemicolonToken}";
 	}
 }

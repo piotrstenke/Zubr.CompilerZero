@@ -1,22 +1,21 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Zubr.Compiler.Syntax;
 using Zubr.Compiler.Syntax.Abstractions;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+
 using CSyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 using Sharp = Microsoft.CodeAnalysis.CSharp.Syntax;
+
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Zubr.Compiler.CSharp;
 
 internal sealed partial class CSharpTranslator
 {
-	private Sharp.CompilationUnitSyntax Translate(CompilationUnitSyntax node)
+	private static Sharp.CompilationUnitSyntax Translate(CompilationUnitSyntax node)
 	{
-		bool hasMultipleModules = node.Members.Count(x => x is ModuleDeclarationSyntax module) > 1;
-
 		return CompilationUnit()
 			.WithUsings(List(node.Uses.Select(x =>
 			{
@@ -56,21 +55,14 @@ internal sealed partial class CSharpTranslator
 
 					break;
 
-				case ClassDeclarationSyntax @class:
-					members.Add(Declarations.Class(@class));
-					break;
-
-				case StructDeclarationSyntax @struct:
-					members.Add(Declarations.Struct(@struct));
-					break;
-
 				case FunctionDeclarationSyntax func:
 					// Top-level functions are added later inside of a partial class.
 					globalFunctions.Add(Declarations.Method(func));
-					continue;
+					break;
 
 				default:
-					continue;
+					members.Add(Declarations.Member(member));
+					break;
 			}
 		}
 

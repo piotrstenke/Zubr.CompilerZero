@@ -6,7 +6,7 @@ public static class SyntaxFacts
 	private const TokenKind END_KIND = TokenKind.EOF;
 
 	private const TokenKind KEYWORDS_START = TokenKind.UseKeyword;
-	private const TokenKind KEYWORDS_END = TokenKind.StrKeyword;
+	private const TokenKind KEYWORDS_END = TokenKind.StringKeyword;
 
 	public static bool IsKeyword(string value)
 	{
@@ -44,7 +44,7 @@ public static class SyntaxFacts
 			value == TokenKind.BoolKeyword ||
 			value == TokenKind.VoidKeyword ||
 			value == TokenKind.IntKeyword ||
-			value == TokenKind.StrKeyword ||
+			value == TokenKind.StringKeyword ||
 			value == TokenKind.CharKeyword ||
 			value == TokenKind.AnyKeyword;
 	}
@@ -177,7 +177,20 @@ public static class SyntaxFacts
 			"false" => TokenKind.FalseKeyword,
 			"any" => TokenKind.AnyKeyword,
 			"int" => TokenKind.IntKeyword,
-			"str" => TokenKind.StrKeyword,
+			"short" => TokenKind.ShortKeyword,
+			"long" => TokenKind.LongKeyword,
+			"byte" => TokenKind.ByteKeyword,
+			"uint" => TokenKind.UIntKeyword,
+			"ushort" => TokenKind.UShortKeyword,
+			"ulong" => TokenKind.ULongKeyword,
+			"sbyte" => TokenKind.SByteKeyword,
+			"nint" => TokenKind.NIntKeyword,
+			"nuint" => TokenKind.NUIntKeyword,
+			"half" => TokenKind.HalfKeyword,
+			"float" => TokenKind.FloatKeyword,
+			"double" => TokenKind.DoubleKeyword,
+			"decimal" => TokenKind.DecimalKeyword,
+			"string" => TokenKind.StringKeyword,
 			"char" => TokenKind.CharKeyword,
 			"where" => TokenKind.WhereKeyword,
 			"and" => TokenKind.AndKeyword,
@@ -185,7 +198,13 @@ public static class SyntaxFacts
 			"not" => TokenKind.NotKeyword,
 			"is" => TokenKind.IsKeyword,
 			"file" => TokenKind.FileKeyword,
+			"field" => TokenKind.FieldKeyword,
 			"assembly" => TokenKind.AssemblyKeyword,
+			"data" => TokenKind.DataKeyword,
+			"flag" => TokenKind.FlagKeyword,
+			"union" => TokenKind.UnionKeyword,
+			"alias" => TokenKind.AliasKeyword,
+			"final" => TokenKind.FinalKeyword,
 			_ => TokenKind.None
 		};
 	}
