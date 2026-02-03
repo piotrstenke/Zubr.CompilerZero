@@ -14,27 +14,52 @@ public sealed class UseDirectiveSyntax : SyntaxNode
 
 	public IdentifierNameSyntax? Alias { get; }
 
+	public Token FromKeyword { get; }
+
+	public NameSyntax? ModuleName { get; }
+
 	public Token SemicolonToken { get; }
 
-	internal UseDirectiveSyntax(Token useKeyword, NameSyntax name, Token asKeyword, IdentifierNameSyntax? alias, Token semicolonToken)
+	internal UseDirectiveSyntax(
+		Token useKeyword,
+		NameSyntax name,
+		Token asKeyword,
+		IdentifierNameSyntax? alias,
+		Token fromKeyword,
+		NameSyntax? moduleName,
+		Token semicolonToken
+	)
 	{
 		UseKeyword = useKeyword;
 		Name = name;
 		AsKeyword = asKeyword;
 		Alias = alias;
+		FromKeyword = fromKeyword;
+		ModuleName = moduleName;
 		SemicolonToken = semicolonToken;
 
 		SetParent(name);
 		SetParentIfNotNull(alias);
+		SetParentIfNotNull(moduleName);
 	}
 
 	public override string ToString()
 	{
-		if (Alias is not null)
+		if (Alias is null)
+		{
+			if(ModuleName is null)
+			{
+				return $"{UseKeyword} {Name}{SemicolonToken}";
+			}
+
+			return $"{UseKeyword} {Name} {FromKeyword} {ModuleName}{SemicolonToken}";
+		}
+
+		if(ModuleName is null)
 		{
 			return $"{UseKeyword} {Name} {AsKeyword} {Alias}{SemicolonToken}";
 		}
 
-		return $"{UseKeyword} {Name}{SemicolonToken}";
+		return $"{UseKeyword} {Name} {AsKeyword} {Alias} {FromKeyword} {ModuleName}{SemicolonToken}";
 	}
 }

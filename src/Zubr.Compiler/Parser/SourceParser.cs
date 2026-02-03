@@ -125,15 +125,24 @@ internal sealed class SourceParser
 		Token asKeyword = default;
 		IdentifierNameSyntax? alias = null;
 
+		Token fromKeyword = default;
+		NameSyntax? moduleName = null;
+
 		if (PeekKind(TokenKind.AsKeyword))
 		{
 			asKeyword = EatToken();
 			alias = ParseIdentifierName();
 		}
 
+		if(PeekKind(TokenKind.FromKeyword))
+		{
+			fromKeyword = EatToken();
+			moduleName = ParseName();
+		}
+
 		Token semicolon = EatToken(TokenKind.SemicolonToken);
 
-		return new(useKeyword, name, asKeyword, alias, semicolon)
+		return new(useKeyword, name, asKeyword, alias, fromKeyword, moduleName, semicolon)
 		{
 			Position = useKeyword.Position
 		};
@@ -317,13 +326,13 @@ internal sealed class SourceParser
 			initializer = TryParseEqualsValueClause();
 			expressionBody = null;
 
-			if (initializer is null)
+			if (accessorList is null)
 			{
-				semicolonToken = default;
+				semicolonToken = EatToken(TokenKind.SemicolonToken);
 			}
 			else
 			{
-				semicolonToken = EatToken(TokenKind.SemicolonToken);
+				semicolonToken = default;
 			}
 		}
 
@@ -1537,7 +1546,7 @@ internal sealed class SourceParser
 		switch (token.Kind)
 		{
 			case TokenKind.IdentifierToken:
-				return ParseName();
+				return ParseSimpleName();
 
 			case TokenKind.SelfKeyword:
 				EatToken();
@@ -1934,6 +1943,7 @@ internal sealed class SourceParser
 
 			if (token.IsKind(TokenKind.CommaToken))
 			{
+				EatToken();
 				args.Add((arg, token));
 				continue;
 			}

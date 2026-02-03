@@ -40,13 +40,26 @@ public static class SyntaxFacts
 
 	public static bool IsPredefinedType(TokenKind value)
 	{
-		return
-			value == TokenKind.BoolKeyword ||
-			value == TokenKind.VoidKeyword ||
-			value == TokenKind.IntKeyword ||
-			value == TokenKind.StringKeyword ||
-			value == TokenKind.CharKeyword ||
-			value == TokenKind.AnyKeyword;
+		return value is
+			TokenKind.VoidKeyword or
+			TokenKind.BoolKeyword or
+			TokenKind.IntKeyword or
+			TokenKind.UIntKeyword or
+			TokenKind.ShortKeyword or
+			TokenKind.UShortKeyword or
+			TokenKind.LongKeyword or
+			TokenKind.ULongKeyword or
+			TokenKind.ByteKeyword or
+			TokenKind.SByteKeyword or
+			TokenKind.StringKeyword or
+			TokenKind.CharKeyword or
+			TokenKind.FloatKeyword or
+			TokenKind.DoubleKeyword or
+			TokenKind.HalfKeyword or
+			TokenKind.DecimalKeyword or
+			TokenKind.NIntKeyword or
+			TokenKind.NUIntKeyword or
+			TokenKind.AnyKeyword;
 	}
 
 	public static bool IsTypeDeclarationKeyword(this in Token token)

@@ -4,16 +4,19 @@ using System.IO;
 using Zubr.Build;
 using Zubr.Build.Logging;
 using Zubr.Compiler;
+using Zubr.Compiler.CSharp;
 using Zubr.Compiler.Diagnostics;
 using Zubr.Compiler.Emit;
 
 ConsoleApp.ConsoleAppBuilder app = ConsoleApp.Create();
 
-args = ["build", "-p", "C:\\Users\\promant\\Desktop\\code-projects\\Zubr\\zubrlib\\src\\core"];
+args = ["build", "-p", "C:\\Users\\promant\\Desktop\\code-projects\\Zubr\\zubrlib\\src\\core", "-t"];
 
 app.Add("build", Commands.Build);
 
 await app.RunAsync(args);
+
+Console.ReadKey();
 
 static class Commands
 {
@@ -21,7 +24,8 @@ static class Commands
 	/// Builds the package.
 	/// </summary>
 	/// <param name="path">-p, Path to the package root directory or the package manifest file.</param>
-	public static void Build(string? path = null)
+	/// <param name="showTrees">-t, Show generated C# syntax trees.</param>
+	public static void Build(string? path = null, bool showTrees = false)
 	{
 		string targetPath = string.IsNullOrWhiteSpace(path)
 			? Environment.CurrentDirectory
@@ -32,7 +36,7 @@ static class Commands
 		Console.WriteLine("Building zubr package...");
 		Console.WriteLine();
 
-		if(errors is not null)
+		if (errors is not null)
 		{
 			foreach (ErrorMessage error in errors)
 			{
@@ -42,43 +46,73 @@ static class Commands
 
 		Compilation compilation = workspace.CreateCompilation();
 
-		if(compilation.HasDiagnostics)
+		if (compilation.HasDiagnostics)
 		{
 			WriteDiagnostics(compilation.GetDiagnostics());
 		}
 
 		IEmitter emitter = workspace.CreateEmitter();
 
-		byte[]? bytes = emitter.Emit(compilation, out DiagnosticMessage[]? diagnostics);
+		EmitResult result = emitter.Emit(compilation);
 
-		if(diagnostics is not null)
+		if (result.HasDiagnostics)
 		{
-			WriteDiagnostics(diagnostics);
+			WriteDiagnostics(result.Diagnostics);
 		}
 
-		if(bytes is null)
+		if (!result.IsSuccess)
 		{
+			Console.WriteLine();
 			Console.WriteLine("Build failed. No output generated.");
+
+			OutputCSharpSyntaxTrees(showTrees, result);
 			return;
 		}
+
+		OutputCSharpSyntaxTrees(showTrees, result);
 
 		string outputPath = Path.Combine(workspace.OutputPath, compilation.AssemblyName);
 
 		try
 		{
-			File.WriteAllBytes(outputPath, bytes);
+			File.WriteAllBytes(outputPath, result.Data);
 		}
-		catch(Exception ex)
+		catch (Exception ex)
 		{
+			Console.WriteLine();
 			Console.WriteLine($"Failed to write compilation result to file at path '{outputPath}' with error {ex.Message}");
+		}
+
+		Console.WriteLine();
+		Console.WriteLine($"Data written to file '{outputPath}'");
+	}
+
+	private static void OutputCSharpSyntaxTrees(bool showTrees, EmitResult result)
+	{
+		if (showTrees && result is CSharpEmitResult csharp)
+		{
+			Console.WriteLine();
+			Console.WriteLine("Generated C# syntax trees:");
+
+			foreach (Microsoft.CodeAnalysis.SyntaxTree tree in csharp.Compilation.SyntaxTrees)
+			{
+				Console.WriteLine();
+				Console.WriteLine("---------------------------------------------------------------------------------------------------------");
+				Console.WriteLine(tree.FilePath);
+				Console.WriteLine("---------------------------------------------------------------------------------------------------------");
+				Console.WriteLine(tree.ToString());
+				Console.WriteLine("---------------------------------------------------------------------------------------------------------");
+			}
 		}
 	}
 
 	private static void WriteDiagnostics(DiagnosticMessage[] diagnostics)
 	{
+		Console.WriteLine();
+
 		foreach (DiagnosticMessage diagnostic in diagnostics)
 		{
-			Console.WriteLine($"({diagnostic.Position}): [{diagnostic.Severity}] {diagnostic.Message} at file '{diagnostic.SourceFile}'");
+			Console.WriteLine($"({diagnostic.SourceFile}): [{diagnostic.Severity}] {diagnostic.Message} at position {diagnostic.Position}");
 		}
 	}
 }

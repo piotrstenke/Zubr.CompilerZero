@@ -1,8 +1,6 @@
-﻿using Zubr.Compiler.Diagnostics;
-
-namespace Zubr.Compiler.Emit;
+﻿namespace Zubr.Compiler.Emit;
 
 public interface IEmitter
 {
-	byte[]? Emit(Compilation compilation, out DiagnosticMessage[]? diagnostics);
+	EmitResult Emit(Compilation compilation);
 }

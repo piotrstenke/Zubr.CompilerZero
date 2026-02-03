@@ -52,7 +52,8 @@ internal sealed partial class CSharpTranslator
 			return @namespace;
 		}
 
-		public static Sharp.MemberDeclarationSyntax Member(MemberDeclarationSyntax node)
+
+		public static Sharp.MemberDeclarationSyntax Member(MemberDeclarationSyntax node, ref TypeFlags typeFlags)
 		{
 			return node switch
 			{
@@ -60,10 +61,11 @@ internal sealed partial class CSharpTranslator
 				StructDeclarationSyntax s => Struct(s),
 				TraitDeclarationSyntax t => Interface(t),
 				ImplementationDeclarationSyntax i => Extension(i),
-				BaseFunctionDeclarationSyntax f => Method(f),
+				BaseFunctionDeclarationSyntax f => Method(f, ref typeFlags),
 				PropertyDeclarationSyntax p => Property(p),
 				SimpleEnumDeclarationSyntax e => Enum(e),
 				AttributeDeclarationSyntax a => AttributeClass(a),
+				FieldDeclarationSyntax f => Field(f),
 				_ => throw new UnreachableException()
 			};
 		}
@@ -79,6 +81,8 @@ internal sealed partial class CSharpTranslator
 				? null
 				: ParameterList(node.ParameterList);
 
+			Sharp.BaseListSyntax? baseTypeList = BaseTypeList(node.BaseTypeList);
+
 			var attributes = Attributes(node.Attributes);
 
 			if (flags.HasFlag(ModifierFlags.Limit))
@@ -86,15 +90,20 @@ internal sealed partial class CSharpTranslator
 				attributes = attributes.Add(Interop.InternalInheritAttribute());
 			}
 
+			TypeFlags typeFlags = default;
+			var members = Members(node.Members, ref typeFlags);
+
+			CheckDisposablePattern(node, modifiers, ref baseTypeList, ref members, typeFlags);
+
 			return SyntaxFactory.ClassDeclaration(
 				attributes,
 				modifiers,
 				SyntaxFactory.Identifier(node.Identifier.Text + "Attribute"),
 				typeParameterList,
 				parameters,
-				BaseTypeList(node.BaseTypeList),
+				baseTypeList,
 				constraints,
-				SyntaxFactory.List(node.Members.Select(Member))
+				members
 			);
 		}
 
@@ -111,10 +120,17 @@ internal sealed partial class CSharpTranslator
 
 			var attributes = Attributes(node.Attributes);
 
+			Sharp.BaseListSyntax? baseTypeList = BaseTypeList(node.BaseTypeList);
+
 			if (flags.HasFlag(ModifierFlags.Limit))
 			{
 				attributes = attributes.Add(Interop.InternalInheritAttribute());
 			}
+
+			TypeFlags typeFlags = default;
+			var members = Members(node.Members, ref typeFlags);
+
+			CheckDisposablePattern(node, modifiers, ref baseTypeList, ref members, typeFlags);
 
 			if (flags.HasFlag(ModifierFlags.Data))
 			{
@@ -125,9 +141,9 @@ internal sealed partial class CSharpTranslator
 					SyntaxFactory.Identifier(node.Identifier.Text),
 					typeParameterList,
 					parameters,
-					BaseTypeList(node.BaseTypeList),
+					baseTypeList,
 					constraints,
-					SyntaxFactory.List(node.Members.Select(Member))
+					members
 				);
 			}
 
@@ -137,9 +153,9 @@ internal sealed partial class CSharpTranslator
 				SyntaxFactory.Identifier(node.Identifier.Text),
 				typeParameterList,
 				parameters,
-				BaseTypeList(node.BaseTypeList),
+				baseTypeList,
 				constraints,
-				SyntaxFactory.List(node.Members.Select(Member))
+				members
 			);
 		}
 
@@ -165,7 +181,7 @@ internal sealed partial class CSharpTranslator
 				typeParameterList,
 				parameterList,
 				constraints,
-				SyntaxFactory.List(node.Members.Select(Member))
+				Members(node.Members)
 			);
 		}
 
@@ -180,6 +196,13 @@ internal sealed partial class CSharpTranslator
 				? null
 				: ParameterList(node.ParameterList);
 
+			Sharp.BaseListSyntax? baseTypeList = BaseTypeList(node.BaseTypeList);
+
+			TypeFlags typeFlags = default;
+			var members = Members(node.Members, ref typeFlags);
+
+			CheckDisposablePattern(node, modifiers, ref baseTypeList, ref members, typeFlags);
+
 			if (flags.HasFlag(ModifierFlags.Data))
 			{
 				return SyntaxFactory.RecordDeclaration(
@@ -189,9 +212,9 @@ internal sealed partial class CSharpTranslator
 					SyntaxFactory.Identifier(node.Identifier.Text),
 					typeParameterList,
 					parameters,
-					BaseTypeList(node.BaseTypeList),
+					baseTypeList,
 					constraints,
-					SyntaxFactory.List(node.Members.Select(Member))
+					members
 				);
 			}
 
@@ -200,9 +223,9 @@ internal sealed partial class CSharpTranslator
 				modifiers,
 				SyntaxFactory.Identifier(node.Identifier.Text),
 				typeParameterList,
-				BaseTypeList(node.BaseTypeList),
+				baseTypeList,
 				constraints,
-				SyntaxFactory.List(node.Members.Select(Member))
+				members
 			);
 		}
 
@@ -224,7 +247,7 @@ internal sealed partial class CSharpTranslator
 				typeParameterList,
 				BaseTypeList(node.BaseTypeList),
 				constraints,
-				SyntaxFactory.List(node.Members.Select(Member))
+				Members(node.Members)
 			);
 		}
 
@@ -421,13 +444,13 @@ internal sealed partial class CSharpTranslator
 				)));
 		}
 
-		public static Sharp.BaseMethodDeclarationSyntax Method(BaseFunctionDeclarationSyntax node)
+		public static Sharp.BaseMethodDeclarationSyntax Method(BaseFunctionDeclarationSyntax node, ref TypeFlags typeFlags)
 		{
 			return node switch
 			{
 				FunctionDeclarationSyntax f => Method(f),
 				ConstructorDeclarationSyntax c => Constructor(c),
-				DestructorDeclarationSyntax d => Destructor(d),
+				DestructorDeclarationSyntax d => DestructorMethod(d, ref typeFlags),
 				_ => throw new UnreachableException()
 			};
 		}
@@ -491,23 +514,37 @@ internal sealed partial class CSharpTranslator
 			);
 		}
 
-		public static Sharp.DestructorDeclarationSyntax Destructor(DestructorDeclarationSyntax node)
+		public static Sharp.MethodDeclarationSyntax DestructorMethod(DestructorDeclarationSyntax node, ref TypeFlags typeFlags)
 		{
 			// TODO: Implement the IDisposable interface for the parent type.
 
+			CSyntaxToken identifier;
+
+			if(node.Keyword.IsKind(TokenKind.GCFreeKeyword))
+			{
+				identifier = SyntaxFactory.Identifier("free_unmanaged");
+				typeFlags |= TypeFlags.Destructor;
+			}
+			else
+			{
+				identifier = SyntaxFactory.Identifier("free_managed");
+			}
+
+			typeFlags |= TypeFlags.Disposable;
+
 			CSyntaxTokenList modifiers = GetModifiers(node, out _);
-			CSyntaxToken identifier = node.Parent is TypeDeclarationSyntax parentType
-				? SyntaxFactory.Identifier(parentType.Identifier.Text)
-				: default;
 
 			Sharp.ParameterListSyntax parameters = SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(node.ParameterList.Parameters.Select(Parameter)));
 
-			return SyntaxFactory.DestructorDeclaration(
+			return SyntaxFactory.MethodDeclaration(
 				Attributes(node.Attributes),
 				modifiers,
-				SyntaxFactory.Token(CSyntaxKind.TildeToken),
+				SyntaxFactory.PredefinedType(SyntaxFactory.Token(CSyntaxKind.VoidKeyword)),
+				default,
 				identifier,
+				default,
 				parameters,
+				default,
 				node.Body is null ? null : Statements.Block(node.Body),
 				node.ExpressionBody is null ? null : Statements.ExpressionBody(node.ExpressionBody),
 				node.Body is null && node.ExpressionBody is null ? SyntaxFactory.Token(CSyntaxKind.SemicolonToken) : default
@@ -743,6 +780,29 @@ internal sealed partial class CSharpTranslator
 			return SyntaxFactory.TokenList(targetModifiers.ToArray());
 		}
 
+		private static Microsoft.CodeAnalysis.SyntaxList<Sharp.MemberDeclarationSyntax> Members(Syntax.Abstractions.SyntaxList<MemberDeclarationSyntax> members)
+		{
+			TypeFlags typeFlags = default;
+			return Members(members, ref typeFlags);
+		}
+
+		private static Microsoft.CodeAnalysis.SyntaxList<Sharp.MemberDeclarationSyntax> Members(Syntax.Abstractions.SyntaxList<MemberDeclarationSyntax> members, ref TypeFlags typeFlags)
+		{
+			if(members.IsDefaultOrEmpty)
+			{
+				return default;
+			}
+
+			List<Sharp.MemberDeclarationSyntax> list = new(members.Count);
+
+			foreach (MemberDeclarationSyntax member in members)
+			{
+				list.Add(Member(member, ref typeFlags));
+			}
+
+			return SyntaxFactory.List(list);
+		}
+
 		private static Sharp.EnumMemberDeclarationSyntax EnumMember(SimpleEnumMemberDeclarationSyntax node)
 		{
 			return SyntaxFactory.EnumMemberDeclaration(
@@ -759,6 +819,36 @@ internal sealed partial class CSharpTranslator
 				SyntaxFactory.Identifier(node.Identifier.Text),
 				SyntaxFactory.EqualsValueClause(SyntaxFactory.LiteralExpression(CSyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(value)))
 			);
+		}
+
+		private static void CheckDisposablePattern(
+			TypeDeclarationSyntax node,
+			CSyntaxTokenList modifiers,
+			ref Sharp.BaseListSyntax? baseTypeList,
+			ref Microsoft.CodeAnalysis.SyntaxList<Sharp.MemberDeclarationSyntax> members,
+			TypeFlags typeFlags
+		)
+		{
+			if (typeFlags.HasFlag(TypeFlags.Disposable))
+			{
+				if (baseTypeList is null)
+				{
+					baseTypeList = SyntaxFactory.BaseList(SyntaxFactory.SingletonSeparatedList<Sharp.BaseTypeSyntax>(Interop.ImplementIDisposable()));
+				}
+				else
+				{
+					baseTypeList = baseTypeList.AddTypes(Interop.ImplementIDisposable());
+				}
+
+				bool isOpen = node is ClassDeclarationSyntax && !modifiers.Any(CSyntaxKind.SealedKeyword);
+
+				members = members.AddRange(Interop.DisposablePattern(isOpen));
+			}
+
+			if (typeFlags.HasFlag(TypeFlags.Destructor))
+			{
+				members = members.Add(Interop.IDisposableDestructor(SyntaxFactory.Identifier(node.Identifier.Text)));
+			}
 		}
 
 		private static Sharp.AccessorDeclarationSyntax Accessor(AccessorDeclarationSyntax node, CSyntaxKind kind)
@@ -835,5 +925,15 @@ internal sealed partial class CSharpTranslator
 		Data = 16,
 
 		Init = 32
+	}
+
+	[Flags]
+	public enum TypeFlags
+	{
+		None = 0,
+
+		Disposable = 1,
+
+		Destructor = 2,
 	}
 }

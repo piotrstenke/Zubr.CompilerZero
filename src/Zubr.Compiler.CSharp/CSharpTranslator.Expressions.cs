@@ -38,6 +38,7 @@ internal sealed partial class CSharpTranslator
 				RangeExpressionSyntax r => Range(r),
 				CollectionExpressionSyntax co => Collection(co),
 				ElementAccessExpressionSyntax e => ElementAccess(e),
+				SkippedArraySizeExpressionSyntax => SyntaxFactory.OmittedArraySizeExpression(),
 				_ => throw new UnreachableException()
 			};
 		}

@@ -1,6 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Emit;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
@@ -8,26 +7,30 @@ using System.Linq;
 using Zubr.Compiler.Diagnostics;
 using Zubr.Compiler.Emit;
 
+using EmitResult = Zubr.Compiler.Emit.EmitResult;
+using MEmitResult = Microsoft.CodeAnalysis.Emit.EmitResult;
+
 namespace Zubr.Compiler.CSharp;
 
 internal sealed class CSharpEmitter : IEmitter
 {
-	public byte[]? Emit(Compilation compilation, out DiagnosticMessage[]? diagnostics)
+	public EmitResult Emit(Compilation compilation)
 	{
 		CSharpCompilation csharpCompilation = CreateCSharpCompilation(compilation);
 
 		using MemoryStream stream = new();
 
-		EmitResult result = csharpCompilation.Emit(stream);
+		MEmitResult result = csharpCompilation.Emit(stream);
 
-		diagnostics = GetDiagnostics(result);
+		DiagnosticMessage[]? diagnostics = GetDiagnostics(result);
 
 		if(!result.Success)
 		{
-			return null;
+			return new CSharpEmitResult(null, csharpCompilation, diagnostics);
 		}
 
-		return stream.ToArray();
+		byte[] data = stream.ToArray();
+		return new CSharpEmitResult(data, csharpCompilation, diagnostics);
 	}
 
 	private static CSharpCompilation CreateCSharpCompilation(Compilation compilation)
@@ -49,7 +52,7 @@ internal sealed class CSharpEmitter : IEmitter
 		return csharpCompilation;
 	}
 
-	private static DiagnosticMessage[]? GetDiagnostics(EmitResult result)
+	private static DiagnosticMessage[]? GetDiagnostics(MEmitResult result)
 	{
 		ImmutableArray<Diagnostic> diagnostics = result.Diagnostics;
 

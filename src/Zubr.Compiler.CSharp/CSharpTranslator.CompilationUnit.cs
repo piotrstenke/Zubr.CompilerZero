@@ -38,6 +38,8 @@ internal sealed partial class CSharpTranslator
 
 		List<Sharp.MethodDeclarationSyntax> globalFunctions = new();
 
+		TypeFlags typeFlags = default;
+
 		foreach (MemberDeclarationSyntax member in node.Members)
 		{
 			switch (member)
@@ -61,7 +63,7 @@ internal sealed partial class CSharpTranslator
 					break;
 
 				default:
-					members.Add(Declarations.Member(member));
+					members.Add(Declarations.Member(member, ref typeFlags));
 					break;
 			}
 		}
@@ -109,6 +111,8 @@ internal sealed partial class CSharpTranslator
 		List<Sharp.MethodDeclarationSyntax> globalFunctions
 	)
 	{
+		TypeFlags typeFlags = default;
+
 		foreach (MemberDeclarationSyntax member in node.Members)
 		{
 			if (member is FunctionDeclarationSyntax func)
@@ -117,7 +121,7 @@ internal sealed partial class CSharpTranslator
 			}
 			else
 			{
-				members.Add(Declarations.Member(member));
+				members.Add(Declarations.Member(member, ref typeFlags));
 			}
 		}
 	}

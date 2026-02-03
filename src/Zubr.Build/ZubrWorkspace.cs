@@ -42,7 +42,7 @@ public sealed partial class ZubrWorkspace
 
 	public IEnumerable<string> GetFiles()
 	{
-		return Directory.EnumerateFiles(RootPath, "*.zr");
+		return Directory.EnumerateFiles(RootPath, "*.zr", SearchOption.AllDirectories);
 	}
 
 	public Compilation CreateCompilation()
@@ -94,7 +94,8 @@ public sealed partial class ZubrWorkspace
 				continue;
 			}
 
-			SyntaxTree tree = SyntaxTree.Parse(SourceText.FromSource(content));
+			Logger.LogInfo($"Parsing syntax tree at path: '{file}'");
+			SyntaxTree tree = SyntaxTree.Parse(SourceText.FromSource(content, file));
 			syntaxTrees.Add(tree);
 		}
 

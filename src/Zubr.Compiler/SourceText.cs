@@ -38,6 +38,11 @@ public sealed class SourceText
 
 	public static SourceText FromSource(string source, Encoding? encoding = null)
 	{
-		return new SourceText(source, null, encoding ?? Encoding.UTF8);
+		return FromSource(source, null, encoding);
+	}
+
+	public static SourceText FromSource(string source, string? sourcePath, Encoding? encoding = null)
+	{
+		return new SourceText(source, sourcePath, encoding ?? Encoding.UTF8);
 	}
 }

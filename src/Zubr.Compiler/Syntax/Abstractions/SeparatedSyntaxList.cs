@@ -42,7 +42,7 @@ public readonly struct SeparatedSyntaxList<TNode> : IReadOnlyList<TNode> where T
 
 		for (int i = 1; i < _nodes.Length; i++)
 		{
-			sb.Append(_nodes[i].separator.ToString());
+			sb.Append(_nodes[i - 1].separator.ToString());
 			sb.Append(' ');
 			sb.Append(_nodes[i].node.ToString());
 		}

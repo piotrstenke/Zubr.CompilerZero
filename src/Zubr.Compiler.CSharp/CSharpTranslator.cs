@@ -29,6 +29,7 @@ internal sealed partial class CSharpTranslator
 		return (CSharpSyntaxTree)CSharpSyntaxTree.Create(
 			root,
 			encoding: syntaxTree.Encoding,
+			path: syntaxTree.SourcePath,
 			options: new CSharpParseOptions(languageVersion: Options.LanguageVersion)
 		);
 	}
