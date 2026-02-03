@@ -64,6 +64,23 @@ public static class SyntaxFacts
 			TokenKind.AttrKeyword;
 	}
 
+	public static bool IsComparisonOperator(this in Token token)
+	{
+		return IsComparisonOperator(token.Kind);
+	}
+
+	public static bool IsComparisonOperator(TokenKind value)
+	{
+		return value is
+			TokenKind.EqualsEqualsToken or
+			TokenKind.EqualsEqualsEqualsToken or
+			TokenKind.ExclamationEqualsToken or
+			TokenKind.GreaterThanToken or
+			TokenKind.GreaterThanEqualsToken or
+			TokenKind.LessThanToken or
+			TokenKind.LessThanEqualsToken;
+	}
+
 	public static bool IsAssignmentOperator(this in Token token)
 	{
 		return IsAssignmentOperator(token.Kind);
@@ -71,19 +88,19 @@ public static class SyntaxFacts
 
 	public static bool IsAssignmentOperator(TokenKind value)
 	{
-		return
-			value == TokenKind.EqualsToken ||
-			value == TokenKind.PlusEqualsToken ||
-			value == TokenKind.MinusEqualsToken ||
-			value == TokenKind.AsteriskEqualsToken ||
-			value == TokenKind.SlashEqualsToken ||
-			value == TokenKind.PercentEqualsToken ||
-			value == TokenKind.BarEqualsToken ||
-			value == TokenKind.CaretEqualsToken ||
-			value == TokenKind.AmpersandEqualsToken ||
-			value == TokenKind.LessThanLessThanEqualsToken ||
-			value == TokenKind.GreaterThanGreaterThanEqualsToken ||
-			value == TokenKind.GreaterThanGreaterThanGreaterThanEqualsToken;
+		return value is
+			TokenKind.EqualsToken or
+			TokenKind.PlusEqualsToken or
+			TokenKind.MinusEqualsToken or
+			TokenKind.AsteriskEqualsToken or
+			TokenKind.SlashEqualsToken or
+			TokenKind.PercentEqualsToken or
+			TokenKind.BarEqualsToken or
+			TokenKind.CaretEqualsToken or
+			TokenKind.AmpersandEqualsToken or
+			TokenKind.LessThanLessThanEqualsToken or
+			TokenKind.GreaterThanGreaterThanEqualsToken or
+			TokenKind.GreaterThanGreaterThanGreaterThanEqualsToken;
 	}
 
 	public static bool IsAccessor(this in Token token)
@@ -234,6 +251,7 @@ public static class SyntaxFacts
 			"union" => TokenKind.UnionKeyword,
 			"alias" => TokenKind.AliasKeyword,
 			"final" => TokenKind.FinalKeyword,
+			"req" => TokenKind.ReqKeyword,
 			_ => TokenKind.None
 		};
 	}

@@ -6,6 +6,8 @@ public sealed class AliasDirectiveSyntax : SyntaxNode
 {
 	public override SyntaxKind Kind => SyntaxKind.AliasDirective;
 
+	public TokenList Modifiers { get; }
+
 	public Token AliasKeyword { get; }
 
 	public NameSyntax Name { get; }
@@ -16,8 +18,9 @@ public sealed class AliasDirectiveSyntax : SyntaxNode
 
 	public Token SemicolonToken { get; }
 
-	internal AliasDirectiveSyntax(Token aliasKeyword, NameSyntax name, Token equalsToken, TypeSyntax type, Token semicolonToken)
+	internal AliasDirectiveSyntax(TokenList modifiers, Token aliasKeyword, NameSyntax name, Token equalsToken, TypeSyntax type, Token semicolonToken)
 	{
+		Modifiers = modifiers;
 		AliasKeyword = aliasKeyword;
 		Name = name;
 		EqualsToken = equalsToken;

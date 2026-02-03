@@ -6,9 +6,9 @@ public sealed class ModuleDeclarationSyntax : MemberDeclarationSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.ModuleDeclaration;
 
-	public override TokenList Modifiers => TokenList.Empty;
-
 	public override SyntaxList<AttributeSyntax> Attributes => default;
+
+	public override TokenList Modifiers => TokenList.Empty;
 
 	public Token ModuleKeyword { get; }
 

@@ -3,7 +3,6 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Xml.Linq;
 using Zubr.Compiler.Syntax;
 using Zubr.Compiler.Syntax.Abstractions;
 
@@ -38,6 +37,7 @@ internal sealed partial class CSharpTranslator
 				ArrayCreationExpressionSyntax arr => ArrayCreation(arr),
 				RangeExpressionSyntax r => Range(r),
 				CollectionExpressionSyntax co => Collection(co),
+				ElementAccessExpressionSyntax e => ElementAccess(e),
 				_ => throw new UnreachableException()
 			};
 		}
@@ -53,6 +53,14 @@ internal sealed partial class CSharpTranslator
 				Expression(node.Condition),
 				Expression(node.TrueExpression),
 				Expression(node.FalseExpression)
+			);
+		}
+
+		public static Sharp.ElementAccessExpressionSyntax ElementAccess(ElementAccessExpressionSyntax node)
+		{
+			return SyntaxFactory.ElementAccessExpression(
+				Expression(node.Expression),
+				SyntaxFactory.BracketedArgumentList(SyntaxFactory.SeparatedList(node.ArgumentList.Arguments.Select(Argument)))
 			);
 		}
 
@@ -136,8 +144,12 @@ internal sealed partial class CSharpTranslator
 
 		public static Sharp.ArgumentListSyntax ArgumentList(ArgumentListSyntax node)
 		{
-			return SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(
-					node.Arguments.Select(x => SyntaxFactory.Argument(Expression(x.Expression)))));
+			return SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(node.Arguments.Select(Argument)));
+		}
+
+		public static Sharp.ArgumentSyntax Argument(ArgumentSyntax node)
+		{
+			return SyntaxFactory.Argument(Expression(node.Expression));
 		}
 
 		public static Sharp.MemberAccessExpressionSyntax MemberAccess(MemberAccessExpressionSyntax node)
@@ -178,6 +190,9 @@ internal sealed partial class CSharpTranslator
 
 				SyntaxKind.FalseLiteralExpression
 					=> SyntaxFactory.LiteralExpression(CSyntaxKind.FalseLiteralExpression),
+
+				SyntaxKind.NullLiteralExpression
+					=> SyntaxFactory.LiteralExpression(CSyntaxKind.NullLiteralExpression),
 
 				SyntaxKind.NumericLiteralExpression
 					=> NumericLiteral(node),
@@ -399,6 +414,7 @@ internal sealed partial class CSharpTranslator
 
 		private static CSyntaxKind GetBinaryKind(SyntaxKind kind)
 		{
+			// TODO: Handle ReferenceEqualsExpression
 			return kind switch
 			{
 				SyntaxKind.AddExpression => CSyntaxKind.AddExpression,

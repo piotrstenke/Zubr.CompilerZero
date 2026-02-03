@@ -12,7 +12,7 @@ public enum TokenKind : uint
 	EqualsEqualsToken,
 
 	// ===
-	EqulasEqualsEqualsToken,
+	EqualsEqualsEqualsToken,
 
 	// =>
 	EqualsGreaterThanToken,
@@ -415,6 +415,9 @@ public enum TokenKind : uint
 
 	// string
 	StringKeyword,
+
+	// An empty token that is valid but has no representation in the source.
+	SkippedToken,
 
 	// A token that was expected but is missing.
 	MissingToken,

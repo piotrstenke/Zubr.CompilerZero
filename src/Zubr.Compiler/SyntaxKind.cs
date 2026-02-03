@@ -146,6 +146,9 @@ public enum SyntaxKind : uint
 	// false
 	FalseLiteralExpression,
 
+	// null
+	NullLiteralExpression,
+
 	// int a
 	VariableExpression,
 
@@ -190,6 +193,9 @@ public enum SyntaxKind : uint
 
 	// a == b
 	EqualsExpression,
+
+	// a === b
+	ReferenceEqualsExpression,
 
 	// a != b
 	NotEqualsExpression,
@@ -290,6 +296,9 @@ public enum SyntaxKind : uint
 	// placeholder for expression when array type has no specified size (e.g. int[])
 	SkippedArraySizeExpression,
 
+	// array[0]
+	ElementAccessExpression,
+
 	// { "text", 1, new() { } }
 	InitializerExpression,
 
@@ -319,6 +328,9 @@ public enum SyntaxKind : uint
 
 	// the '1' and '2 'in 'a(1, 2)'
 	Argument,
+
+	// the '[0]' in 'array[0]'
+	BracketArgumentList,
 
 	// -----------------------------
 	// Types & Names

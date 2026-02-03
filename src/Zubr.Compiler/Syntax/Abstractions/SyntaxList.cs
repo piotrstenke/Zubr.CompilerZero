@@ -31,7 +31,7 @@ public readonly struct SyntaxList<TNode> : IReadOnlyList<TNode> where TNode : Sy
 
 	public override string ToString()
 	{
-		return ToString('\n');
+		return ToString(' ');
 	}
 
 	public string ToString(char separator)

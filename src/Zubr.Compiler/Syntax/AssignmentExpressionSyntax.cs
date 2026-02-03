@@ -21,4 +21,9 @@ public sealed class AssignmentExpressionSyntax : ExpressionSyntax
 		SetParent(left);
 		SetParent(right);
 	}
+
+	public override string ToString()
+	{
+		return $"{Left} {OperatorToken} {Right}";
+	}
 }

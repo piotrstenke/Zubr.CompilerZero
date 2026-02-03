@@ -23,6 +23,7 @@ public sealed class ArrayCreationExpressionSyntax : ExpressionSyntax
 	{
 		NewKeyword = newKeyword;
 		ElementType = elementType;
+		Ranks = ranks;
 		Initializer = initializer;
 
 		SetParentIfNotNull(elementType);
