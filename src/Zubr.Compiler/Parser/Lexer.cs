@@ -242,6 +242,12 @@ internal struct Lexer
 				if (_reader.Peek() == '=')
 				{
 					_reader.Move();
+
+					if(_reader.Peek() == '=')
+					{
+						return new(TokenKind.ExclamationEqualsEqualsToken, "!==", _tokenStartPos);
+					}
+
 					return new(TokenKind.ExclamationEqualsToken, "!=", _tokenStartPos);
 				}
 

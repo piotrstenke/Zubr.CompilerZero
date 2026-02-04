@@ -23,6 +23,9 @@ public enum TokenKind : uint
 	// !=
 	ExclamationEqualsToken,
 
+	// !==
+	ExclamationEqualsEqualsToken,
+
 	// >
 	GreaterThanToken,
 
@@ -206,6 +209,18 @@ public enum TokenKind : uint
 	// attr
 	AttrKeyword,
 
+	// field
+	FieldKeyword,
+
+	// oper
+	OperKeyword,
+
+	// cast
+	CastKeyword,
+
+	// auto
+	AutoKeyword,
+
 	// data
 	DataKeyword,
 
@@ -236,17 +251,14 @@ public enum TokenKind : uint
 	// priv
 	PrivKeyword,
 
-	//// stat
-	//StatKeyword,
+	// stat
+	StatKeyword,
 
 	// over
 	OverKeyword,
 
 	// final
 	FinalKeyword,
-
-	// field
-	FieldKeyword,
 
 	// // extern
 	// ExternKeyword,

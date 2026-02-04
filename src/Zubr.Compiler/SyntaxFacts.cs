@@ -77,6 +77,147 @@ public static class SyntaxFacts
 			TokenKind.AttrKeyword;
 	}
 
+	public static SyntaxKind GetPrefixUnaryExpressionKind(TokenKind value)
+	{
+		return value switch
+		{
+			TokenKind.PlusToken => SyntaxKind.UnaryPlusExpression,
+			TokenKind.PlusPlusToken => SyntaxKind.PreIncrementExpression,
+			TokenKind.MinusToken => SyntaxKind.UnaryMinusExpression,
+			TokenKind.MinusMinusToken => SyntaxKind.PreDecrementExpression,
+			TokenKind.ExclamationToken => SyntaxKind.LogicalNotExpression,
+			TokenKind.TildeToken => SyntaxKind.BitwiseNotExpression,
+			_ => default
+		};
+	}
+
+	public static SyntaxKind GetPostfixUnaryExpressionKind(TokenKind value)
+	{
+		return value switch
+		{
+			TokenKind.PlusPlusToken => SyntaxKind.PostIncrementExpression,
+			TokenKind.MinusMinusToken => SyntaxKind.PostDecrementExpression,
+			_ => default
+		};
+	}
+
+	public static SyntaxKind GetBinaryExpressionKind(TokenKind value)
+	{
+		return value switch
+		{
+			TokenKind.PlusToken => SyntaxKind.AddExpression,
+			TokenKind.MinusToken => SyntaxKind.SubtractExpression,
+			TokenKind.AsteriskToken => SyntaxKind.MultiplyExpression,
+			TokenKind.SlashToken => SyntaxKind.DivideExpression,
+			TokenKind.PercentToken => SyntaxKind.ModuloExpression,
+			TokenKind.CaretToken => SyntaxKind.ExclusiveOrExpression,
+			TokenKind.BarToken => SyntaxKind.BitwiseOrExpression,
+			TokenKind.AmpersandToken => SyntaxKind.BitwiseAndExpression,
+			TokenKind.GreaterThanGreaterThanToken => SyntaxKind.RightShiftExpression,
+			TokenKind.LessThanLessThanToken => SyntaxKind.LeftShiftExpression,
+			TokenKind.GreaterThanGreaterThanGreaterThanToken => SyntaxKind.UnsignedRightShiftExpression,
+			TokenKind.EqualsEqualsToken => SyntaxKind.EqualsExpression,
+			TokenKind.EqualsEqualsEqualsToken => SyntaxKind.ReferenceEqualsExpression,
+			TokenKind.ExclamationEqualsToken => SyntaxKind.NotEqualsExpression,
+			TokenKind.ExclamationEqualsEqualsToken => SyntaxKind.ReferenceNotEqualsExpression,
+			TokenKind.GreaterThanToken => SyntaxKind.GreaterThanExpression,
+			TokenKind.GreaterThanEqualsToken => SyntaxKind.GreaterThanOrEqualExpression,
+			TokenKind.LessThanToken => SyntaxKind.LessThanExpression,
+			TokenKind.LessThanEqualsToken => SyntaxKind.LessThanOrEqualExpression,
+			TokenKind.BarBarToken => SyntaxKind.LogicalOrExpression,
+			TokenKind.AmpersandAmpersandToken => SyntaxKind.LogicalAndExpression,
+			TokenKind.DotDotToken => SyntaxKind.RangeExpression,
+
+			// Assignment
+
+			TokenKind.EqualsToken => SyntaxKind.AssignmentExpression,
+			TokenKind.PlusEqualsToken => SyntaxKind.AddAssignmentExpression,
+			TokenKind.MinusEqualsToken => SyntaxKind.SubtractAssignmentExpression,
+			TokenKind.AsteriskEqualsToken => SyntaxKind.MultiplyAssignmentExpression,
+			TokenKind.SlashEqualsToken => SyntaxKind.DivideAssignmentExpression,
+			TokenKind.PercentEqualsToken => SyntaxKind.ModuloAssignmentExpression,
+			TokenKind.CaretEqualsToken => SyntaxKind.ExclusiveOrAssignmentExpression,
+			TokenKind.BarEqualsToken => SyntaxKind.BitwiseOrExpression,
+			TokenKind.AmpersandEqualsToken => SyntaxKind.BitwiseAndExpression,
+			TokenKind.LessThanLessThanEqualsToken => SyntaxKind.LeftShiftAssignmentExpression,
+			TokenKind.GreaterThanGreaterThanEqualsToken => SyntaxKind.RightShiftAssignmentExpression,
+			TokenKind.GreaterThanGreaterThanGreaterThanEqualsToken => SyntaxKind.UnsignedRightShiftAssignmentExpression,
+			_ => default
+		};
+	}
+
+	public static SyntaxKind GetLiteralExpressionKind(TokenKind value)
+	{
+		return value switch
+		{
+			TokenKind.StringLiteralToken => SyntaxKind.StringLiteralExpression,
+			TokenKind.NumericLiteralToken => SyntaxKind.NumericLiteralExpression,
+			TokenKind.CharLiteralToken => SyntaxKind.CharLiteralExpression,
+			TokenKind.TrueKeyword => SyntaxKind.TrueLiteralExpression,
+			TokenKind.FalseKeyword => SyntaxKind.FalseLiteralExpression,
+			_ => default
+		};
+	}
+
+	public static SyntaxKind GetExpressionKind(TokenKind value)
+	{
+		SyntaxKind kind = GetBinaryExpressionKind(value);
+
+		if(kind != default)
+		{
+			return kind;
+		}
+
+		kind = GetPostfixUnaryExpressionKind(value);
+
+		if(kind != default)
+		{
+			return kind;
+		}
+
+		kind = GetPrefixUnaryExpressionKind(value);
+
+		if(kind != default)
+		{
+			return kind;
+		}
+
+		kind = GetLiteralExpressionKind(value);
+
+		return kind;
+	}
+
+	public static bool IsOverloadableOperator(this Token token)
+	{
+		return IsOverloadableOperator(token.Kind);
+	}
+
+	public static bool IsOverloadableOperator(TokenKind value)
+	{
+		if(IsComparisonOperator(value))
+		{
+			return true;
+		}
+
+		if(GetPrefixUnaryExpressionKind(value) != default)
+		{
+			return true;
+		}
+
+		return value is
+			TokenKind.AsteriskToken or
+			TokenKind.PercentToken or
+			TokenKind.SlashToken or
+			TokenKind.AmpersandToken or
+			TokenKind.BarToken or
+			TokenKind.CaretToken or
+			TokenKind.LessThanLessThanToken or
+			TokenKind.GreaterThanGreaterThanToken or
+			TokenKind.GreaterThanGreaterThanGreaterThanToken or
+			TokenKind.FalseKeyword or
+			TokenKind.TrueKeyword;
+	}
+
 	public static bool IsComparisonOperator(this in Token token)
 	{
 		return IsComparisonOperator(token.Kind);
@@ -88,6 +229,7 @@ public static class SyntaxFacts
 			TokenKind.EqualsEqualsToken or
 			TokenKind.EqualsEqualsEqualsToken or
 			TokenKind.ExclamationEqualsToken or
+			TokenKind.ExclamationEqualsEqualsToken or
 			TokenKind.GreaterThanToken or
 			TokenKind.GreaterThanEqualsToken or
 			TokenKind.LessThanToken or
@@ -116,16 +258,29 @@ public static class SyntaxFacts
 			TokenKind.GreaterThanGreaterThanGreaterThanEqualsToken;
 	}
 
+	public static SyntaxKind GetAccessorKind(this in Token token)
+	{
+		return GetAccessorKind(token.Kind);
+	}
+
+	public static SyntaxKind GetAccessorKind(TokenKind value)
+	{
+		return value switch
+		{
+			TokenKind.GetKeyword => SyntaxKind.GetAccessorDeclaration,
+			TokenKind.SetKeyword => SyntaxKind.SetAccessorDeclaration,
+			_ => default
+		};
+	}
+
 	public static bool IsAccessor(this in Token token)
 	{
-		return IsAccessor(token.Kind);
+		return IsAccessModifier(token.Kind);
 	}
 
 	public static bool IsAccessor(TokenKind value)
 	{
-		return value is
-			TokenKind.GetKeyword or
-			TokenKind.SetKeyword;
+		return GetAccessorKind(value) != default;
 	}
 
 	public static bool IsAccessModifier(this in Token token)
@@ -165,7 +320,9 @@ public static class SyntaxFacts
 			TokenKind.BaseKeyword or
 			TokenKind.LimitKeyword or
 			TokenKind.OverKeyword or
-			TokenKind.ReqKeyword;
+			TokenKind.ReqKeyword or
+			TokenKind.StatKeyword or
+			TokenKind.AutoKeyword;
 	}
 
 	public static bool IsValid(this in Token token)
@@ -265,6 +422,9 @@ public static class SyntaxFacts
 			"alias" => TokenKind.AliasKeyword,
 			"final" => TokenKind.FinalKeyword,
 			"req" => TokenKind.ReqKeyword,
+			"stat" => TokenKind.StatKeyword,
+			"cast" => TokenKind.CastKeyword,
+			"oper" => TokenKind.OperKeyword,
 			_ => TokenKind.None
 		};
 	}

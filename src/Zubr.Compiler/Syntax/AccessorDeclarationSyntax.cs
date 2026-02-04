@@ -4,7 +4,7 @@ namespace Zubr.Compiler.Syntax;
 
 public sealed class AccessorDeclarationSyntax : SyntaxNode
 {
-	public override SyntaxKind Kind => SyntaxKind.AccessorDeclaration;
+	public override SyntaxKind Kind { get; }
 
 	public SyntaxList<AttributeSyntax> Attributes { get; }
 
@@ -19,6 +19,7 @@ public sealed class AccessorDeclarationSyntax : SyntaxNode
 	public Token SemicolonToken { get; }
 
 	internal AccessorDeclarationSyntax(
+		SyntaxKind kind,
 		SyntaxList<AttributeSyntax> attributes,
 		TokenList modifiers,
 		Token keyword,
@@ -27,6 +28,7 @@ public sealed class AccessorDeclarationSyntax : SyntaxNode
 		Token semicolonToken
 	)
 	{
+		Kind = kind;
 		Attributes = attributes;
 		Modifiers = modifiers;
 		Keyword = keyword;

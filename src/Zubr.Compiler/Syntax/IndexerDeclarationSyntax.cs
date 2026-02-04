@@ -2,7 +2,7 @@
 
 namespace Zubr.Compiler.Syntax;
 
-public sealed class PropertyDeclarationSyntax : BasePropertyDeclarationSyntax
+public sealed class IndexerDeclarationSyntax : BasePropertyDeclarationSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.PropertyDeclaration;
 
@@ -12,50 +12,50 @@ public sealed class PropertyDeclarationSyntax : BasePropertyDeclarationSyntax
 
 	public override TypeSyntax Type { get; }
 
-	public Token Identifier { get; }
+	public Token SelfKeyword { get; }
+
+	public BracketParameterListSyntax ParameterList { get; }
 
 	public override ArrowExpressionClauseSyntax? ExpressionBody { get; }
 
 	public override AccessorListSyntax? AccessorList { get; }
 
-	public EqualsValueClauseSyntax? Initializer { get; }
-
 	public override Token SemicolonToken { get; }
 
-	internal PropertyDeclarationSyntax(
+	internal IndexerDeclarationSyntax(
 		SyntaxList<AttributeSyntax> attributes,
 		TokenList modifiers,
 		TypeSyntax type,
-		Token identifier,
+		Token selfKeyword,
+		BracketParameterListSyntax parameterList,
 		ArrowExpressionClauseSyntax? expressionBody,
 		AccessorListSyntax? accessorList,
-		EqualsValueClauseSyntax? initializer,
 		Token semicolonToken
 	)
 	{
 		Attributes = attributes;
 		Modifiers = modifiers;
 		Type = type;
-		Identifier = identifier;
+		SelfKeyword = selfKeyword;
+		ParameterList = parameterList;
 		ExpressionBody = expressionBody;
 		AccessorList = accessorList;
-		Initializer = initializer;
 		SemicolonToken = semicolonToken;
 
 		SetParent(attributes);
 		SetParent(type);
+		SetParent(parameterList);
 		SetParentIfNotNull(expressionBody);
 		SetParentIfNotNull(accessorList);
-		SetParentIfNotNull(initializer);
 	}
 
 	public override string ToString()
 	{
-		if(ExpressionBody is not null)
+		if (ExpressionBody is not null)
 		{
-			return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{Type} {Identifier} {ExpressionBody}{SemicolonToken}";
+			return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{Type} {SelfKeyword} {ParameterList} {ExpressionBody}{SemicolonToken}";
 		}
 
-		return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{Type} {Identifier}{(AccessorList is null ? "" : $" {AccessorList}")}{(Initializer is null ? "" : $" {Initializer}")}{SemicolonToken}";
+		return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{Type} {SelfKeyword} {ParameterList}{(AccessorList is null ? "" : $" {AccessorList}")}{SemicolonToken}";
 	}
 }

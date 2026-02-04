@@ -73,8 +73,20 @@ public enum SyntaxKind : uint
 	// free() { } or gcfree() { }
 	DestructorDeclaration,
 
+	// pub int oper+(int a, int b) { } 
+	OperatorDeclaration,
+
+	// pub cast bool(int a)
+	CastDeclaration,
+
 	// pub int a = 1;, pub int a => 1;, pub int a { get => 1; } etc.
 	PropertyDeclaration,
+
+	// pub int self[int index] => 1, pub int [int index] { get => 2; } etc.
+	IndexerDeclaration,
+
+	// pub int self(int index) { ... }
+	InvokerDeclaration,
 
 	// field int a = 2;
 	FieldDeclaration,
@@ -83,13 +95,19 @@ public enum SyntaxKind : uint
 	AccessorList,
 
 	// get; get => 1; get { } etc.
-	AccessorDeclaration,
+	GetAccessorDeclaration,
+
+	// set; set => field = value; set { } etc.
+	SetAccessorDeclaration,
 
 	// the '(int a, bool b)' in 'foo(int a, bool b)'
 	ParameterList,
 
 	// the 'int a' and 'bool b' in 'foo(int a, bool b)'
 	Parameter,
+
+	// the '[int a, int b]' in 'pub T [int a, int b]'
+	BracketParameterList,
 
 	// the '<int, string>' in 'Test<int, string>'
 	TypeParameterList,
@@ -194,11 +212,14 @@ public enum SyntaxKind : uint
 	// a == b
 	EqualsExpression,
 
+	// a != b
+	NotEqualsExpression,
+
 	// a === b
 	ReferenceEqualsExpression,
 
-	// a != b
-	NotEqualsExpression,
+	// a !== b
+	ReferenceNotEqualsExpression,
 
 	// a < b
 	LessThanExpression,

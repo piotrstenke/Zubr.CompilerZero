@@ -270,25 +270,47 @@ internal sealed class SourceParser
 
 	private MemberDeclarationSyntax ParseFunctionOrPropertyDeclaration(SyntaxList<AttributeSyntax> attributes, TokenList modifiers, int position)
 	{
+		if(PeekKind(TokenKind.CastKeyword))
+		{
+			return ParseCastDeclaration(attributes, modifiers, position);
+		}
+
 		TypeSyntax returnType = ParseType();
 
-		Token identifier = EatToken(TokenKind.IdentifierToken);
+		Token token = EatToken();
 
-		TypeParameterListSyntax? typeParameterList = TryParseTypeParameterList();
-
-		if(typeParameterList is not null)
+		switch(token.Kind)
 		{
-			return ParseFunctionDeclaration(attributes, modifiers, returnType, identifier, typeParameterList, position);
+			case TokenKind.SelfKeyword:
+				if (PeekKind(TokenKind.OpenBracketToken))
+				{
+					return ParseIndexerDeclaration(attributes, modifiers, returnType, token, position);
+				}
+
+				return ParseInvokerDeclaration(attributes, modifiers, returnType, token, position);
+
+			case TokenKind.OperKeyword:
+				return ParseOperatorDeclaration(attributes, modifiers, returnType, token, position);
+
+			default:
+				EnsureKind(ref token, TokenKind.IdentifierToken);
+
+				TypeParameterListSyntax? typeParameterList = TryParseTypeParameterList();
+
+				if (typeParameterList is not null)
+				{
+					return ParseFunctionDeclaration(attributes, modifiers, returnType, token, typeParameterList, position);
+				}
+
+				ParameterListSyntax? parameterList = TryParseParameterList();
+
+				if (parameterList is not null)
+				{
+					return ParseFunctionDeclaration(attributes, modifiers, returnType, token, typeParameterList, parameterList, position);
+				}
+
+				return ParsePropertyDeclaration(attributes, modifiers, returnType, token, position);
 		}
-
-		ParameterListSyntax? parameterList = TryParseParameterList();
-
-		if(parameterList is not null)
-		{
-			return ParseFunctionDeclaration(attributes, modifiers, returnType, identifier, typeParameterList, parameterList, position);
-		}
-
-		return ParsePropertyDeclaration(attributes, modifiers, returnType, identifier, position);
 	}
 
 	private PropertyDeclarationSyntax ParsePropertyDeclaration(
@@ -306,7 +328,7 @@ internal sealed class SourceParser
 		EqualsValueClauseSyntax? initializer;
 		Token semicolonToken;
 
-		if (PeekKind(TokenKind.EqualsGreaterThanToken))
+		if (token.IsKind(TokenKind.EqualsGreaterThanToken))
 		{
 			EatToken();
 
@@ -342,6 +364,56 @@ internal sealed class SourceParser
 		};
 	}
 
+	private IndexerDeclarationSyntax ParseIndexerDeclaration(
+		SyntaxList<AttributeSyntax> attributes,
+		TokenList modifiers,
+		TypeSyntax returnType,
+		Token selfKeyword,
+		int position
+	)
+	{
+		BracketParameterListSyntax parameterList = ParseBracketParameterList();
+
+		Token token = Peek();
+
+		ArrowExpressionClauseSyntax? expressionBody;
+		AccessorListSyntax? accessorList;
+		Token semicolonToken;
+
+		if (token.IsKind(TokenKind.EqualsGreaterThanToken))
+		{
+			EatToken();
+
+			expressionBody = new(token, ParseExpression())
+			{
+				Position = token.Position
+			};
+
+			semicolonToken = EatToken(TokenKind.SemicolonToken);
+
+			accessorList = null;
+		}
+		else
+		{
+			accessorList = TryParseAccesorList();
+			expressionBody = null;
+
+			if (accessorList is null)
+			{
+				semicolonToken = EatToken(TokenKind.SemicolonToken);
+			}
+			else
+			{
+				semicolonToken = default;
+			}
+		}
+
+		return new(attributes, modifiers, returnType, selfKeyword, parameterList, expressionBody, accessorList, semicolonToken)
+		{
+			Position = position
+		};
+	}
+
 	private AccessorListSyntax? TryParseAccesorList()
 	{
 		if(!PeekKind(TokenKind.OpenBraceToken))
@@ -369,7 +441,9 @@ internal sealed class SourceParser
 
 			int position = GetMemberPosition(attributes, modifiers, keyword);
 
-			if(!keyword.IsAccessor())
+			SyntaxKind kind = keyword.GetAccessorKind();
+
+			if(kind == default)
 			{
 				AddError(ErrorCode.ERR_SyntaxError);
 				keyword = UnexpectedToken();
@@ -377,7 +451,7 @@ internal sealed class SourceParser
 
 			(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody();
 
-			accessors.Add(new(attributes, modifiers, keyword, body, expressionBody, semicolonToken)
+			accessors.Add(new(kind, attributes, modifiers, keyword, body, expressionBody, semicolonToken)
 			{
 				Position = position
 			});
@@ -388,6 +462,70 @@ internal sealed class SourceParser
 		return new(openBrace, List(accessors), closeBrace)
 		{
 			Position = openBrace.Position,
+		};
+	}
+
+	private CastDeclarationSyntax ParseCastDeclaration(
+		SyntaxList<AttributeSyntax> attributes,
+		TokenList modifiers,
+		int position
+	)
+	{
+		Token keyword = EatToken(TokenKind.CastKeyword);
+
+		TypeSyntax type = ParseType();
+
+		ParameterListSyntax parameterList = ParseParameterList();
+
+		(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody();
+
+		return new(attributes, modifiers, keyword, type, parameterList, body, expressionBody, semicolonToken)
+		{
+			Position = position
+		};
+	}
+
+	private OperatorDeclarationSyntax ParseOperatorDeclaration(
+		SyntaxList<AttributeSyntax> attributes,
+		TokenList modifiers,
+		TypeSyntax returnType,
+		Token keyword,
+		int position
+	)
+	{
+		Token token = EatToken();
+
+		if(!token.IsOverloadableOperator())
+		{
+			AddError(ErrorCode.ERR_SyntaxError, token.Position);
+			token = UnexpectedToken(token);
+		}
+
+		ParameterListSyntax parameterList = ParseParameterList();
+
+		(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody();
+
+		return new(attributes, modifiers, returnType, keyword, token, parameterList, body, expressionBody, semicolonToken)
+		{
+			Position = position
+		};
+	}
+
+	private InvokerDeclarationSyntax ParseInvokerDeclaration(
+		SyntaxList<AttributeSyntax> attributes,
+		TokenList modifiers,
+		TypeSyntax returnType,
+		Token selfKeyword,
+		int position
+	)
+	{
+		ParameterListSyntax parameterList = ParseParameterList();
+
+		(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody();
+
+		return new(attributes, modifiers, returnType, selfKeyword, parameterList, body, expressionBody, semicolonToken)
+		{
+			Position = position
 		};
 	}
 
@@ -575,6 +713,50 @@ internal sealed class SourceParser
 			default:
 				return null;
 		}
+	}
+
+	private BracketParameterListSyntax ParseBracketParameterList()
+	{
+		Token openBracket = EatToken(TokenKind.OpenBracketToken);
+
+		List<(ParameterSyntax parameter, Token separator)> parameters = new();
+
+		Token token = Peek();
+
+		if (token.IsKind(TokenKind.CloseBracketToken))
+		{
+			EatToken();
+		}
+		else
+		{
+			while (token.IsValid())
+			{
+				ParameterSyntax parameter = ParseParameter();
+
+				token = Peek();
+
+				if (token.IsKind(TokenKind.CloseBracketToken))
+				{
+					EatToken();
+					parameters.Add((parameter, default));
+
+					break;
+				}
+
+				if (token.IsKind(TokenKind.CommaToken))
+				{
+					EatToken();
+					parameters.Add((parameter, token));
+
+					continue;
+				}
+			}
+		}
+
+		return new(openBracket, List(parameters), token)
+		{
+			Position = openBracket.Position
+		};
 	}
 
 	private ParameterListSyntax? TryParseParameterList()
@@ -1443,7 +1625,7 @@ internal sealed class SourceParser
 	private ExpressionSyntax ParseExpression(Precedence precedence = default)
 	{
 		Token token = Peek();
-		SyntaxKind kind = GetPrefixUnaryExpressionKind(token.Kind);
+		SyntaxKind kind = SyntaxFacts.GetPrefixUnaryExpressionKind(token.Kind);
 
 		if (kind != default)
 		{
@@ -1483,7 +1665,7 @@ internal sealed class SourceParser
 
 	private ExpressionSyntax? TryParseSubExpression(ExpressionSyntax left, Precedence precedence)
 	{
-		SyntaxKind exprKind = GetBinaryExpressionKind(PeekKind());
+		SyntaxKind exprKind = SyntaxFacts.GetBinaryExpressionKind(PeekKind());
 
 		if(exprKind == SyntaxKind.None)
 		{
@@ -1575,7 +1757,7 @@ internal sealed class SourceParser
 			case TokenKind.CharLiteralToken:
 				EatToken();
 
-				return new LiteralExpressionSyntax(GetLiteralExpressionKind(token.Kind), token)
+				return new LiteralExpressionSyntax(SyntaxFacts.GetLiteralExpressionKind(token.Kind), token)
 				{
 					Position = token.Position
 				};
@@ -1643,7 +1825,7 @@ internal sealed class SourceParser
 
 				case TokenKind.PlusPlusToken:
 				case TokenKind.MinusMinusToken:
-					expr = new PostfixUnaryExpression(GetPostfixUnaryExpressionKind(token.Kind), expr, EatToken())
+					expr = new PostfixUnaryExpression(SyntaxFacts.GetPostfixUnaryExpressionKind(token.Kind), expr, EatToken())
 					{
 						Position = expr.Position,
 					};
@@ -2128,87 +2310,6 @@ internal sealed class SourceParser
 			: attributes.GetPosition();
 	}
 
-	private static SyntaxKind GetPrefixUnaryExpressionKind(TokenKind kind)
-	{
-		return kind switch
-		{
-			TokenKind.PlusToken => SyntaxKind.UnaryPlusExpression,
-			TokenKind.PlusPlusToken => SyntaxKind.PreIncrementExpression,
-			TokenKind.MinusToken => SyntaxKind.UnaryMinusExpression,
-			TokenKind.MinusMinusToken => SyntaxKind.PreDecrementExpression,
-			TokenKind.ExclamationToken => SyntaxKind.LogicalNotExpression,
-			TokenKind.TildeToken => SyntaxKind.BitwiseNotExpression,
-			_ => default
-		};
-	}
-
-	private static SyntaxKind GetPostfixUnaryExpressionKind(TokenKind kind)
-	{
-		return kind switch
-		{
-			TokenKind.PlusPlusToken => SyntaxKind.PostIncrementExpression,
-			TokenKind.MinusMinusToken => SyntaxKind.PostDecrementExpression,
-			_ => default
-		};
-	}
-
-	private static SyntaxKind GetBinaryExpressionKind(TokenKind kind)
-	{
-		return kind switch
-		{
-			TokenKind.PlusToken => SyntaxKind.AddExpression,
-			TokenKind.MinusToken => SyntaxKind.SubtractExpression,
-			TokenKind.AsteriskToken => SyntaxKind.MultiplyExpression,
-			TokenKind.SlashToken => SyntaxKind.DivideExpression,
-			TokenKind.PercentToken => SyntaxKind.ModuloExpression,
-			TokenKind.CaretToken => SyntaxKind.ExclusiveOrExpression,
-			TokenKind.BarToken => SyntaxKind.BitwiseOrExpression,
-			TokenKind.AmpersandToken => SyntaxKind.BitwiseAndExpression,
-			TokenKind.GreaterThanGreaterThanToken => SyntaxKind.RightShiftExpression,
-			TokenKind.LessThanLessThanToken => SyntaxKind.LeftShiftExpression,
-			TokenKind.GreaterThanGreaterThanGreaterThanToken => SyntaxKind.UnsignedRightShiftExpression,
-			TokenKind.EqualsEqualsToken => SyntaxKind.EqualsExpression,
-			TokenKind.EqualsEqualsEqualsToken => SyntaxKind.ReferenceEqualsExpression,
-			TokenKind.ExclamationEqualsToken => SyntaxKind.NotEqualsExpression,
-			TokenKind.GreaterThanToken => SyntaxKind.GreaterThanExpression,
-			TokenKind.GreaterThanEqualsToken => SyntaxKind.GreaterThanOrEqualExpression,
-			TokenKind.LessThanToken => SyntaxKind.LessThanExpression,
-			TokenKind.LessThanEqualsToken => SyntaxKind.LessThanOrEqualExpression,
-			TokenKind.BarBarToken => SyntaxKind.LogicalOrExpression,
-			TokenKind.AmpersandAmpersandToken => SyntaxKind.LogicalAndExpression,
-			TokenKind.DotDotToken => SyntaxKind.RangeExpression,
-
-			// Assignment
-
-			TokenKind.EqualsToken => SyntaxKind.AssignmentExpression,
-			TokenKind.PlusEqualsToken => SyntaxKind.AddAssignmentExpression,
-			TokenKind.MinusEqualsToken => SyntaxKind.SubtractAssignmentExpression,
-			TokenKind.AsteriskEqualsToken => SyntaxKind.MultiplyAssignmentExpression,
-			TokenKind.SlashEqualsToken => SyntaxKind.DivideAssignmentExpression,
-			TokenKind.PercentEqualsToken => SyntaxKind.ModuloAssignmentExpression,
-			TokenKind.CaretEqualsToken => SyntaxKind.ExclusiveOrAssignmentExpression,
-			TokenKind.BarEqualsToken => SyntaxKind.BitwiseOrExpression,
-			TokenKind.AmpersandEqualsToken => SyntaxKind.BitwiseAndExpression,
-			TokenKind.LessThanLessThanEqualsToken => SyntaxKind.LeftShiftAssignmentExpression,
-			TokenKind.GreaterThanGreaterThanEqualsToken => SyntaxKind.RightShiftAssignmentExpression,
-			TokenKind.GreaterThanGreaterThanGreaterThanEqualsToken => SyntaxKind.UnsignedRightShiftAssignmentExpression,
-			_ => default
-		};
-	}
-
-	private static SyntaxKind GetLiteralExpressionKind(TokenKind kind)
-	{
-		return kind switch
-		{
-			TokenKind.StringLiteralToken => SyntaxKind.StringLiteralExpression,
-			TokenKind.NumericLiteralToken => SyntaxKind.NumericLiteralExpression,
-			TokenKind.CharLiteralToken => SyntaxKind.CharLiteralExpression,
-			TokenKind.TrueKeyword => SyntaxKind.TrueLiteralExpression,
-			TokenKind.FalseKeyword => SyntaxKind.FalseLiteralExpression,
-			_ => default
-		};
-	}
-
 	private static Precedence GetPrecedence(SyntaxKind kind)
 	{
 		return kind switch
@@ -2362,21 +2463,20 @@ internal sealed class SourceParser
 
 		if (current.Kind != kind)
 		{
-			if (current.Kind == TokenKind.EOF)
-			{
-				AddError(ErrorCode.ERR_UnexpectedEndOfFile);
-			}
-			else
-			{
-				AddError(ErrorCode.ERR_SyntaxError);
-			}
-
-			return MissingToken(current);
+			return MissingTokenWithError(current);
 		}
 
 		EatToken();
 
 		return current;
+	}
+
+	private void EnsureKind(ref Token token, TokenKind kind)
+	{
+		if (token.Kind != kind)
+		{
+			token = MissingTokenWithError(token);
+		}
 	}
 
 	private ref readonly Token EatToken()
@@ -2417,6 +2517,20 @@ internal sealed class SourceParser
 	{
 		ref readonly Token token = ref Peek();
 		return token.Kind == kind;
+	}
+
+	private Token MissingTokenWithError(in Token token)
+	{
+		if (token.Kind == TokenKind.EOF)
+		{
+			AddError(ErrorCode.ERR_UnexpectedEndOfFile);
+		}
+		else
+		{
+			AddError(ErrorCode.ERR_SyntaxError);
+		}
+
+		return MissingToken(token);
 	}
 
 	private static Token MissingToken(in Token current)
