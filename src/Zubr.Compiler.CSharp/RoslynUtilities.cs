@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using zubr.interop.csharp;
 
 namespace Zubr.Compiler.CSharp;
 
@@ -13,7 +14,8 @@ internal static class RoslynUtilities
 	public static CSharpCompilation CreateCompilation(
 		string assemblyName,
 		Microsoft.CodeAnalysis.OutputKind outputKind,
-		params Microsoft.CodeAnalysis.SyntaxTree[]? syntaxTrees)
+		params Microsoft.CodeAnalysis.SyntaxTree[]? syntaxTrees
+	)
 	{
 		MetadataReference[] references = GetBaseReferences();
 
@@ -37,7 +39,8 @@ internal static class RoslynUtilities
 			typeof(BigInteger).Assembly.Location,
 			typeof(Enumerable).Assembly.Location,
 			typeof(List<>).Assembly.Location,
-			Path.Combine(directory, "System.Runtime.dll")
+			Path.Combine(directory, "System.Runtime.dll"),
+			typeof(InternalInheritAttribute).Assembly.Location
 		};
 
 		List<MetadataReference> references = new(locations.Length);

@@ -63,6 +63,7 @@ internal sealed partial class CSharpTranslator
 				ImplementationDeclarationSyntax i => Extension(i),
 				BaseFunctionDeclarationSyntax f => Method(f, ref typeFlags),
 				PropertyDeclarationSyntax p => Property(p),
+				IndexerDeclarationSyntax ind => Indexer(ind),
 				SimpleEnumDeclarationSyntax e => Enum(e),
 				AttributeDeclarationSyntax a => AttributeClass(a),
 				FieldDeclarationSyntax f => Field(f),
@@ -82,10 +83,11 @@ internal sealed partial class CSharpTranslator
 				: ParameterList(node.ParameterList);
 
 			Sharp.BaseListSyntax? baseTypeList = BaseTypeList(node.BaseTypeList);
+			baseTypeList = AddBaseType(baseTypeList, Expressions.GlobalQualifiedName("System", "Attribute"));
 
 			var attributes = Attributes(node.Attributes);
 
-			if (flags.HasFlag(ModifierFlags.Limit))
+			if (HasFlag(flags, ModifierFlags.Limit))
 			{
 				attributes = attributes.Add(Interop.InternalInheritAttribute());
 			}
@@ -122,7 +124,7 @@ internal sealed partial class CSharpTranslator
 
 			Sharp.BaseListSyntax? baseTypeList = BaseTypeList(node.BaseTypeList);
 
-			if (flags.HasFlag(ModifierFlags.Limit))
+			if (HasFlag(flags, ModifierFlags.Limit))
 			{
 				attributes = attributes.Add(Interop.InternalInheritAttribute());
 			}
@@ -132,7 +134,7 @@ internal sealed partial class CSharpTranslator
 
 			CheckDisposablePattern(node, modifiers, ref baseTypeList, ref members, typeFlags);
 
-			if (flags.HasFlag(ModifierFlags.Data))
+			if (HasFlag(flags, ModifierFlags.Data))
 			{
 				return SyntaxFactory.RecordDeclaration(
 					attributes,
@@ -203,7 +205,7 @@ internal sealed partial class CSharpTranslator
 
 			CheckDisposablePattern(node, modifiers, ref baseTypeList, ref members, typeFlags);
 
-			if (flags.HasFlag(ModifierFlags.Data))
+			if (HasFlag(flags, ModifierFlags.Data))
 			{
 				return SyntaxFactory.RecordDeclaration(
 					Attributes(node.Attributes),
@@ -231,14 +233,10 @@ internal sealed partial class CSharpTranslator
 
 		public static Sharp.InterfaceDeclarationSyntax Interface(TraitDeclarationSyntax node)
 		{
-			CSyntaxTokenList modifiers = GetModifiers(node, out ModifierFlags flags);
+			CSyntaxTokenList modifiers = GetModifiers(node, out _);
 
 			Sharp.TypeParameterListSyntax? typeParameterList = TypeParameterList(node.TypeParameterList);
 			var constraints = ConstraintList(node.ConstraintList);
-
-			Sharp.ParameterListSyntax? parameters = node.ParameterList is null
-				? null
-				: ParameterList(node.ParameterList);
 
 			return SyntaxFactory.InterfaceDeclaration(
 				Attributes(node.Attributes),
@@ -258,7 +256,7 @@ internal sealed partial class CSharpTranslator
 			var attributes = Attributes(node.Attributes);
 			CSyntaxTokenList modifiers = GetModifiers(node, out ModifierFlags flags);
 
-			if(flags.HasFlag(ModifierFlags.Flag))
+			if(HasFlag(flags, ModifierFlags.Flag))
 			{
 				attributes.Add(Interop.FlagsAttribute());
 
@@ -311,18 +309,7 @@ internal sealed partial class CSharpTranslator
 			var attributes = Attributes(node.Attributes);
 			CSyntaxTokenList modifiers = GetModifiers(node, out ModifierFlags flags);
 
-			if (flags.HasFlag(ModifierFlags.Base))
-			{
-				if (node.ExpressionBody is null)
-				{
-					modifiers = modifiers.Add(SyntaxFactory.Token(CSyntaxKind.AbstractKeyword));
-				}
-				else
-				{
-					modifiers = modifiers.Add(SyntaxFactory.Token(CSyntaxKind.VirtualKeyword));
-					attributes = attributes.Add(Interop.MustOverrideAttribute());
-				}
-			}
+			CheckBaseKeyword(node, ref attributes, ref modifiers, flags);
 
 			if (node.ExpressionBody is not null)
 			{
@@ -334,7 +321,8 @@ internal sealed partial class CSharpTranslator
 					SyntaxFactory.Identifier(node.Identifier.Text),
 					null,
 					Statements.ExpressionBody(node.ExpressionBody),
-					null
+					null,
+					SyntaxFactory.Token(CSyntaxKind.SemicolonToken)
 				);
 			}
 
@@ -348,7 +336,8 @@ internal sealed partial class CSharpTranslator
 					SyntaxFactory.Identifier(node.Identifier.Text),
 					GenerateAccessorList(flags),
 					null,
-					Initializer(node.Initializer)
+					Initializer(node.Initializer),
+					SyntaxFactory.Token(CSyntaxKind.SemicolonToken)
 				);
 			}
 
@@ -358,30 +347,30 @@ internal sealed partial class CSharpTranslator
 			// Zubr does not support set-only properties.
 			Sharp.AccessorDeclarationSyntax getAccessor = getAccessorSource is null
 				? SyntaxFactory.AccessorDeclaration(CSyntaxKind.GetAccessorDeclaration)
-				: Accessor(getAccessorSource, CSyntaxKind.GetAccessorDeclaration);
+				: Accessor(getAccessorSource, CSyntaxKind.GetKeyword);
 
 			Sharp.AccessorDeclarationSyntax? setAccessor = null;
 
 			if (setAccessorSource is null)
 			{
-				if (flags.HasFlag(ModifierFlags.Mut))
+				if (HasFlag(flags, ModifierFlags.Mut))
 				{
 					setAccessor = SyntaxFactory.AccessorDeclaration(CSyntaxKind.SetAccessorDeclaration);
 				}
-				else if (flags.HasFlag(ModifierFlags.Init))
+				else if (HasFlag(flags, ModifierFlags.Init))
 				{
 					setAccessor = SyntaxFactory.AccessorDeclaration(CSyntaxKind.InitAccessorDeclaration);
 				}
 			}
 			else
 			{
-				if (flags.HasFlag(ModifierFlags.Init))
+				if (HasFlag(flags, ModifierFlags.Init))
 				{
-					setAccessor = Accessor(setAccessorSource, CSyntaxKind.InitAccessorDeclaration);
+					setAccessor = Accessor(setAccessorSource, CSyntaxKind.InitKeyword);
 				}
 				else
 				{
-					setAccessor = Accessor(setAccessorSource, CSyntaxKind.SetAccessorDeclaration);
+					setAccessor = Accessor(setAccessorSource, CSyntaxKind.SetKeyword);
 				}
 			}
 
@@ -397,7 +386,8 @@ internal sealed partial class CSharpTranslator
 				SyntaxFactory.Identifier(node.Identifier.Text),
 				accessorList,
 				null,
-				Initializer(node.Initializer)
+				Initializer(node.Initializer),
+				node.Initializer is null ? default : SyntaxFactory.Token(CSyntaxKind.SemicolonToken)
 			);
 
 			static AccessorDeclarationSyntax? GetAccessor(PropertyDeclarationSyntax node, TokenKind keyword)
@@ -410,14 +400,14 @@ internal sealed partial class CSharpTranslator
 				Sharp.AccessorDeclarationSyntax getAccessor = SyntaxFactory.AccessorDeclaration(CSyntaxKind.GetAccessorDeclaration);
 				Sharp.AccessorListSyntax accessorList;
 
-				if (flags.HasFlag(ModifierFlags.Mut))
+				if (HasFlag(flags, ModifierFlags.Mut))
 				{
 					accessorList = SyntaxFactory.AccessorList(SyntaxFactory.List([
 							getAccessor,
 						SyntaxFactory.AccessorDeclaration(CSyntaxKind.SetAccessorDeclaration)
 					]));
 				}
-				else if (flags.HasFlag(ModifierFlags.Init))
+				else if (HasFlag(flags, ModifierFlags.Init))
 				{
 					accessorList = SyntaxFactory.AccessorList(SyntaxFactory.List([
 						getAccessor,
@@ -431,6 +421,41 @@ internal sealed partial class CSharpTranslator
 
 				return accessorList;
 			}
+		}
+
+		public static Sharp.IndexerDeclarationSyntax Indexer(IndexerDeclarationSyntax node)
+		{
+			var attributes = Attributes(node.Attributes);
+			CSyntaxTokenList modifiers = GetModifiers(node, out ModifierFlags flags);
+
+			CheckBaseKeyword(node, ref attributes, ref modifiers, flags);
+
+			if (node.AccessorList is null)
+			{
+				return SyntaxFactory.IndexerDeclaration(
+					attributes,
+					modifiers,
+					Expressions.Type(node.Type),
+					null,
+					SyntaxFactory.Token(CSyntaxKind.ThisKeyword),
+					ParameterList(node.ParameterList),
+					null,
+					Statements.ExpressionBody(node.ExpressionBody!),
+					SyntaxFactory.Token(CSyntaxKind.SemicolonToken)
+				);
+			}
+
+			return SyntaxFactory.IndexerDeclaration(
+				attributes,
+				modifiers,
+				Expressions.Type(node.Type),
+				null,
+				SyntaxFactory.Token(CSyntaxKind.ThisKeyword),
+				ParameterList(node.ParameterList),
+				AccessorList(node.AccessorList, HasFlag(flags, ModifierFlags.Init)),
+				null,
+				default
+			);
 		}
 
 		public static Sharp.VariableDeclarationSyntax Variable(VariableDeclarationSyntax node)
@@ -451,6 +476,9 @@ internal sealed partial class CSharpTranslator
 				FunctionDeclarationSyntax f => Method(f),
 				ConstructorDeclarationSyntax c => Constructor(c),
 				DestructorDeclarationSyntax d => DestructorMethod(d, ref typeFlags),
+				CastDeclarationSyntax cast => ConversionOperator(cast),
+				OperatorDeclarationSyntax o => Operator(o),
+				InvokerDeclarationSyntax i => InvokeMethod(i),
 				_ => throw new UnreachableException()
 			};
 		}
@@ -460,18 +488,7 @@ internal sealed partial class CSharpTranslator
 			var attributes = Attributes(node.Attributes);
 			CSyntaxTokenList modifiers = GetModifiers(node, out ModifierFlags flags);
 
-			if (flags.HasFlag(ModifierFlags.Base))
-			{
-				if(node.ExpressionBody is null && node.Body is null)
-				{
-					modifiers = modifiers.Add(SyntaxFactory.Token(CSyntaxKind.AbstractKeyword));
-				}
-				else
-				{
-					modifiers = modifiers.Add(SyntaxFactory.Token(CSyntaxKind.VirtualKeyword));
-					attributes = attributes.Add(Interop.MustOverrideAttribute());
-				}
-			}
+			CheckBaseKeyword(node, ref attributes, ref modifiers, flags);
 
 			Sharp.TypeParameterListSyntax? typeParameterList = TypeParameterList(node.TypeParameterList);
 			Sharp.ParameterListSyntax parameters = SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(node.ParameterList.Parameters.Select(Parameter)));
@@ -551,6 +568,69 @@ internal sealed partial class CSharpTranslator
 			);
 		}
 
+		public static Sharp.OperatorDeclarationSyntax Operator(OperatorDeclarationSyntax node)
+		{
+			CSyntaxTokenList modifiers = GetModifiers(node, out _);
+
+			return SyntaxFactory.OperatorDeclaration(
+				Attributes(node.Attributes),
+				modifiers,
+				Expressions.Type(node.ReturnType),
+				SyntaxFactory.Token(CSyntaxKind.OperatorKeyword),
+				SyntaxFactory.Token(GetOperatorKind(node.OperatorToken.Kind)),
+				ParameterList(node.ParameterList),
+				node.Body is null ? null : Statements.Block(node.Body),
+				node.ExpressionBody is null ? null : Statements.ExpressionBody(node.ExpressionBody),
+				node.Body is null && node.ExpressionBody is null ? SyntaxFactory.Token(CSyntaxKind.SemicolonToken) : default
+			);
+		}
+
+		public static Sharp.ConversionOperatorDeclarationSyntax ConversionOperator(CastDeclarationSyntax node)
+		{
+			CSyntaxTokenList modifiers = GetModifiers(node, out ModifierFlags flags);
+
+			CSyntaxToken keyword = HasFlag(flags, ModifierFlags.Auto)
+				? SyntaxFactory.Token(CSyntaxKind.ImplicitKeyword)
+				: SyntaxFactory.Token(CSyntaxKind.ExplicitKeyword);
+
+			return SyntaxFactory.ConversionOperatorDeclaration(
+				Attributes(node.Attributes),
+				modifiers,
+				keyword,
+				default,
+				SyntaxFactory.Token(CSyntaxKind.OperatorKeyword),
+				default, // TODO: What to do with checked/unchecked?
+				Expressions.Type(node.Type),
+				ParameterList(node.ParameterList),
+				node.Body is null ? null : Statements.Block(node.Body),
+				node.ExpressionBody is null ? null : Statements.ExpressionBody(node.ExpressionBody),
+				node.Body is null && node.ExpressionBody is null ? SyntaxFactory.Token(CSyntaxKind.SemicolonToken) : default
+			);
+		}
+
+		public static Sharp.MethodDeclarationSyntax InvokeMethod(InvokerDeclarationSyntax node)
+		{
+			var attributes = Attributes(node.Attributes);
+			CSyntaxTokenList modifiers = GetModifiers(node, out ModifierFlags flags);
+
+			CheckBaseKeyword(node, ref attributes, ref modifiers, flags);
+			attributes = attributes.Add(Interop.InvokerAttribute());
+
+			return SyntaxFactory.MethodDeclaration(
+				attributes,
+				modifiers,
+				Expressions.Type(node.ReturnType),
+				default,
+				SyntaxFactory.Identifier("Invoke"),
+				default,
+				ParameterList(node.ParameterList),
+				default,
+				node.Body is null ? null : Statements.Block(node.Body),
+				node.ExpressionBody is null ? null : Statements.ExpressionBody(node.ExpressionBody),
+				node.Body is null && node.ExpressionBody is null ? SyntaxFactory.Token(CSyntaxKind.SemicolonToken) : default
+			);
+		}
+
 		public static Sharp.AttributeListSyntax AttributeList(AttributeSyntax node)
 		{
 			Sharp.AttributeArgumentListSyntax? args = node.ArgumentList is null
@@ -574,6 +654,11 @@ internal sealed partial class CSharpTranslator
 			}
 
 			return SyntaxFactory.List(list.Select(AttributeList));
+		}
+
+		public static Sharp.BracketedParameterListSyntax ParameterList(BracketParameterListSyntax node)
+		{
+			return SyntaxFactory.BracketedParameterList(SyntaxFactory.SeparatedList(node.Parameters.Select(Parameter)));
 		}
 
 		public static Sharp.ParameterListSyntax ParameterList(ParameterListSyntax node)
@@ -652,7 +737,7 @@ internal sealed partial class CSharpTranslator
 
 			bool isOpen = false;
 			bool hasAccessModifiers = false;
-			bool isPrivate = false;
+			bool isStatic = false;
 
 			for (int i = 0; i < modifiers.Count; i++)
 			{
@@ -663,7 +748,6 @@ internal sealed partial class CSharpTranslator
 					case TokenKind.PrivKeyword:
 						targetModifiers.Add(SyntaxFactory.Token(CSyntaxKind.PrivateKeyword));
 						hasAccessModifiers = true;
-						isPrivate = true;
 						break;
 
 					case TokenKind.ProtKeyword:
@@ -729,6 +813,14 @@ internal sealed partial class CSharpTranslator
 						isOpen = true;
 						break;
 
+					case TokenKind.StatKeyword:
+						isStatic = true;
+						break;
+
+					case TokenKind.AutoKeyword:
+						flags |= ModifierFlags.Auto;
+						break;
+
 					case TokenKind.MutKeyword:
 						flags |= ModifierFlags.Mut;
 						break;
@@ -757,27 +849,38 @@ internal sealed partial class CSharpTranslator
 			else
 			{
 				// Classes in C# are 'open' by default.
-				if (node is ClassDeclarationSyntax)
+				if (node is ClassDeclarationSyntax or AttributeDeclarationSyntax)
 				{
 					targetModifiers.Add(SyntaxFactory.Token(CSyntaxKind.SealedKeyword));
 				}
 			}
 
-			if(isPrivate)
+			if (!HasFlag(flags, ModifierFlags.Mut) && node is FieldDeclarationSyntax)
 			{
-				// Private properties are translated as fields, so apply 'readonly' modifier if the property is not mutable.
-				if(!flags.HasFlag(ModifierFlags.Mut) && node is PropertyDeclarationSyntax)
-				{
-					targetModifiers.Add(SyntaxFactory.Token(CSyntaxKind.ReadOnlyKeyword));
-				}
+				targetModifiers.Add(SyntaxFactory.Token(CSyntaxKind.ReadOnlyKeyword));
 			}
 
-			if (node is FunctionDeclarationSyntax && node.Parent is CompilationUnitSyntax or ModuleDeclarationSyntax)
+			if(!isStatic && ShouldAddStatic(node))
 			{
 				targetModifiers.Add(SyntaxFactory.Token(CSyntaxKind.StaticKeyword));
 			}
 
 			return SyntaxFactory.TokenList(targetModifiers.ToArray());
+
+			static bool ShouldAddStatic(SyntaxNode node)
+			{
+				if(node is FunctionDeclarationSyntax)
+				{
+					return node.Parent is CompilationUnitSyntax or ModuleDeclarationSyntax;
+				}
+
+				if(node is CastDeclarationSyntax)
+				{
+					return true;
+				}
+
+				return false;
+			}
 		}
 
 		private static Microsoft.CodeAnalysis.SyntaxList<Sharp.MemberDeclarationSyntax> Members(Syntax.Abstractions.SyntaxList<MemberDeclarationSyntax> members)
@@ -821,6 +924,56 @@ internal sealed partial class CSharpTranslator
 			);
 		}
 
+		private static void CheckBaseKeyword(BaseFunctionDeclarationSyntax node, ref Microsoft.CodeAnalysis.SyntaxList<Sharp.AttributeListSyntax> attributes, ref CSyntaxTokenList modifiers, ModifierFlags flags)
+		{
+			if (HasFlag(flags, ModifierFlags.Base))
+			{
+				if (node.ExpressionBody is null && node.Body is null)
+				{
+					modifiers = modifiers.Add(SyntaxFactory.Token(CSyntaxKind.AbstractKeyword));
+				}
+				else
+				{
+					modifiers = modifiers.Add(SyntaxFactory.Token(CSyntaxKind.VirtualKeyword));
+					attributes = attributes.Add(Interop.MustOverrideAttribute());
+				}
+			}
+		}
+
+		private static void CheckBaseKeyword(BasePropertyDeclarationSyntax node, ref Microsoft.CodeAnalysis.SyntaxList<Sharp.AttributeListSyntax> attributes, ref CSyntaxTokenList modifiers, ModifierFlags flags)
+		{
+			if (HasFlag(flags, ModifierFlags.Base))
+			{
+				if (node.ExpressionBody is null && !HasAccessorWithImplementation(node.AccessorList))
+				{
+					modifiers = modifiers.Add(SyntaxFactory.Token(CSyntaxKind.AbstractKeyword));
+				}
+				else
+				{
+					modifiers = modifiers.Add(SyntaxFactory.Token(CSyntaxKind.VirtualKeyword));
+					attributes = attributes.Add(Interop.MustOverrideAttribute());
+				}
+			}
+
+			static bool HasAccessorWithImplementation(AccessorListSyntax? node)
+			{
+				if(node is null)
+				{
+					return false;
+				}
+
+				foreach (AccessorDeclarationSyntax accessor in node.Accessors)
+				{
+					if(accessor.ExpressionBody is not null || accessor.Block is not null)
+					{
+						return true;
+					}
+				}
+
+				return false;
+			}
+		}
+
 		private static void CheckDisposablePattern(
 			TypeDeclarationSyntax node,
 			CSyntaxTokenList modifiers,
@@ -829,7 +982,7 @@ internal sealed partial class CSharpTranslator
 			TypeFlags typeFlags
 		)
 		{
-			if (typeFlags.HasFlag(TypeFlags.Disposable))
+			if (HasFlag(typeFlags, TypeFlags.Disposable))
 			{
 				if (baseTypeList is null)
 				{
@@ -845,39 +998,61 @@ internal sealed partial class CSharpTranslator
 				members = members.AddRange(Interop.DisposablePattern(isOpen));
 			}
 
-			if (typeFlags.HasFlag(TypeFlags.Destructor))
+			if (HasFlag(typeFlags, TypeFlags.Destructor))
 			{
 				members = members.Add(Interop.IDisposableDestructor(SyntaxFactory.Identifier(node.Identifier.Text)));
 			}
 		}
 
+		private static Sharp.AccessorListSyntax AccessorList(AccessorListSyntax node, bool isInit)
+		{
+			return SyntaxFactory.AccessorList(SyntaxFactory.List(node.Accessors.Select(x => Accessor(x, x.Kind switch
+			{
+				SyntaxKind.GetAccessorDeclaration => CSyntaxKind.GetKeyword,
+				SyntaxKind.SetAccessorDeclaration => isInit
+					? CSyntaxKind.InitKeyword
+					: CSyntaxKind.SetKeyword,
+				_ => throw new UnreachableException()
+			}))));
+		}
+
 		private static Sharp.AccessorDeclarationSyntax Accessor(AccessorDeclarationSyntax node, CSyntaxKind kind)
 		{
+			CSyntaxKind decl = Microsoft.CodeAnalysis.CSharp.SyntaxFacts.GetAccessorDeclarationKind(kind);
+
 			CSyntaxTokenList modifiers = GetModifiers(node, node.Modifiers, out _);
 
 			if (node.Block is not null)
 			{
-				return SyntaxFactory.AccessorDeclaration(kind,
+				return SyntaxFactory.AccessorDeclaration(decl,
 					Attributes(node.Attributes),
 					modifiers,
-					Statements.Block(node.Block)
+					SyntaxFactory.Token(kind),
+					Statements.Block(node.Block),
+					null,
+					SyntaxFactory.Token(CSyntaxKind.SemicolonToken)
 				);
 			}
 
 			if (node.ExpressionBody is not null)
 			{
-				return SyntaxFactory.AccessorDeclaration(kind,
+				return SyntaxFactory.AccessorDeclaration(decl,
 					Attributes(node.Attributes),
 					modifiers,
-					Statements.ExpressionBody(node.ExpressionBody)
+					SyntaxFactory.Token(kind),
+					null,
+					Statements.ExpressionBody(node.ExpressionBody),
+					SyntaxFactory.Token(CSyntaxKind.SemicolonToken)
 				);
 			}
 
-			return SyntaxFactory.AccessorDeclaration(kind,
+			return SyntaxFactory.AccessorDeclaration(decl,
 				Attributes(node.Attributes),
 				modifiers,
+				SyntaxFactory.Token(kind),
 				null,
-				null
+				null,
+				SyntaxFactory.Token(CSyntaxKind.SemicolonToken)
 			);
 		}
 
@@ -897,6 +1072,17 @@ internal sealed partial class CSharpTranslator
 			})));
 		}
 
+		private static Sharp.BaseListSyntax AddBaseType(Sharp.BaseListSyntax? node, Sharp.TypeSyntax type)
+		{
+			if(node is null)
+			{
+				return SyntaxFactory.BaseList(SyntaxFactory.SingletonSeparatedList<Sharp.BaseTypeSyntax>(SyntaxFactory.SimpleBaseType(type)));
+			}
+
+			var baseTypes = node.Types;
+			return node.WithTypes(baseTypes.Insert(0, SyntaxFactory.SimpleBaseType(type)));
+		}
+
 		[return: NotNullIfNotNull(nameof(node))]
 		private static Sharp.EqualsValueClauseSyntax? Initializer(EqualsValueClauseSyntax? node)
 		{
@@ -907,6 +1093,69 @@ internal sealed partial class CSharpTranslator
 
 			return SyntaxFactory.EqualsValueClause(Expressions.Expression(node.Value));
 		}
+
+		private static CSyntaxKind GetOperatorKind(TokenKind kind)
+		{
+			return kind switch
+			{
+				TokenKind.EqualsEqualsToken => CSyntaxKind.EqualsEqualsToken,
+				TokenKind.EqualsGreaterThanToken => CSyntaxKind.EqualsGreaterThanToken,
+				TokenKind.ExclamationToken => CSyntaxKind.ExclamationToken,
+				TokenKind.ExclamationEqualsToken => CSyntaxKind.ExclamationEqualsToken,
+				TokenKind.GreaterThanToken => CSyntaxKind.GreaterThanToken,
+				TokenKind.GreaterThanGreaterThanToken => CSyntaxKind.GreaterThanGreaterThanToken,
+				TokenKind.GreaterThanGreaterThanGreaterThanToken => CSyntaxKind.GreaterThanGreaterThanGreaterThanToken,
+				TokenKind.GreaterThanEqualsToken => CSyntaxKind.GreaterThanEqualsToken,
+				TokenKind.GreaterThanGreaterThanEqualsToken => CSyntaxKind.GreaterThanGreaterThanEqualsToken,
+				TokenKind.GreaterThanGreaterThanGreaterThanEqualsToken => CSyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken,
+				TokenKind.LessThanToken => CSyntaxKind.LessThanToken,
+				TokenKind.LessThanLessThanToken => CSyntaxKind.LessThanLessThanToken,
+				TokenKind.LessThanEqualsToken => CSyntaxKind.LessThanEqualsToken,
+				TokenKind.LessThanLessThanEqualsToken => CSyntaxKind.LessThanLessThanEqualsToken,
+				TokenKind.PlusToken => CSyntaxKind.PlusToken,
+				TokenKind.PlusPlusToken => CSyntaxKind.PlusPlusToken,
+				TokenKind.PlusEqualsToken => CSyntaxKind.PlusEqualsToken,
+				TokenKind.MinusToken => CSyntaxKind.MinusToken,
+				TokenKind.MinusMinusToken => CSyntaxKind.MinusMinusToken,
+				TokenKind.MinusEqualsToken => CSyntaxKind.MinusEqualsToken,
+				TokenKind.AsteriskToken => CSyntaxKind.AsteriskToken,
+				TokenKind.AsteriskEqualsToken => CSyntaxKind.AsteriskEqualsToken,
+				TokenKind.PercentToken => CSyntaxKind.PercentToken,
+				TokenKind.PercentEqualsToken => CSyntaxKind.PercentEqualsToken,
+				TokenKind.CaretToken => CSyntaxKind.CaretToken,
+				TokenKind.CaretEqualsToken => CSyntaxKind.CaretEqualsToken,
+				TokenKind.BarToken => CSyntaxKind.BarToken,
+				TokenKind.BarEqualsToken => CSyntaxKind.BarEqualsToken,
+				TokenKind.SlashToken => CSyntaxKind.SlashToken,
+				TokenKind.SlashEqualsToken => CSyntaxKind.SlashEqualsToken,
+				TokenKind.AmpersandToken => CSyntaxKind.AmpersandToken,
+				TokenKind.AmpersandEqualsToken => CSyntaxKind.AmpersandEqualsToken,
+				TokenKind.TildeToken => CSyntaxKind.TildeToken,
+				TokenKind.TrueKeyword => CSyntaxKind.TrueKeyword,
+				TokenKind.FalseKeyword => CSyntaxKind.FalseKeyword,
+				_ => throw new UnreachableException()
+			};
+		}
+	}
+
+	private static bool HasFlag(ModifierFlags flags, ModifierFlags target)
+	{
+		if (flags == default)
+		{
+			return false;
+		}
+
+		return (flags & target) == target;
+	}
+
+	private static bool HasFlag(TypeFlags flags, TypeFlags target)
+	{
+		if (flags == default)
+		{
+			return false;
+		}
+
+		return (flags & target) == target;
 	}
 
 	[Flags]
@@ -924,7 +1173,9 @@ internal sealed partial class CSharpTranslator
 
 		Data = 16,
 
-		Init = 32
+		Init = 32,
+
+		Auto = 64,
 	}
 
 	[Flags]

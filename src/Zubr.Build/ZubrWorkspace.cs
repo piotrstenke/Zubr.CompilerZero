@@ -10,6 +10,8 @@ namespace Zubr.Build;
 
 public sealed partial class ZubrWorkspace
 {
+	private readonly ZubrManifest _manifest;
+
 	public string Name { get; }
 
 	public string RootPath { get; }
@@ -18,26 +20,33 @@ public sealed partial class ZubrWorkspace
 
 	public string OutputPath { get; }
 
-	public ZubrManifest Manifest { get; }
-
 	public ILogger Logger { get; }
+
+	public ZubrPackage Package { get; }
+
+	public ZubrRuntime Runtime { get; }
 
 	internal ZubrWorkspace(
 		string name,
 		string rootPath,
 		string packageFilePath,
 		ZubrManifest manifest,
+		ZubrRuntime runtime,
 		ILogger logger
 	)
 	{
+		_manifest = manifest;
+
 		Name = name;
 		RootPath = rootPath;
 		PackageFilePath = packageFilePath;
-		Manifest = manifest;
 		Logger = logger;
 		OutputPath = string.IsNullOrWhiteSpace(manifest.Settings?.OutputPath)
 			? Path.Combine(rootPath, "out")
 			: manifest.Settings.OutputPath;
+
+		Package = manifest.Package ?? new();
+		Runtime = runtime;
 	}
 
 	public IEnumerable<string> GetFiles()
@@ -50,30 +59,33 @@ public sealed partial class ZubrWorkspace
 		List<SyntaxTree> syntaxTrees = GetSyntaxTrees();
 
 		Compilation compilation = Compilation.Create(
-			assemblyName: Name,
+			assemblyName: Name + ".dll",
 			languageVersion: GetLanguageVersion(),
-			outputKind: Manifest.Settings?.OutputKind ?? default,
+			outputKind: _manifest.Settings?.OutputKind ?? default,
 			syntaxTrees: syntaxTrees
 		);
 
 		return compilation;
 	}
 
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static")]
 	public IEmitter CreateEmitter()
 	{
-		CSharpEmitter emitter = new();
-		return emitter;
+		if(Runtime.IsDotNet())
+		{
+			return new CSharpEmitter();
+		}
+
+		throw new InvalidOperationException("Only dotnet runtime is supported");
 	}
 
 	private LanguageVersion GetLanguageVersion()
 	{
-		if(Manifest.Settings?.LanguageVersion is null || Manifest.Settings.LanguageVersion == LanguageVersion.Default)
+		if(_manifest.Settings?.LanguageVersion is null || _manifest.Settings.LanguageVersion == LanguageVersion.Default)
 		{
 			return LanguageVersion.Alpha;
 		}
 
-		return Manifest.Settings.LanguageVersion;
+		return _manifest.Settings.LanguageVersion;
 	}
 
 	private List<SyntaxTree> GetSyntaxTrees()

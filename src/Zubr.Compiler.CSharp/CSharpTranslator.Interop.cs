@@ -28,6 +28,11 @@ partial class CSharpTranslator
 			return Attribute("System", "Flags");
 		}
 
+		public static Sharp.AttributeListSyntax InvokerAttribute()
+		{
+			return Attribute("zubr", "interop", "csharp", "Invoker");
+		}
+
 		public static Sharp.SimpleBaseTypeSyntax ImplementIDisposable()
 		{
 			return SyntaxFactory.SimpleBaseType(Expressions.GlobalQualifiedName("System", "IDisposable"));

@@ -227,7 +227,7 @@ internal sealed partial class CSharpTranslator
 			return SyntaxFactory.NullableType(Type(node.ElementType));
 		}
 
-		public static Sharp.ArrayTypeSyntax ArrayType(ArrayTypeSyntax node)
+		public static Sharp.TypeSyntax ArrayType(ArrayTypeSyntax node)
 		{
 			return ArrayType(node.ElementType, node.Ranks);
 		}

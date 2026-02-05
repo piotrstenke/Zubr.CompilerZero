@@ -38,7 +38,7 @@ partial class ZubrWorkspace
 		ZubrManifest manifest;
 		string packageFilePath;
 
-		if (attr.HasFlag(FileAttributes.Directory))
+		if (attr != default && attr.HasFlag(FileAttributes.Directory))
 		{
 			manifest = LoadManifestFromDirectory(path, out packageFilePath, out errors);
 		}
@@ -54,7 +54,19 @@ partial class ZubrWorkspace
 
 		string rootPath = Path.GetDirectoryName(packageFilePath)!;
 
-		return new(name, rootPath, packageFilePath, manifest, logger);
+		string? target = manifest.Settings?.Target;
+
+		if(string.IsNullOrWhiteSpace(target))
+		{
+			throw new WorkspaceException("Target runtime must be specified");
+		}
+
+		if(!ZubrRuntime.TryParse(target, out ZubrRuntime runtime))
+		{
+			throw new WorkspaceException($"Unknown runtime: '{target}'");
+		}
+
+		return new(name, rootPath, packageFilePath, manifest, runtime, logger);
 	}
 
 	private static ZubrManifest LoadManifestFromDirectory(string path, out string packageFilePath, out ErrorMessage[]? errors)

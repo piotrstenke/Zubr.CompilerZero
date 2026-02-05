@@ -11,5 +11,6 @@
     <Project Path="src/Zubr.Cli/Zubr.Cli.csproj" Id="85be9eb7-92ea-429f-8bda-148e61e9781f" />
     <Project Path="src/Zubr.Compiler.CSharp/Zubr.Compiler.CSharp.csproj" Id="33d0fcf0-25ba-420d-b2a7-39d4122417b1" />
     <Project Path="src/Zubr.Compiler/Zubr.Compiler.csproj" />
+    <Project Path="src/Zubr.Interop.CSharp/Zubr.Interop.CSharp.csproj" Id="9011269b-feff-47f9-a91c-fda5675a4fbf" />
   </Folder>
 </Solution>

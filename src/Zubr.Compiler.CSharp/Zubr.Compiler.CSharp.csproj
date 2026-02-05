@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Zubr.Compiler\Zubr.Compiler.csproj" />
+    <ProjectReference Include="..\Zubr.Interop.CSharp\Zubr.Interop.CSharp.csproj" />
   </ItemGroup>
 
 </Project>
