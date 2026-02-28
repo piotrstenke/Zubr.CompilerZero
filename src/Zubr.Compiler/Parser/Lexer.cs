@@ -371,7 +371,7 @@ internal struct Lexer
 	{
 		string identifier = ReadIdentifier();
 
-		TokenKind keyword = SyntaxFacts.GetKeywordKind(identifier);
+		TokenKind keyword = SyntaxFacts.GetKeyword(identifier);
 
 		if (keyword != TokenKind.None)
 		{

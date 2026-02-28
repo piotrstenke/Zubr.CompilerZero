@@ -345,7 +345,7 @@ public static class SyntaxFacts
 		return value == TokenKind.BadToken || value == TokenKind.MissingToken;
 	}
 
-	public static TokenKind GetKeywordKind(string value)
+	public static TokenKind GetKeyword(string value)
 	{
 		return value switch
 		{
@@ -425,6 +425,7 @@ public static class SyntaxFacts
 			"stat" => TokenKind.StatKeyword,
 			"cast" => TokenKind.CastKeyword,
 			"oper" => TokenKind.OperKeyword,
+			"goto" => TokenKind.GotoKeyword,
 			_ => TokenKind.None
 		};
 	}

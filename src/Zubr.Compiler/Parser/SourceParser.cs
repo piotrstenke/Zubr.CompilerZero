@@ -1230,6 +1230,7 @@ internal sealed class SourceParser
 			TokenKind.WhileKeyword => ParseWhileStatement(),
 			TokenKind.DoKeyword => ParseDoStatement(),
 			TokenKind.ForKeyword => ParseForStatement(),
+			TokenKind.GotoKeyword => ParseGotoStatement(),
 			TokenKind.IdentifierToken => ParseLocalOrExpressionStatement(),
 			TokenKind.ReturnKeyword => ParseReturnStatement(),
 			TokenKind.NextKeyword => ParseNextStatement(),
@@ -1280,9 +1281,22 @@ internal sealed class SourceParser
 	{
 		Token token = Peek();
 
-		if (token.IsPredefinedType() && Peek(1).Kind != TokenKind.DotToken)
+		if (token.IsKind(TokenKind.IdentifierToken) && PeekKind(TokenKind.ColonToken, 1))
 		{
-			return ParseLocalDeclaration();
+			return ParseLabelStatement();
+		}
+
+		if (token.IsPredefinedType())
+		{
+			if(!PeekKind(TokenKind.DotToken, 1))
+			{
+				return ParseLocalDeclaration();
+			}
+
+			if(PeekKind(TokenKind.ColonToken, 1))
+			{
+				return ParseLabelStatement();
+			}
 		}
 
 		ExpressionSyntax expr = ParseExpression();
@@ -1378,6 +1392,31 @@ internal sealed class SourceParser
 		TextSpan span = GetSpan(doKeyword, semicolon);
 
 		return new(_tree, span, doKeyword, statement, whileKeyword, openParen, condition, closeParen, semicolon);
+	}
+
+	private GotoStatementSyntax ParseGotoStatement()
+	{
+		Token keyword = EatToken(TokenKind.GotoKeyword);
+
+		Token identifier = EatToken(TokenKind.IdentifierToken);
+
+		Token semicolon = EatToken(TokenKind.SemicolonToken);
+
+		TextSpan span = GetSpan(keyword, semicolon);
+		return new(_tree, span, keyword, identifier, semicolon);
+	}
+
+	private LabelStatementSyntax ParseLabelStatement()
+	{
+		Token identifier = EatToken(TokenKind.IdentifierToken);
+
+		Token colon = EatToken(TokenKind.ColonToken);
+
+		StatementSyntax statement = ParseStatement();
+
+		TextSpan span = GetSpan(identifier, statement);
+
+		return new(_tree, span, identifier, colon, statement);
 	}
 
 	private ForStatementSyntax ParseForStatement()

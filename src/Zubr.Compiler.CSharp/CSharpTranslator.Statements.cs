@@ -2,7 +2,6 @@
 using Microsoft.CodeAnalysis.CSharp;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection.Metadata;
 using Zubr.Compiler.Syntax;
 using Zubr.Compiler.Syntax.Abstractions;
 
@@ -32,6 +31,8 @@ internal sealed partial class CSharpTranslator
 				ForStatementSyntax f => ForEach(f),
 				ExpressionStatementSyntax expr => Expression(expr),
 				LocalFunctionStatementSyntax lf => LocalFunction(lf),
+				GotoStatementSyntax g => Goto(g),
+				LabelStatementSyntax l => Label(l),
 				_ => throw new UnreachableException()
 			};
 		}
@@ -85,6 +86,16 @@ internal sealed partial class CSharpTranslator
 			}
 
 			return @if;
+		}
+
+		public static Sharp.GotoStatementSyntax Goto(GotoStatementSyntax node)
+		{
+			return SyntaxFactory.GotoStatement(CSyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(node.Identifier.Text));
+		}
+
+		public static Sharp.LabeledStatementSyntax Label(LabelStatementSyntax node)
+		{
+			return SyntaxFactory.LabeledStatement(node.Identifier.Text, Statement(node.Statement));
 		}
 
 		public static Sharp.WhileStatementSyntax While(WhileStatementSyntax node)

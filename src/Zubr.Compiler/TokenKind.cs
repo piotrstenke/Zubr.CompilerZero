@@ -302,6 +302,9 @@ public enum TokenKind : uint
 	// let
 	LetKeyword,
 
+	// goto
+	GotoKeyword,
+
 	// if
 	IfKeyword,
 
