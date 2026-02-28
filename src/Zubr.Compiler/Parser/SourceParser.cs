@@ -586,12 +586,16 @@ internal sealed class SourceParser
 				break;
 			}
 
-			EatToken(TokenKind.CommaToken);
+			if(!EatToken(TokenKind.CommaToken, out token))
+			{
+				parameters.Add((typeParameter, default));
+				break;
+			}
 
 			parameters.Add((typeParameter, token));
 		}
 
-		Token greaterThanToken = EatToken();
+		Token greaterThanToken = EatToken(TokenKind.GreaterThanToken);
 
 		TextSpan span = GetSpan(lessThanToken, greaterThanToken);
 
@@ -2606,6 +2610,21 @@ internal sealed class SourceParser
 
 		AcceptContextualKeyword(ref token);
 		return token;
+	}
+
+	private bool EatToken(TokenKind kind, out Token token)
+	{
+		ref readonly Token current = ref Peek();
+
+		if (current.Kind != kind)
+		{
+			token = MissingTokenWithError(current);
+			return false;
+		}
+
+		EatToken();
+		token = current;
+		return true;
 	}
 
 	private Token EatToken(TokenKind kind)

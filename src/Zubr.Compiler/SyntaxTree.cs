@@ -88,13 +88,13 @@ public sealed class SyntaxTree
 
 	private int GetLine(int position)
 	{
-		int i = 0;
+		int i = 1;
 
 		while (i < _lineStartPositions.Length)
 		{
-			if (_lineStartPositions[i] > position)
+			if (_lineStartPositions[i] >= position)
 			{
-				return i;
+				return i - 1;
 			}
 
 			i++;

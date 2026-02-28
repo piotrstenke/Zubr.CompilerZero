@@ -41,9 +41,7 @@ public sealed partial class ZubrWorkspace
 		RootPath = rootPath;
 		PackageFilePath = packageFilePath;
 		Logger = logger;
-		OutputPath = string.IsNullOrWhiteSpace(manifest.Settings?.OutputPath)
-			? Path.Combine(rootPath, "out")
-			: manifest.Settings.OutputPath;
+		OutputPath = GetOutputPath(manifest, rootPath);
 
 		Package = manifest.Package ?? new();
 		Runtime = runtime;
@@ -106,11 +104,35 @@ public sealed partial class ZubrWorkspace
 				continue;
 			}
 
-			Logger.LogInfo($"Parsing syntax tree at path: '{file}'");
+			Logger.LogDebug($"Parsing syntax tree at path: '{file}'");
 			SyntaxTree tree = SyntaxTree.Parse(SourceText.FromSource(content, file));
 			syntaxTrees.Add(tree);
 		}
 
 		return syntaxTrees;
+	}
+
+	private static string GetOutputPath(ZubrManifest manifest, string rootPath)
+	{
+		if(string.IsNullOrWhiteSpace(manifest.Settings?.OutputPath))
+		{
+			return Path.Combine(rootPath, "out");
+		}
+
+		return Path.Combine(rootPath, FormatPath(manifest.Settings.OutputPath));
+	}
+
+	private static string FormatPath(string template)
+	{
+		string configuration =
+#if RELEASE
+			"Release";
+#else
+			"Debug";
+#endif
+
+		return template
+			.Replace("/", "\\")
+			.Replace("${Configuration}", configuration);
 	}
 }

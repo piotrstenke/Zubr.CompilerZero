@@ -38,10 +38,10 @@ partial class CSharpTranslator
 			return SyntaxFactory.SimpleBaseType(Expressions.GlobalQualifiedName("System", "IDisposable"));
 		}
 
-		public static IEnumerable<Sharp.MemberDeclarationSyntax> DisposablePattern(bool isOpen)
+		public static IEnumerable<Sharp.MemberDeclarationSyntax> DisposablePattern(bool isOpen, bool unmanaged)
 		{
 			yield return SyntaxFactory.ParseMemberDeclaration(
-@"private bool _disposed")!;
+@"private bool _disposed;")!;
 
 			yield return SyntaxFactory.ParseMemberDeclaration(
 @"public void free()
@@ -51,7 +51,7 @@ partial class CSharpTranslator
 }")!;
 
 			yield return SyntaxFactory.ParseMemberDeclaration(
-@"void IDisposable.Dispose()
+@"void global::System.IDisposable.Dispose()
 {
 	free();
 }")!;
@@ -60,7 +60,9 @@ partial class CSharpTranslator
 				? "protected virtual"
 				: "private";
 
-			yield return SyntaxFactory.ParseMemberDeclaration(
+			if(unmanaged)
+			{
+				yield return SyntaxFactory.ParseMemberDeclaration(
 modifiers + @" void free(bool disposing)
 {
 	if(_disposed)
@@ -74,7 +76,28 @@ modifiers + @" void free(bool disposing)
 	}
 
 	free_unmanaged();
+
+	_disposed = true;
 }")!;
+			}
+			else
+			{
+				yield return SyntaxFactory.ParseMemberDeclaration(
+modifiers + @" void free(bool disposing)
+{
+	if(_disposed)
+	{
+		return;
+	}
+
+	if(disposing)
+	{
+		free_managed();
+	}
+
+	_disposed = true;
+}")!;
+			}
 		}
 
 		public static Sharp.DestructorDeclarationSyntax IDisposableDestructor(SyntaxToken identifier)

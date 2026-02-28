@@ -14,7 +14,7 @@ public readonly struct Token
 
 	public TokenKind Kind { get; }
 
-	public TokenKind ContextualKind => SyntaxFacts.GetContextualKeyword(this);
+	public TokenKind ContextualKind => SyntaxFacts.GetContextualKind(this);
 
 	public int Length => Text.Length;
 

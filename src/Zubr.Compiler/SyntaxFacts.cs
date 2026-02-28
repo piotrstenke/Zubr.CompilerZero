@@ -23,14 +23,21 @@ public static class SyntaxFacts
 		return IsBetween(value, KEYWORDS_START, KEYWORDS_END);
 	}
 
-	public static TokenKind GetContextualKeyword(this in Token token)
+	public static TokenKind GetContextualKind(this in Token token)
 	{
 		if (!token.IsKind(TokenKind.IdentifierToken))
 		{
 			return token.Kind;
 		}
 
-		return GetKeyword(token.Text);
+		TokenKind kind = GetKeyword(token.Text);
+
+		if(kind == default)
+		{
+			return token.Kind;
+		}
+
+		return kind;
 	}
 
 	public static bool IsContextualKeyword(this in Token token)
@@ -56,7 +63,11 @@ public static class SyntaxFacts
 			value == TokenKind.FileKeyword ||
 			value == TokenKind.AssemblyKeyword ||
 			value == TokenKind.OverKeyword ||
-			value == TokenKind.FlagKeyword;
+			value == TokenKind.FlagKeyword ||
+			value == TokenKind.OpenKeyword ||
+			value == TokenKind.LimitKeyword ||
+			value == TokenKind.ScopedKeyword ||
+			value == TokenKind.FinalKeyword;
 	}
 
 	public static bool IsLiteralExpression(SyntaxKind value)
@@ -336,7 +347,7 @@ public static class SyntaxFacts
 
 	public static bool IsModifier(this in Token token)
 	{
-		return IsModifier(token.Kind);
+		return IsModifier(token.ContextualKind);
 	}
 
 	public static bool IsModifier(TokenKind value)

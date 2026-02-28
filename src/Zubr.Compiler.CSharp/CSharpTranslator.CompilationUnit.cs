@@ -8,26 +8,34 @@ using Zubr.Compiler.Syntax.Abstractions;
 using CSyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 using Sharp = Microsoft.CodeAnalysis.CSharp.Syntax;
 
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-
 namespace Zubr.Compiler.CSharp;
 
 internal sealed partial class CSharpTranslator
 {
 	private static Sharp.CompilationUnitSyntax Translate(CompilationUnitSyntax node)
 	{
-		return CompilationUnit()
-			.WithUsings(List(node.Uses.Select(x =>
-			{
-				if (x.Alias is null)
-				{
-					return UsingDirective(Expressions.Name(x.Name));
-				}
-
-				return UsingDirective(NameEquals(Expressions.IdentifierName(x.Alias)), Expressions.Name(x.Name));
-			})))
-			.WithMembers(List(GetCompilationUnitMembers(node)))
+		return SyntaxFactory.CompilationUnit()
+			.WithUsings(SyntaxFactory.List(node.Uses.Select(UsingDirective)))
+			.WithMembers(SyntaxFactory.List(GetCompilationUnitMembers(node)))
 			.NormalizeWhitespace();
+	}
+
+	private static Sharp.UsingDirectiveSyntax UsingDirective(UseDirectiveSyntax x)
+	{
+		if (x.Alias is null)
+		{
+			return SyntaxFactory.UsingDirective(Expressions.Name(x.Name));
+		}
+
+		if (x.ModuleName is null)
+		{
+			return SyntaxFactory.UsingDirective(SyntaxFactory.NameEquals(Expressions.IdentifierName(x.Alias)), Expressions.Name(x.Name));
+		}
+
+		return SyntaxFactory.UsingDirective(
+			SyntaxFactory.NameEquals(Expressions.IdentifierName(x.Alias)),
+			SyntaxFactory.QualifiedName(Expressions.Name(x.ModuleName), Expressions.SimpleName((SimpleNameSyntax)x.Name)) // TODO: Support non-simple names.
+		);
 	}
 
 	private static List<Sharp.MemberDeclarationSyntax> GetCompilationUnitMembers(CompilationUnitSyntax node)
@@ -100,9 +108,9 @@ internal sealed partial class CSharpTranslator
 
 	private static Sharp.ClassDeclarationSyntax GlobalFunctionContainerType(List<Sharp.MethodDeclarationSyntax> globalFunctions)
 	{
-		return ClassDeclaration(Identifier("TopLevel"))
-			.WithModifiers(TokenList(Token(CSyntaxKind.StaticKeyword), Token(CSyntaxKind.PartialKeyword)))
-			.WithMembers(List<Sharp.MemberDeclarationSyntax>(globalFunctions));
+		return SyntaxFactory.ClassDeclaration(SyntaxFactory.Identifier("TopLevel"))
+			.WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(CSyntaxKind.StaticKeyword), SyntaxFactory.Token(CSyntaxKind.PartialKeyword)))
+			.WithMembers(SyntaxFactory.List<Sharp.MemberDeclarationSyntax>(globalFunctions));
 	}
 
 	private static void AddModuleMembers(

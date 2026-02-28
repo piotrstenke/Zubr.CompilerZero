@@ -93,7 +93,7 @@ internal sealed partial class CSharpTranslator
 			}
 
 			TypeFlags typeFlags = default;
-			var members = Members(node.Members, ref typeFlags);
+			var members = MembersIncludingParameters(node.Members, node.ParameterList, ref typeFlags);
 
 			CheckDisposablePattern(node, modifiers, ref baseTypeList, ref members, typeFlags);
 
@@ -761,8 +761,16 @@ internal sealed partial class CSharpTranslator
 						break;
 
 					case TokenKind.PubKeyword:
+
+						// Destructor method in C# must not be public.
+						if (node is DestructorDeclarationSyntax)
+						{
+							continue;
+						}
+
 						targetModifiers.Add(SyntaxFactory.Token(CSyntaxKind.PublicKeyword));
 						hasAccessModifiers = true;
+
 						break;
 
 					case TokenKind.OverKeyword:
@@ -806,6 +814,8 @@ internal sealed partial class CSharpTranslator
 							// Base keyword is handled by the property/function.
 							flags |= ModifierFlags.Base;
 						}
+
+						isOpen = true;
 
 						break;
 
@@ -855,12 +865,24 @@ internal sealed partial class CSharpTranslator
 				}
 			}
 
-			if (!HasFlag(flags, ModifierFlags.Mut) && node is FieldDeclarationSyntax)
+			if(node is FieldDeclarationSyntax)
 			{
-				targetModifiers.Add(SyntaxFactory.Token(CSyntaxKind.ReadOnlyKeyword));
+				if(!hasAccessModifiers)
+				{
+					targetModifiers.Add(SyntaxFactory.Token(CSyntaxKind.PrivateKeyword));
+				}
+
+				if(!HasFlag(flags, ModifierFlags.Mut))
+				{
+					targetModifiers.Add(SyntaxFactory.Token(CSyntaxKind.ReadOnlyKeyword));
+				}
+			}
+			else if(node is DestructorDeclarationSyntax)
+			{
+				targetModifiers.Add(SyntaxFactory.Token(CSyntaxKind.PrivateKeyword));
 			}
 
-			if(!isStatic && ShouldAddStatic(node))
+			if (!isStatic && ShouldAddStatic(node))
 			{
 				targetModifiers.Add(SyntaxFactory.Token(CSyntaxKind.StaticKeyword));
 			}
@@ -905,6 +927,51 @@ internal sealed partial class CSharpTranslator
 
 			return SyntaxFactory.List(list);
 		}
+
+		private static Microsoft.CodeAnalysis.SyntaxList<Sharp.MemberDeclarationSyntax> MembersIncludingParameters(Syntax.Abstractions.SyntaxList<MemberDeclarationSyntax> members, ParameterListSyntax? parameterList, ref TypeFlags typeFlags)
+		{
+			if (parameterList is null || parameterList.Parameters.Count == 0)
+			{
+				return Members(members, ref typeFlags);
+			}
+
+			List<Sharp.MemberDeclarationSyntax> list;
+
+			if (members.IsDefaultOrEmpty)
+			{
+				list = new(parameterList.Parameters.Count);
+			}
+			else
+			{
+				list = new(members.Count + parameterList.Parameters.Count);
+			}
+		
+			foreach (ParameterSyntax parameter in parameterList.Parameters)
+			{
+				list.Add(SyntaxFactory.PropertyDeclaration(
+					default,
+					SyntaxFactory.TokenList(SyntaxFactory.Token(CSyntaxKind.PublicKeyword)),
+					Expressions.Type(parameter.Type),
+					default,
+					SyntaxFactory.Identifier(parameter.Identifier.Text),
+					SyntaxFactory.AccessorList(SyntaxFactory.SingletonList(SyntaxFactory.AccessorDeclaration(CSyntaxKind.GetAccessorDeclaration))),
+					default,
+					SyntaxFactory.EqualsValueClause(SyntaxFactory.IdentifierName(parameter.Identifier.Text)),
+					SyntaxFactory.Token(CSyntaxKind.SemicolonToken))
+				);
+			}
+
+			if (!members.IsDefault)
+			{
+				foreach (MemberDeclarationSyntax member in members)
+				{
+					list.Add(Member(member, ref typeFlags));
+				}
+			}
+
+			return SyntaxFactory.List(list);
+		}
+
 
 		private static Sharp.EnumMemberDeclarationSyntax EnumMember(SimpleEnumMemberDeclarationSyntax node)
 		{
@@ -995,7 +1062,7 @@ internal sealed partial class CSharpTranslator
 
 				bool isOpen = node is ClassDeclarationSyntax && !modifiers.Any(CSyntaxKind.SealedKeyword);
 
-				members = members.AddRange(Interop.DisposablePattern(isOpen));
+				members = members.AddRange(Interop.DisposablePattern(isOpen, HasFlag(typeFlags, TypeFlags.Destructor)));
 			}
 
 			if (HasFlag(typeFlags, TypeFlags.Destructor))
