@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -12,7 +13,7 @@ public sealed class BinaryExpressionSyntax : ExpressionSyntax
 
 	public ExpressionSyntax Right { get; }
 
-	internal BinaryExpressionSyntax(SyntaxKind kind, ExpressionSyntax left, Token operatorToken, ExpressionSyntax right)
+	internal BinaryExpressionSyntax(SyntaxTree tree, TextSpan span, SyntaxKind kind, ExpressionSyntax left, Token operatorToken, ExpressionSyntax right) : base(tree, span)
 	{
 		Kind = kind;
 		Left = left;

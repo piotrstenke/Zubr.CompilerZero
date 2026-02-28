@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -10,7 +11,7 @@ public sealed class ArrowExpressionClauseSyntax : SyntaxNode
 
 	public ExpressionSyntax Expression { get; }
 
-	internal ArrowExpressionClauseSyntax(Token arrowToken, ExpressionSyntax expression)
+	internal ArrowExpressionClauseSyntax(SyntaxTree tree, TextSpan span, Token arrowToken, ExpressionSyntax expression) : base(tree, span)
 	{
 		ArrowToken = arrowToken;
 		Expression = expression;

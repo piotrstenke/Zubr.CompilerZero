@@ -24,7 +24,7 @@ internal sealed partial class CSharpTranslator
 
 	public CSharpSyntaxTree Translate(SyntaxTree syntaxTree)
 	{
-		CompilationUnitSyntax root = Translate(syntaxTree.Root);
+		CompilationUnitSyntax root = Translate((Syntax.CompilationUnitSyntax)syntaxTree.Root);
 
 		return (CSharpSyntaxTree)CSharpSyntaxTree.Create(
 			root,

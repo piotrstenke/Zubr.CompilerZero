@@ -1,4 +1,6 @@
-﻿namespace Zubr.Compiler.Syntax;
+﻿using Zubr.Compiler.Text;
+
+namespace Zubr.Compiler.Syntax;
 
 public sealed class TypeParameterSyntax : SyntaxNode
 {
@@ -6,7 +8,7 @@ public sealed class TypeParameterSyntax : SyntaxNode
 
 	public Token Identifier { get; }
 
-	internal TypeParameterSyntax(Token identifier)
+	internal TypeParameterSyntax(SyntaxTree tree, TextSpan span, Token identifier) : base(tree, span)
 	{
 		Identifier = identifier;
 	}

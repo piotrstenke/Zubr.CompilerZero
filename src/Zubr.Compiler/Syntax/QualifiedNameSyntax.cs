@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -12,7 +13,7 @@ public sealed class QualifiedNameSyntax : NameSyntax
 
 	public SimpleNameSyntax Right { get; }
 
-	internal QualifiedNameSyntax(NameSyntax left, Token dotToken, SimpleNameSyntax right)
+	internal QualifiedNameSyntax(SyntaxTree tree, TextSpan span, NameSyntax left, Token dotToken, SimpleNameSyntax right) : base(tree, span)
 	{
 		Left = left;
 		DotToken = dotToken;

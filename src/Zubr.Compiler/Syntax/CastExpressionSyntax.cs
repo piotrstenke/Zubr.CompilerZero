@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -14,7 +15,7 @@ public sealed class CastExpressionSyntax : ExpressionSyntax
 
 	public ExpressionSyntax Expression { get; }
 
-	internal CastExpressionSyntax(Token openParenToken, TypeSyntax type, Token closeParenToken, ExpressionSyntax expression)
+	internal CastExpressionSyntax(SyntaxTree tree, TextSpan span, Token openParenToken, TypeSyntax type, Token closeParenToken, ExpressionSyntax expression) : base(tree, span)
 	{
 		OpenParenToken = openParenToken;
 		Type = type;

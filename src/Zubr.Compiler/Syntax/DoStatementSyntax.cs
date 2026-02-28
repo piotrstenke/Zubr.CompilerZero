@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -20,7 +21,7 @@ public sealed class DoStatementSyntax : StatementSyntax
 
 	public Token SemicolonToken { get; }
 
-	internal DoStatementSyntax(Token doKeyword, StatementSyntax statement, Token whileKeyword, Token openParenToken, ExpressionSyntax condition, Token closeParenToken, Token semicolonToken)
+	internal DoStatementSyntax(SyntaxTree tree, TextSpan span, Token doKeyword, StatementSyntax statement, Token whileKeyword, Token openParenToken, ExpressionSyntax condition, Token closeParenToken, Token semicolonToken) : base(tree, span)
 	{
 		DoKeyword = doKeyword;
 		Statement = statement;

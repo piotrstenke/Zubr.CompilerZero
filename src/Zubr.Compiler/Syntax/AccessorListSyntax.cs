@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -12,7 +13,7 @@ public sealed class AccessorListSyntax : SyntaxNode
 
 	public Token CloseBraceToken { get; }
 
-	internal AccessorListSyntax(Token openBraceToken, SyntaxList<AccessorDeclarationSyntax> accessors, Token closeBraceToken)
+	internal AccessorListSyntax(SyntaxTree tree, TextSpan span, Token openBraceToken, SyntaxList<AccessorDeclarationSyntax> accessors, Token closeBraceToken) : base(tree, span)
 	{
 		OpenBraceToken = openBraceToken;
 		Accessors = accessors;

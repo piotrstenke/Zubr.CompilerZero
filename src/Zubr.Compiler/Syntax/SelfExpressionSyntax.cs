@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -8,7 +9,7 @@ public sealed class SelfExpressionSyntax : InstanceExpressionSyntax
 
 	public Token Keyword { get; }
 
-	internal SelfExpressionSyntax(Token keyword)
+	internal SelfExpressionSyntax(SyntaxTree tree, TextSpan span, Token keyword) : base(tree, span)
 	{
 		Keyword = keyword;
 	}

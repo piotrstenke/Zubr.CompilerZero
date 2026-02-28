@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -12,7 +13,7 @@ public sealed class ArgumentListSyntax : SyntaxNode
 
 	public Token CloseParenToken { get; }
 
-	internal ArgumentListSyntax(Token openParenToken, SeparatedSyntaxList<ArgumentSyntax> arguments, Token closeParenToken)
+	internal ArgumentListSyntax(SyntaxTree tree, TextSpan span, Token openParenToken, SeparatedSyntaxList<ArgumentSyntax> arguments, Token closeParenToken) : base(tree, span)
 	{
 		OpenParenToken = openParenToken;
 		Arguments = arguments;

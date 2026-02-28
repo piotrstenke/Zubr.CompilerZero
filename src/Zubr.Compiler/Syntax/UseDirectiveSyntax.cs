@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -21,6 +22,8 @@ public sealed class UseDirectiveSyntax : SyntaxNode
 	public Token SemicolonToken { get; }
 
 	internal UseDirectiveSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		Token useKeyword,
 		NameSyntax name,
 		Token asKeyword,
@@ -28,7 +31,7 @@ public sealed class UseDirectiveSyntax : SyntaxNode
 		Token fromKeyword,
 		NameSyntax? moduleName,
 		Token semicolonToken
-	)
+	) : base(tree, span)
 	{
 		UseKeyword = useKeyword;
 		Name = name;

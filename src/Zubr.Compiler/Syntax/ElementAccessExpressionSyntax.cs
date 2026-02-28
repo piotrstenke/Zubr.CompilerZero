@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -10,7 +11,7 @@ public sealed class ElementAccessExpressionSyntax : ExpressionSyntax
 
 	public BracketArgumentListSyntax ArgumentList { get; }
 
-	internal ElementAccessExpressionSyntax(ExpressionSyntax expression, BracketArgumentListSyntax argumentList)
+	internal ElementAccessExpressionSyntax(SyntaxTree tree, TextSpan span, ExpressionSyntax expression, BracketArgumentListSyntax argumentList) : base(tree, span)
 	{
 		Expression = expression;
 		ArgumentList = argumentList;

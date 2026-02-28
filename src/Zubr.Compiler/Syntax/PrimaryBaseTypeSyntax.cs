@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -10,7 +11,7 @@ public sealed class PrimaryBaseTypeSyntax : BaseTypeSyntax
 
 	public ArgumentListSyntax ArgumentList { get; }
 
-	internal PrimaryBaseTypeSyntax(TypeSyntax type, ArgumentListSyntax argumentList)
+	internal PrimaryBaseTypeSyntax(SyntaxTree tree, TextSpan span, TypeSyntax type, ArgumentListSyntax argumentList) : base(tree, span)
 	{
 		Type = type;
 		ArgumentList = argumentList;

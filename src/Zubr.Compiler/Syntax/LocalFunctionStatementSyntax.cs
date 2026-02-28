@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -27,6 +28,8 @@ public sealed class LocalFunctionStatementSyntax : StatementSyntax
 	public Token SemicolonToken { get; }
 
 	internal LocalFunctionStatementSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		SyntaxList<AttributeSyntax> attributes,
 		TokenList modifiers,
 		TypeSyntax returnType,
@@ -37,7 +40,7 @@ public sealed class LocalFunctionStatementSyntax : StatementSyntax
 		BlockSyntax? body,
 		ArrowExpressionClauseSyntax? expressionBody,
 		Token semicolonToken
-	)
+	) : base(tree, span)
 	{
 		Attributes = attributes;
 		Modifiers = modifiers;

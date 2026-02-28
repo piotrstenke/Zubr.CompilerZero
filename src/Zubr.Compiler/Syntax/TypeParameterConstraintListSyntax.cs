@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -10,7 +11,7 @@ public sealed class TypeParameterConstraintListSyntax : SyntaxNode
 
 	public SeparatedSyntaxList<TypeParameterConstraintClauseSyntax> Clauses { get; }
 
-	internal TypeParameterConstraintListSyntax(Token whereKeyword, SeparatedSyntaxList<TypeParameterConstraintClauseSyntax> constraints)
+	internal TypeParameterConstraintListSyntax(SyntaxTree tree, TextSpan span, Token whereKeyword, SeparatedSyntaxList<TypeParameterConstraintClauseSyntax> constraints) : base(tree, span)
 	{
 		WhereKeyword = whereKeyword;
 		Clauses = constraints;

@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -15,11 +16,13 @@ public sealed class SimpleEnumMemberDeclarationSyntax : EnumMemberDeclarationSyn
 	public EqualsValueClauseSyntax? Initializer { get; }
 
 	internal SimpleEnumMemberDeclarationSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		SyntaxList<AttributeSyntax> attributes,
 		TokenList modifiers,
 		Token identifier,
 		EqualsValueClauseSyntax? initializer
-	)
+	) : base(tree, span)
 	{
 		Attributes = attributes;
 		Modifiers = modifiers;

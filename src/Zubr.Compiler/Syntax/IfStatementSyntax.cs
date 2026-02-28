@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -20,7 +21,7 @@ public sealed class IfStatementSyntax : StatementSyntax
 
 	public ElseClauseSyntax? Else { get; }
 
-	internal IfStatementSyntax(Token ifKeyword, Token openParenToken, ExpressionSyntax condition, Token closeParenToken, StatementSyntax statement, SyntaxList<ElifClauseSyntax> elifs, ElseClauseSyntax? @else)
+	internal IfStatementSyntax(SyntaxTree tree, TextSpan span, Token ifKeyword, Token openParenToken, ExpressionSyntax condition, Token closeParenToken, StatementSyntax statement, SyntaxList<ElifClauseSyntax> elifs, ElseClauseSyntax? @else) : base(tree, span)
 	{
 		IfKeyword = ifKeyword;
 		OpenParenToken = openParenToken;

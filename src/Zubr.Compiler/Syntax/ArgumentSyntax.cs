@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -8,7 +9,7 @@ public sealed class ArgumentSyntax : SyntaxNode
 
 	public ExpressionSyntax Expression { get; }
 
-	internal ArgumentSyntax(ExpressionSyntax expression)
+	internal ArgumentSyntax(SyntaxTree tree, TextSpan span, ExpressionSyntax expression) : base(tree, span)
 	{
 		Expression = expression;
 

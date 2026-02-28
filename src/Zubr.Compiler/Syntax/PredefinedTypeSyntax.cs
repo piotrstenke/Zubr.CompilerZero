@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -8,7 +9,7 @@ public sealed class PredefinedTypeSyntax : TypeSyntax
 
 	public Token Keyword { get; }
 
-	internal PredefinedTypeSyntax(Token keyword)
+	internal PredefinedTypeSyntax(SyntaxTree tree, TextSpan span, Token keyword) : base(tree, span)
 	{
 		Keyword = keyword;
 	}

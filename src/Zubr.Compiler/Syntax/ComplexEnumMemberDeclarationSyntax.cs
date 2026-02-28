@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -15,11 +16,13 @@ public sealed class ComplexEnumMemberDeclarationSyntax : EnumMemberDeclarationSy
 	public ArgumentListSyntax? ArgumentList { get; }
 
 	internal ComplexEnumMemberDeclarationSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		SyntaxList<AttributeSyntax> attributes,
 		TokenList modifiers,
 		Token identifier,
 		ArgumentListSyntax? argumentList
-	)
+	) : base(tree, span)
 	{
 		Attributes = attributes;
 		Modifiers = modifiers;

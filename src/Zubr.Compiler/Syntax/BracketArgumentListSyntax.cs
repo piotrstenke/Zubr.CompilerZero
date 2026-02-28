@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -12,7 +13,7 @@ public sealed class BracketArgumentListSyntax : SyntaxNode
 
 	public Token CloseBracketToken { get; }
 
-	internal BracketArgumentListSyntax(Token openBracketToken, SeparatedSyntaxList<ArgumentSyntax> arguments, Token closeBracketToken)
+	internal BracketArgumentListSyntax(SyntaxTree tree, TextSpan span, Token openBracketToken, SeparatedSyntaxList<ArgumentSyntax> arguments, Token closeBracketToken) : base(tree, span)
 	{
 		OpenBracketToken = openBracketToken;
 		Arguments = arguments;

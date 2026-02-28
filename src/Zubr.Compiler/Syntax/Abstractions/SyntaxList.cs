@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax.Abstractions;
 
@@ -19,6 +20,48 @@ public readonly struct SyntaxList<TNode> : IReadOnlyList<TNode> where TNode : Sy
 	public bool IsDefault => _nodes is null;
 
 	public bool IsDefaultOrEmpty => _nodes is null || _nodes.Length == 0;
+
+	public int Position
+	{
+		get
+		{
+			if (IsDefaultOrEmpty)
+			{
+				return default;
+			}
+
+			return _nodes[0].Span.Start;
+		}
+	}
+
+	public Location Location
+	{
+		get
+		{
+			if(IsDefaultOrEmpty)
+			{
+				return Location.Invalid;
+			}
+
+			Location location = _nodes[0].Location;
+			TextSpan end = _nodes[^1].Span;
+
+			return location.MoveEnd(end.End);
+		}
+	}
+
+	public TextSpan Span
+	{
+		get
+		{
+			if(IsDefaultOrEmpty)
+			{
+				return default;
+			}
+
+			return _nodes[0].Span.MoveEnd(_nodes[^1].Span.End);
+		}
+	}
 
 	private int CountWithCheck => _nodes is null ? 0 : _nodes.Length;
 
@@ -54,19 +97,27 @@ public readonly struct SyntaxList<TNode> : IReadOnlyList<TNode> where TNode : Sy
 		return sb.ToString();
 	}
 
-	public int GetPosition()
-	{
-		if(IsDefaultOrEmpty)
-		{
-			return default;
-		}
-
-		return _nodes[0].Position;
-	}
-
 	public bool Any()
 	{
 		return !IsDefaultOrEmpty;
+	}
+
+	public bool HasKind(SyntaxKind kind)
+	{
+		if(IsDefault)
+		{
+			return false;
+		}
+
+		for (int i = 0; i < _nodes.Length; i++)
+		{
+			if (_nodes[0].Kind == kind)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public Enumerator GetEnumerator()

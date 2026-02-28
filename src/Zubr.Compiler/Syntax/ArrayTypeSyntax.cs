@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -10,7 +11,7 @@ public sealed class ArrayTypeSyntax : TypeSyntax
 
 	public SyntaxList<ArrayRankSyntax> Ranks { get; }
 
-	internal ArrayTypeSyntax(TypeSyntax elementType, SyntaxList<ArrayRankSyntax> ranks)
+	internal ArrayTypeSyntax(SyntaxTree tree, TextSpan span, TypeSyntax elementType, SyntaxList<ArrayRankSyntax> ranks) : base(tree, span)
 	{
 		ElementType = elementType;
 		Ranks = ranks;

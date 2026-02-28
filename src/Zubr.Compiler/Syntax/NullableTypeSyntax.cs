@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -10,7 +11,7 @@ public sealed class NullableTypeSyntax : TypeSyntax
 
 	public Token QuestionToken { get; }
 
-	internal NullableTypeSyntax(TypeSyntax type, Token questionToken)
+	internal NullableTypeSyntax(SyntaxTree tree, TextSpan span, TypeSyntax type, Token questionToken) : base(tree, span)
 	{
 		ElementType = type;
 		QuestionToken = questionToken;

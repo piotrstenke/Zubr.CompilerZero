@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -23,6 +24,8 @@ public sealed class CastDeclarationSyntax : BaseFunctionDeclarationSyntax
 	public override Token SemicolonToken { get; }
 
 	internal CastDeclarationSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		SyntaxList<AttributeSyntax> attributes,
 		TokenList modifiers,
 		Token keyword,
@@ -31,7 +34,7 @@ public sealed class CastDeclarationSyntax : BaseFunctionDeclarationSyntax
 		BlockSyntax? body,
 		ArrowExpressionClauseSyntax? expressionBody,
 		Token semicolonToken
-	)
+	) : base(tree, span)
 	{
 		Attributes = attributes;
 		Modifiers = modifiers;

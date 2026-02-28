@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -23,6 +24,8 @@ public sealed class PropertyDeclarationSyntax : BasePropertyDeclarationSyntax
 	public override Token SemicolonToken { get; }
 
 	internal PropertyDeclarationSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		SyntaxList<AttributeSyntax> attributes,
 		TokenList modifiers,
 		TypeSyntax type,
@@ -31,7 +34,7 @@ public sealed class PropertyDeclarationSyntax : BasePropertyDeclarationSyntax
 		AccessorListSyntax? accessorList,
 		EqualsValueClauseSyntax? initializer,
 		Token semicolonToken
-	)
+	) : base(tree, span)
 	{
 		Attributes = attributes;
 		Modifiers = modifiers;

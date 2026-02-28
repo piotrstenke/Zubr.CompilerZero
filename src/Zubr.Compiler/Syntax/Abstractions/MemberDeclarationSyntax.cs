@@ -1,4 +1,6 @@
-﻿namespace Zubr.Compiler.Syntax.Abstractions;
+﻿using Zubr.Compiler.Text;
+
+namespace Zubr.Compiler.Syntax.Abstractions;
 
 public abstract class MemberDeclarationSyntax : NameSyntax
 {
@@ -6,7 +8,7 @@ public abstract class MemberDeclarationSyntax : NameSyntax
 
 	public abstract TokenList Modifiers { get; }
 
-	internal MemberDeclarationSyntax()
+	internal MemberDeclarationSyntax(SyntaxTree tree, TextSpan span) : base(tree, span)
 	{
 	}
 }

@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -15,11 +16,13 @@ public sealed class RangeExpressionSyntax : ExpressionSyntax
 	public ExpressionSyntax Right { get; }
 
 	internal RangeExpressionSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		ExpressionSyntax left,
 		Token rangeToken,
 		Token comparisonToken,
 		ExpressionSyntax right
-	)
+	) : base(tree, span)
 	{
 		Left = left;
 		RangeToken = rangeToken;

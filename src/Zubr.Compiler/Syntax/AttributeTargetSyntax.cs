@@ -1,4 +1,6 @@
-﻿namespace Zubr.Compiler.Syntax;
+﻿using Zubr.Compiler.Text;
+
+namespace Zubr.Compiler.Syntax;
 
 public sealed class AttributeTargetSyntax : SyntaxNode
 {
@@ -9,9 +11,11 @@ public sealed class AttributeTargetSyntax : SyntaxNode
 	public Token ColonToken { get; }
 
 	internal AttributeTargetSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		Token keyword,
 		Token colonToken
-	)
+	) : base(tree, span)
 	{
 		Keyword = keyword;
 		ColonToken = colonToken;

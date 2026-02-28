@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -20,7 +21,7 @@ public sealed class ForStatementSyntax : StatementSyntax
 
 	public StatementSyntax Statement { get; }
 
-	internal ForStatementSyntax(Token forKeyword, Token openParenToken, ExpressionSyntax variable, Token colonToken, ExpressionSyntax expression, Token closeParenToken, StatementSyntax statement)
+	internal ForStatementSyntax(SyntaxTree tree, TextSpan span, Token forKeyword, Token openParenToken, ExpressionSyntax variable, Token colonToken, ExpressionSyntax expression, Token closeParenToken, StatementSyntax statement) : base(tree, span)
 	{
 		ForKeyword = forKeyword;
 		OpenParenToken = openParenToken;

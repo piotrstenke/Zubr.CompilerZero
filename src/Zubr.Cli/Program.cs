@@ -40,7 +40,7 @@ static class Commands
 		{
 			foreach (ErrorMessage error in errors)
 			{
-				Console.WriteLine($"({error.Line}, {error.Column}): [{error.Level}] {error.Message}");
+				Console.WriteLine($"[{error.Level}]: {error.Message} at ({error.Line}, {error.Column})");
 			}
 		}
 
@@ -112,7 +112,7 @@ static class Commands
 
 		foreach (DiagnosticMessage diagnostic in diagnostics)
 		{
-			Console.WriteLine($"({diagnostic.SourceFile}): [{diagnostic.Severity}] {diagnostic.Message} at position {diagnostic.Position}");
+			Console.WriteLine($"[{diagnostic.Severity}]: {diagnostic.Message} at {diagnostic.Location}");
 		}
 	}
 }

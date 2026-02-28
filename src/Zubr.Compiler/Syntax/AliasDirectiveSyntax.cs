@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -18,7 +19,7 @@ public sealed class AliasDirectiveSyntax : SyntaxNode
 
 	public Token SemicolonToken { get; }
 
-	internal AliasDirectiveSyntax(TokenList modifiers, Token aliasKeyword, NameSyntax name, Token equalsToken, TypeSyntax type, Token semicolonToken)
+	internal AliasDirectiveSyntax(SyntaxTree tree, TextSpan span, TokenList modifiers, Token aliasKeyword, NameSyntax name, Token equalsToken, TypeSyntax type, Token semicolonToken) : base(tree, span)
 	{
 		Modifiers = modifiers;
 		AliasKeyword = aliasKeyword;

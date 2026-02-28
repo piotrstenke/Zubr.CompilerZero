@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler;
 
@@ -20,6 +21,8 @@ public readonly struct Token
 	public bool IsFound => !IsNone;
 
 	public bool IsEmpty => Text.Length == 0;
+
+	public TextSpan Span => new(Position, Length);
 
 	internal Token(TokenKind kind, string text, int position)
 	{

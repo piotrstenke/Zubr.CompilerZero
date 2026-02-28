@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -10,7 +11,7 @@ public sealed class VariableExpressionSyntax : ExpressionSyntax
 
 	public Token Identifier { get; }
 
-	internal VariableExpressionSyntax(TypeSyntax? type, Token identifier)
+	internal VariableExpressionSyntax(SyntaxTree tree, TextSpan span, TypeSyntax? type, Token identifier) : base(tree, span)
 	{
 		Type = type;
 		Identifier = identifier;

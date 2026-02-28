@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -12,7 +13,7 @@ public sealed class ParameterListSyntax : SyntaxNode
 
 	public Token CloseParenToken { get; }
 
-	internal ParameterListSyntax(Token openParenToken, SeparatedSyntaxList<ParameterSyntax> parameters, Token closeParenToken)
+	internal ParameterListSyntax(SyntaxTree tree, TextSpan span, Token openParenToken, SeparatedSyntaxList<ParameterSyntax> parameters, Token closeParenToken) : base(tree, span)
 	{
 		OpenParenToken = openParenToken;
 		Parameters = parameters;

@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -19,6 +20,8 @@ public sealed class AccessorDeclarationSyntax : SyntaxNode
 	public Token SemicolonToken { get; }
 
 	internal AccessorDeclarationSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		SyntaxKind kind,
 		SyntaxList<AttributeSyntax> attributes,
 		TokenList modifiers,
@@ -26,7 +29,7 @@ public sealed class AccessorDeclarationSyntax : SyntaxNode
 		BlockSyntax? block,
 		ArrowExpressionClauseSyntax? expressionBody,
 		Token semicolonToken
-	)
+	) : base(tree, span)
 	{
 		Kind = kind;
 		Attributes = attributes;

@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -15,11 +16,13 @@ public sealed class ArrayCreationExpressionSyntax : ExpressionSyntax
 	public InitializerExpressionSyntax? Initializer { get; }
 
 	internal ArrayCreationExpressionSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		Token newKeyword,
 		TypeSyntax? elementType,
 		SyntaxList<ArrayRankSyntax> ranks,
 		InitializerExpressionSyntax? initializer
-	)
+	) : base(tree, span)
 	{
 		NewKeyword = newKeyword;
 		ElementType = elementType;

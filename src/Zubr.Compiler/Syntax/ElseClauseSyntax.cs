@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -10,7 +11,7 @@ public sealed class ElseClauseSyntax : SyntaxNode
 
 	public StatementSyntax Statement { get; }
 
-	internal ElseClauseSyntax(Token elseKeyword, StatementSyntax statement)
+	internal ElseClauseSyntax(SyntaxTree tree, TextSpan span, Token elseKeyword, StatementSyntax statement) : base(tree, span)
 	{
 		ElseKeyword = elseKeyword;
 		Statement = statement;

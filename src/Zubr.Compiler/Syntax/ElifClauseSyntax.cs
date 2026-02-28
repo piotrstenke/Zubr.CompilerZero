@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -16,7 +17,7 @@ public sealed class ElifClauseSyntax : SyntaxNode
 
 	public StatementSyntax Statement { get; }
 
-	internal ElifClauseSyntax(Token elifKeyword, Token openParenToken, ExpressionSyntax condition, Token closeParenToken, StatementSyntax statement)
+	internal ElifClauseSyntax(SyntaxTree tree, TextSpan span, Token elifKeyword, Token openParenToken, ExpressionSyntax condition, Token closeParenToken, StatementSyntax statement) : base(tree, span)
 	{
 		ElifKeyword = elifKeyword;
 		OpenParenToken = openParenToken;

@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -20,7 +21,7 @@ public sealed class ModuleDeclarationSyntax : MemberDeclarationSyntax
 
 	public SyntaxList<MemberDeclarationSyntax> Members { get; }
 
-	internal ModuleDeclarationSyntax(Token moduleKeyword, Token topKeyword, NameSyntax? name, Token semicolonToken, SyntaxList<MemberDeclarationSyntax> members)
+	internal ModuleDeclarationSyntax(SyntaxTree tree, TextSpan span, Token moduleKeyword, Token topKeyword, NameSyntax? name, Token semicolonToken, SyntaxList<MemberDeclarationSyntax> members) : base(tree, span)
 	{
 		ModuleKeyword = moduleKeyword;
 		TopKeyword = topKeyword;

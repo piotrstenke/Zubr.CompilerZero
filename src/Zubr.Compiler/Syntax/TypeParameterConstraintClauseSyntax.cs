@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -12,7 +13,7 @@ public sealed class TypeParameterConstraintClauseSyntax : SyntaxNode
 
 	public SeparatedSyntaxList<TypeParameterConstraintSyntax> Constraints { get; }
 
-	internal TypeParameterConstraintClauseSyntax(Token identifier, Token colonToken, SeparatedSyntaxList<TypeParameterConstraintSyntax> constraints)
+	internal TypeParameterConstraintClauseSyntax(SyntaxTree tree, TextSpan span, Token identifier, Token colonToken, SeparatedSyntaxList<TypeParameterConstraintSyntax> constraints) : base(tree, span)
 	{
 		Identifier = identifier;
 		ColonToken = colonToken;

@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -12,7 +13,7 @@ public sealed class TypeArgumentListSyntax : SyntaxNode
 
 	public Token GreaterThanToken { get; }
 
-	internal TypeArgumentListSyntax(Token lessThanToken, SeparatedSyntaxList<TypeSyntax> arguments, Token greaterThanToken)
+	internal TypeArgumentListSyntax(SyntaxTree tree, TextSpan span, Token lessThanToken, SeparatedSyntaxList<TypeSyntax> arguments, Token greaterThanToken) : base(tree, span)
 	{
 		LessThanToken = lessThanToken;
 		Arguments = arguments;

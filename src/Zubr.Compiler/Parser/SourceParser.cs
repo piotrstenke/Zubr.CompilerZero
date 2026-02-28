@@ -4,22 +4,25 @@ using System.Diagnostics;
 using Zubr.Compiler.Diagnostics;
 using Zubr.Compiler.Syntax;
 using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Parser;
 
 internal sealed class SourceParser
 {
 	private readonly Token[] _tokens;
+	private readonly SyntaxTree _tree;
 	private int _current;
 
 	private List<InternalDiagnostic>? _errors;
 
-	public SourceParser(Token[] tokens) : this(tokens, null)
+	internal SourceParser(SyntaxTree tree, Token[] tokens) : this(tree, tokens, null)
 	{
 	}
 
-	public SourceParser(Token[] tokens, List<InternalDiagnostic>? errors)
+	internal SourceParser(SyntaxTree tree, Token[] tokens, List<InternalDiagnostic>? errors)
 	{
+		_tree = tree;
 		_tokens = tokens;
 		_errors = errors;
 	}
@@ -61,10 +64,9 @@ internal sealed class SourceParser
 			}
 		}
 
-		return new(List(uses), List(aliases), List(members), token)
-		{
-			Position = 0
-		};
+		int end = token.Position;
+
+		return new(_tree, new TextSpan(0, end), List(uses), List(aliases), List(members), token);
 	}
 
 	internal List<InternalDiagnostic>? GetDiagnostics()
@@ -75,6 +77,9 @@ internal sealed class SourceParser
 	private ModuleDeclarationSyntax ParseModuleDeclaration()
 	{
 		Token moduleKeyword = EatToken();
+		int start = moduleKeyword.Position;
+		int end;
+
 		Token topKeyword;
 
 		NameSyntax? name;
@@ -110,10 +115,18 @@ internal sealed class SourceParser
 			}
 		}
 
-		return new(moduleKeyword, topKeyword, name, semicolonToken, List(members))
+		if(members.Count > 0)
 		{
-			Position = moduleKeyword.Position
-		};
+			end = members[^1].Span.End;
+		}
+		else
+		{
+			end = semicolonToken.Position;
+		}
+
+		TextSpan span = GetSpan(start, end);
+
+		return new(_tree, span, moduleKeyword, topKeyword, name, semicolonToken, List(members));
 	}
 
 	private UseDirectiveSyntax ParseUseDirective()
@@ -141,11 +154,9 @@ internal sealed class SourceParser
 		}
 
 		Token semicolon = EatToken(TokenKind.SemicolonToken);
+		TextSpan span = GetSpan(useKeyword, semicolon);
 
-		return new(useKeyword, name, asKeyword, alias, fromKeyword, moduleName, semicolon)
-		{
-			Position = useKeyword.Position
-		};
+		return new(_tree, span, useKeyword, name, asKeyword, alias, fromKeyword, moduleName, semicolon);
 	}
 
 	private AliasDirectiveSyntax ParseAliasDirective()
@@ -161,14 +172,13 @@ internal sealed class SourceParser
 
 		Token semicolonToken = EatToken(TokenKind.SemicolonToken);
 
-		int position = modifiers.IsDefaultOrEmpty
+		int start = modifiers.IsDefaultOrEmpty
 			? keyword.Position
-			: modifiers.GetPosition();
+			: modifiers.Span.Start;
 
-		return new(modifiers, keyword, alias, equalsToken, name, semicolonToken)
-		{
-			Position = position
-		};
+		TextSpan span = GetSpan(start, semicolonToken);
+
+		return new(_tree, span, modifiers, keyword, alias, equalsToken, name, semicolonToken);
 	}
 
 	private MemberDeclarationSyntax? TryParseMemberDeclaration()
@@ -233,11 +243,9 @@ internal sealed class SourceParser
 		VariableDeclarationSyntax variable = ParseVariable();
 
 		Token semicolonToken = EatToken(TokenKind.SemicolonToken);
+		TextSpan span = GetSpan(position, semicolonToken);
 
-		return new(attributes, modifiers, fieldKeyword, variable, semicolonToken)
-		{
-			Position = position
-		};
+		return new(_tree, span, attributes, modifiers, fieldKeyword, variable, semicolonToken);
 	}
 
 	private ConstructorDeclarationSyntax ParseConstructorDeclaration(SyntaxList<AttributeSyntax> attributes, TokenList modifiers, int position)
@@ -246,12 +254,10 @@ internal sealed class SourceParser
 
 		ParameterListSyntax parameterList = ParseParameterList();
 
-		(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody();
+		(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody(out int end);
 
-		return new(attributes, modifiers, keyword, parameterList, body, expressionBody, semicolonToken)
-		{
-			Position = position
-		};
+		TextSpan span = GetSpan(position, end);
+		return new(_tree, span, attributes, modifiers, keyword, parameterList, body, expressionBody, semicolonToken);
 	}
 
 	private DestructorDeclarationSyntax ParseDestructorDeclaration(SyntaxList<AttributeSyntax> attributes, TokenList modifiers, int position)
@@ -260,12 +266,11 @@ internal sealed class SourceParser
 
 		ParameterListSyntax parameterList = ParseParameterList();
 
-		(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody();
+		(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody(out int end);
 
-		return new(attributes, modifiers, keyword, parameterList, body, expressionBody, semicolonToken)
-		{
-			Position = position
-		};
+		TextSpan span = GetSpan(position, end);
+
+		return new(_tree, span, attributes, modifiers, keyword, parameterList, body, expressionBody, semicolonToken);
 	}
 
 	private MemberDeclarationSyntax ParseFunctionOrPropertyDeclaration(SyntaxList<AttributeSyntax> attributes, TokenList modifiers, int position)
@@ -327,20 +332,21 @@ internal sealed class SourceParser
 		AccessorListSyntax? accessorList;
 		EqualsValueClauseSyntax? initializer;
 		Token semicolonToken;
+		TextSpan span;
 
 		if (token.IsKind(TokenKind.EqualsGreaterThanToken))
 		{
 			EatToken();
 
-			expressionBody = new(token, ParseExpression())
-			{
-				Position = token.Position
-			};
+			ExpressionSyntax expr = ParseExpression();
+			expressionBody = new(_tree, GetSpan(token, expr), token, expr);
 
 			semicolonToken = EatToken(TokenKind.SemicolonToken);
 
 			initializer = null;
 			accessorList = null;
+
+			span = GetSpan(position, semicolonToken);
 		}
 		else
 		{
@@ -351,17 +357,18 @@ internal sealed class SourceParser
 			if (accessorList is null)
 			{
 				semicolonToken = EatToken(TokenKind.SemicolonToken);
+				span = GetSpan(position, semicolonToken);
 			}
 			else
 			{
 				semicolonToken = default;
+				span = initializer is null
+					? GetSpan(position, accessorList)
+					: GetSpan(position, initializer);
 			}
 		}
 
-		return new(attributes, modifiers, returnType, identifier, expressionBody, accessorList, initializer, semicolonToken)
-		{
-			Position = position
-		};
+		return new(_tree, span, attributes, modifiers, returnType, identifier, expressionBody, accessorList, initializer, semicolonToken);
 	}
 
 	private IndexerDeclarationSyntax ParseIndexerDeclaration(
@@ -379,19 +386,20 @@ internal sealed class SourceParser
 		ArrowExpressionClauseSyntax? expressionBody;
 		AccessorListSyntax? accessorList;
 		Token semicolonToken;
+		TextSpan span;
 
 		if (token.IsKind(TokenKind.EqualsGreaterThanToken))
 		{
 			EatToken();
 
-			expressionBody = new(token, ParseExpression())
-			{
-				Position = token.Position
-			};
+			ExpressionSyntax expr = ParseExpression();
+			expressionBody = new(_tree, GetSpan(token, expr), token, expr);
 
 			semicolonToken = EatToken(TokenKind.SemicolonToken);
 
 			accessorList = null;
+
+			span = GetSpan(position, semicolonToken);
 		}
 		else
 		{
@@ -401,17 +409,16 @@ internal sealed class SourceParser
 			if (accessorList is null)
 			{
 				semicolonToken = EatToken(TokenKind.SemicolonToken);
+				span = GetSpan(position, semicolonToken);
 			}
 			else
 			{
 				semicolonToken = default;
+				span = GetSpan(position, accessorList);
 			}
 		}
 
-		return new(attributes, modifiers, returnType, selfKeyword, parameterList, expressionBody, accessorList, semicolonToken)
-		{
-			Position = position
-		};
+		return new(_tree, span, attributes, modifiers, returnType, selfKeyword, parameterList, expressionBody, accessorList, semicolonToken);
 	}
 
 	private AccessorListSyntax? TryParseAccesorList()
@@ -449,20 +456,16 @@ internal sealed class SourceParser
 				keyword = UnexpectedToken();
 			}
 
-			(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody();
+			(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody(out int end);
 
-			accessors.Add(new(kind, attributes, modifiers, keyword, body, expressionBody, semicolonToken)
-			{
-				Position = position
-			});
+			accessors.Add(new(_tree, GetSpan(position, end), kind, attributes, modifiers, keyword, body, expressionBody, semicolonToken));
 		}
 
 		Token closeBrace = EatToken(TokenKind.CloseBraceToken);
 
-		return new(openBrace, List(accessors), closeBrace)
-		{
-			Position = openBrace.Position,
-		};
+		TextSpan span = GetSpan(openBrace, closeBrace);
+
+		return new(_tree, span, openBrace, List(accessors), closeBrace);
 	}
 
 	private CastDeclarationSyntax ParseCastDeclaration(
@@ -477,12 +480,11 @@ internal sealed class SourceParser
 
 		ParameterListSyntax parameterList = ParseParameterList();
 
-		(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody();
+		(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody(out int end);
 
-		return new(attributes, modifiers, keyword, type, parameterList, body, expressionBody, semicolonToken)
-		{
-			Position = position
-		};
+		TextSpan span = GetSpan(position, end);
+
+		return new(_tree, span, attributes, modifiers, keyword, type, parameterList, body, expressionBody, semicolonToken);
 	}
 
 	private OperatorDeclarationSyntax ParseOperatorDeclaration(
@@ -503,12 +505,11 @@ internal sealed class SourceParser
 
 		ParameterListSyntax parameterList = ParseParameterList();
 
-		(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody();
+		(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody(out int end);
 
-		return new(attributes, modifiers, returnType, keyword, token, parameterList, body, expressionBody, semicolonToken)
-		{
-			Position = position
-		};
+		TextSpan span = GetSpan(position, end);
+
+		return new(_tree, span, attributes, modifiers, returnType, keyword, token, parameterList, body, expressionBody, semicolonToken);
 	}
 
 	private InvokerDeclarationSyntax ParseInvokerDeclaration(
@@ -521,12 +522,11 @@ internal sealed class SourceParser
 	{
 		ParameterListSyntax parameterList = ParseParameterList();
 
-		(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody();
+		(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody(out int end);
 
-		return new(attributes, modifiers, returnType, selfKeyword, parameterList, body, expressionBody, semicolonToken)
-		{
-			Position = position
-		};
+		TextSpan span = GetSpan(position, end);
+
+		return new(_tree, span, attributes, modifiers, returnType, selfKeyword, parameterList, body, expressionBody, semicolonToken);
 	}
 
 	private FunctionDeclarationSyntax ParseFunctionDeclaration(
@@ -554,24 +554,21 @@ internal sealed class SourceParser
 	{
 		TypeParameterConstraintListSyntax? constraintList = TryParseConstraintList();
 
-		(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody();
+		(BlockSyntax? body, ArrowExpressionClauseSyntax? expressionBody, Token semicolonToken) = ParseBody(out int end);
 
-		return new(attributes, modifiers, returnType, identifier, typeParameterList, parameterList, constraintList, body, expressionBody, semicolonToken)
-		{
-			Position = position
-		};
+		TextSpan span = GetSpan(position, end);
+
+		return new(_tree, span, attributes, modifiers, returnType, identifier, typeParameterList, parameterList, constraintList, body, expressionBody, semicolonToken);
 	}
 
 	private TypeParameterListSyntax? TryParseTypeParameterList()
 	{
-		Token lessThanToken = Peek();
-
-		if (!lessThanToken.IsKind(TokenKind.LessThanToken))
+		if (!PeekKind(TokenKind.LessThanToken))
 		{
 			return null;
 		}
 
-		EatToken();
+		Token lessThanToken = EatToken();
 
 		List<(TypeParameterSyntax, Token)> parameters = new();
 
@@ -581,10 +578,7 @@ internal sealed class SourceParser
 
 			Token token = Peek();
 
-			TypeParameterSyntax typeParameter = new(identifier)
-			{
-				Position = identifier.Position
-			};
+			TypeParameterSyntax typeParameter = new(_tree, identifier.Span, identifier);
 
 			if (token.IsKind(TokenKind.GreaterThanToken))
 			{
@@ -599,7 +593,9 @@ internal sealed class SourceParser
 
 		Token greaterThanToken = EatToken();
 
-		return new(lessThanToken, List(parameters), greaterThanToken);
+		TextSpan span = GetSpan(lessThanToken, greaterThanToken);
+
+		return new(_tree, span, lessThanToken, List(parameters), greaterThanToken);
 	}
 
 	private TypeParameterConstraintListSyntax? TryParseConstraintList()
@@ -664,10 +660,7 @@ internal sealed class SourceParser
 				break;
 			}
 
-			TypeParameterConstraintClauseSyntax clause = new(identifier, colonToken, List(constraints))
-			{
-				Position = identifier.Position
-			};
+			TypeParameterConstraintClauseSyntax clause = new(_tree, GetSpan(identifier, constraints), identifier, colonToken, List(constraints));
 
 			clauses.Add((clause, commaToken));
 
@@ -678,10 +671,9 @@ internal sealed class SourceParser
 			}
 		}
 
-		return new(whereKeyword, List(clauses))
-		{
-			Position = whereKeyword.Position,
-		};
+		TextSpan span = GetSpan(whereKeyword, clauses);
+
+		return new(_tree, span, whereKeyword, List(clauses));
 	}
 
 	private TypeParameterConstraintSyntax? TryParseConstraint(Token token)
@@ -691,24 +683,16 @@ internal sealed class SourceParser
 			case TokenKind.ClassKeyword:
 				EatToken();
 
-				return new ClassConstraintSyntax(token)
-				{
-					Position = token.Position
-				};
+				return new ClassConstraintSyntax(_tree, token.Span, token);
 
 			case TokenKind.StructKeyword:
 				EatToken();
 
-				return new StructConstraintSyntax(token)
-				{
-					Position = token.Position
-				};
+				return new StructConstraintSyntax(_tree, token.Span, token);
 
 			case TokenKind.IdentifierToken:
-				return new TypeConstraintSyntax(ParseName())
-				{
-					Position = token.Position
-				};
+				NameSyntax name = ParseName();
+				return new TypeConstraintSyntax(_tree, name.Span, name);
 
 			default:
 				return null;
@@ -753,10 +737,9 @@ internal sealed class SourceParser
 			}
 		}
 
-		return new(openBracket, List(parameters), token)
-		{
-			Position = openBracket.Position
-		};
+		TextSpan span = GetSpan(openBracket, token);
+
+		return new(_tree, span, openBracket, List(parameters), token);
 	}
 
 	private ParameterListSyntax? TryParseParameterList()
@@ -807,10 +790,9 @@ internal sealed class SourceParser
 			}
 		}
 
-		return new(openParen, List(parameters), token)
-		{
-			Position = openParen.Position
-		};
+		TextSpan span = GetSpan(openParen, token);
+
+		return new(_tree, span, openParen, List(parameters), token);
 	}
 
 	private ParameterSyntax ParseParameter()
@@ -822,7 +804,11 @@ internal sealed class SourceParser
 
 		Token identifier = EatToken(TokenKind.IdentifierToken);
 
+		int position = GetMemberPosition(attributes, modifiers, identifier);
+
 		EqualsValueClauseSyntax? @default = null;
+
+		TextSpan span;
 
 		if (PeekKind(TokenKind.EqualsToken))
 		{
@@ -830,16 +816,16 @@ internal sealed class SourceParser
 
 			ExpressionSyntax value = ParseExpression();
 
-			@default = new(equalsToken, value)
-			{
-				Position = equalsToken.Position
-			};
+			@default = new(_tree, GetSpan(equalsToken, value), equalsToken, value);
+
+			span = GetSpan(position, @default);
+		}
+		else
+		{
+			span = GetSpan(position, identifier);
 		}
 
-		return new(attributes, modifiers, type, identifier, @default)
-		{
-			Position = identifier.Position
-		};
+		return new(_tree, span, attributes, modifiers, type, identifier, @default);
 	}
 
 	private TokenList ParseModifiers()
@@ -884,6 +870,7 @@ internal sealed class SourceParser
 		Token closeBrace;
 
 		Token semicolonToken;
+		TextSpan span;
 
 		if (PeekKind(TokenKind.SemicolonToken))
 		{
@@ -891,6 +878,7 @@ internal sealed class SourceParser
 			openBrace = default;
 			members = default;
 			closeBrace = default;
+			span = GetSpan(position, semicolonToken);
 		}
 		else
 		{
@@ -898,12 +886,10 @@ internal sealed class SourceParser
 			members = ParseTypeMembers();
 			closeBrace = EatToken(TokenKind.CloseBraceToken);
 			semicolonToken = default;
+			span = GetSpan(position, closeBrace);
 		}
 
-		return new(attributes, modifiers, keyword, typeParameterList, type, baseTypeList, constraints, semicolonToken, openBrace, members, closeBrace)
-		{
-			Position = position
-		};
+		return new(_tree, span, attributes, modifiers, keyword, typeParameterList, type, baseTypeList, constraints, semicolonToken, openBrace, members, closeBrace);
 	}
 
 	private BaseEnumDeclarationSyntax ParseEnumDeclaration(SyntaxList<AttributeSyntax> attributes, TokenList modifiers, int position)
@@ -926,6 +912,7 @@ internal sealed class SourceParser
 		Token closeBrace;
 
 		Token semicolonToken;
+		TextSpan span;
 
 		if (PeekKind(TokenKind.SemicolonToken))
 		{
@@ -933,6 +920,7 @@ internal sealed class SourceParser
 			openBrace = default;
 			members = default;
 			closeBrace = default;
+			span = GetSpan(position, semicolonToken);
 		}
 		else
 		{
@@ -940,28 +928,20 @@ internal sealed class SourceParser
 			members = ParseEnumMembers();
 			closeBrace = EatToken(TokenKind.CloseBraceToken);
 			semicolonToken = default;
+			span = GetSpan(position, closeBrace);
 		}
 
 		if (nextKeyword.IsKind(TokenKind.ClassKeyword))
 		{
-			return new EnumClassDeclarationSyntax(attributes, modifiers, keyword, nextKeyword, identifier, parameterList, baseTypeList, semicolonToken, openBrace, members, closeBrace)
-			{
-				Position = position
-			};
+			return new EnumClassDeclarationSyntax(_tree, span, attributes, modifiers, keyword, nextKeyword, identifier, parameterList, baseTypeList, semicolonToken, openBrace, members, closeBrace);
 		}
 
 		if(nextKeyword.IsKind(TokenKind.StructKeyword))
 		{
-			return new EnumStructDeclarationSyntax(attributes, modifiers, keyword, nextKeyword, identifier, parameterList, baseTypeList, semicolonToken, openBrace, members, closeBrace)
-			{
-				Position = position
-			};
+			return new EnumStructDeclarationSyntax(_tree, span, attributes, modifiers, keyword, nextKeyword, identifier, parameterList, baseTypeList, semicolonToken, openBrace, members, closeBrace);
 		}
 
-		return new SimpleEnumDeclarationSyntax(attributes, modifiers, keyword, identifier, semicolonToken, openBrace, members, closeBrace)
-		{
-			Position = position
-		};
+		return new SimpleEnumDeclarationSyntax(_tree, span, attributes, modifiers, keyword, identifier, semicolonToken, openBrace, members, closeBrace);
 	}
 
 	private SeparatedSyntaxList<EnumMemberDeclarationSyntax> ParseEnumMembers()
@@ -1005,20 +985,22 @@ internal sealed class SourceParser
 
 		ArgumentListSyntax? argumentList = TryParseArgumentList();
 
-		if(argumentList is not null)
+		if (argumentList is null)
 		{
-			return new ComplexEnumMemberDeclarationSyntax(attributes, modifiers, identifier, argumentList)
-			{
-				Position = position
-			};
+			EqualsValueClauseSyntax? initializer = TryParseEqualsValueClause();
+
+			TextSpan span = initializer is null
+				? GetSpan(position, identifier)
+				: GetSpan(position, initializer);
+
+			return new SimpleEnumMemberDeclarationSyntax(_tree, span, attributes, modifiers, identifier, initializer);
 		}
-
-		EqualsValueClauseSyntax? initializer = TryParseEqualsValueClause();
-
-		return new SimpleEnumMemberDeclarationSyntax(attributes, modifiers, identifier, initializer)
+		else
 		{
-			Position = position
-		};
+			TextSpan span = GetSpan(position, argumentList);
+
+			return new ComplexEnumMemberDeclarationSyntax(_tree, span, attributes, modifiers, identifier, argumentList);
+		}
 	}
 
 	private AttributeDeclarationSyntax ParseAttributeDeclaration(SyntaxList<AttributeSyntax> attributes, TokenList modifiers, int position)
@@ -1068,6 +1050,7 @@ internal sealed class SourceParser
 		Token closeBrace;
 
 		Token semicolonToken;
+		TextSpan span;
 
 		if (PeekKind(TokenKind.SemicolonToken))
 		{
@@ -1075,6 +1058,7 @@ internal sealed class SourceParser
 			openBrace = default;
 			members = default;
 			closeBrace = default;
+			span = GetSpan(position, semicolonToken);
 		}
 		else
 		{
@@ -1082,29 +1066,18 @@ internal sealed class SourceParser
 			members = ParseTypeMembers();
 			closeBrace = EatToken(TokenKind.CloseBraceToken);
 			semicolonToken = default;
+			span = GetSpan(position, closeBrace);
 		}
 
 		return kind switch
 		{
-			SyntaxKind.ClassDeclaration => new ClassDeclarationSyntax(attributes, modifiers, keyword, identifier, typeParameterList, parameterList, baseTypeList, constraints, semicolonToken, openBrace, members, closeBrace)
-			{
-				Position = position
-			},
+			SyntaxKind.ClassDeclaration => new ClassDeclarationSyntax(_tree, span, attributes, modifiers, keyword, identifier, typeParameterList, parameterList, baseTypeList, constraints, semicolonToken, openBrace, members, closeBrace),
 
-			SyntaxKind.StructDeclaration => new StructDeclarationSyntax(attributes, modifiers, keyword, identifier, typeParameterList, parameterList, baseTypeList, constraints, semicolonToken, openBrace, members, closeBrace)
-			{
-				Position = position
-			},
+			SyntaxKind.StructDeclaration => new StructDeclarationSyntax(_tree, span, attributes, modifiers, keyword, identifier, typeParameterList, parameterList, baseTypeList, constraints, semicolonToken, openBrace, members, closeBrace),
 
-			SyntaxKind.TraitDeclaration => new TraitDeclarationSyntax(attributes, modifiers, keyword, identifier, typeParameterList, parameterList, baseTypeList, constraints, semicolonToken, openBrace, members, closeBrace)
-			{
-				Position = position
-			},
+			SyntaxKind.TraitDeclaration => new TraitDeclarationSyntax(_tree, span, attributes, modifiers, keyword, identifier, typeParameterList, parameterList, baseTypeList, constraints, semicolonToken, openBrace, members, closeBrace),
 
-			SyntaxKind.AttributeDeclaration => new AttributeDeclarationSyntax(attributes, modifiers, keyword, identifier, typeParameterList, parameterList, baseTypeList, constraints, semicolonToken, openBrace, members, closeBrace)
-			{
-				Position = position
-			},
+			SyntaxKind.AttributeDeclaration => new AttributeDeclarationSyntax(_tree, span, attributes, modifiers, keyword, identifier, typeParameterList, parameterList, baseTypeList, constraints, semicolonToken, openBrace, members, closeBrace),
 
 			_ => throw new UnreachableException()
 		};
@@ -1162,10 +1135,9 @@ internal sealed class SourceParser
 			baseTypes.Add((type, default));
 		}
 
-		return new(colonToken, List(baseTypes))
-		{
-			Position = colonToken.Position,
-		};
+		TextSpan span = GetSpan(colonToken, baseTypes);
+
+		return new(_tree, span, colonToken, List(baseTypes));
 
 		static bool ShouldStop(Token token)
 		{
@@ -1184,42 +1156,41 @@ internal sealed class SourceParser
 
 		if(argumentList is null)
 		{
-			return new SimpleBaseTypeSyntax(type)
-			{
-				Position = type.Position
-			};
+			return new SimpleBaseTypeSyntax(_tree, type.Span, type);
 		}
 
-		return new PrimaryBaseTypeSyntax(type, argumentList)
-		{
-			Position = type.Position
-		};
+		TextSpan span = GetSpan(type, argumentList);
+		return new PrimaryBaseTypeSyntax(_tree, span, type, argumentList);
 	}
 
-	private (BlockSyntax? block, ArrowExpressionClauseSyntax? expression, Token semicolonToken) ParseBody()
+	private (BlockSyntax? block, ArrowExpressionClauseSyntax? expression, Token semicolonToken) ParseBody(out int end)
 	{
 		ref readonly Token token = ref Peek();
 
 		switch(token.Kind)
 		{
 			case TokenKind.OpenBraceToken:
-				return (ParseBlock(), null, default);
+				BlockSyntax block = ParseBlock();
+				end = block.Span.End;
+				return (block, null, default);
 
 			case TokenKind.EqualsGreaterThanToken:
 				EatToken();
-				ArrowExpressionClauseSyntax exprBody = new(token, ParseExpression())
-				{
-					Position = token.Position
-				};
+				ExpressionSyntax expr = ParseExpression();
+				TextSpan span = GetSpan(token, expr);
+				ArrowExpressionClauseSyntax exprBody = new(_tree, span, token, expr);
 
 				Token semicolonToken = EatToken(TokenKind.SemicolonToken);
+				end = semicolonToken.Span.End;
 				return (null, exprBody, semicolonToken);
 
 			case TokenKind.SemicolonToken:
 				EatToken();
+				end = token.Span.End;
 				return (null, null, token);
 
 			default:
+				end = token.Span.End;
 				return default;
 		}
 	}
@@ -1243,11 +1214,9 @@ internal sealed class SourceParser
 		}
 
 		Token closeBrace = EatToken(TokenKind.CloseBraceToken);
+		TextSpan span = GetSpan(openBrace, closeBrace);
 
-		return new(openBrace, List(statements), closeBrace)
-		{
-			Position = openBrace.Position
-		};
+		return new(_tree, span, openBrace, List(statements), closeBrace);
 	}
 
 	private StatementSyntax ParseStatement()
@@ -1282,10 +1251,9 @@ internal sealed class SourceParser
 
 		Token semicolon = EatToken(TokenKind.SemicolonToken);
 
-		return new(returnKeyword, expression, semicolon)
-		{
-			Position = returnKeyword.Position,
-		};
+		TextSpan span = GetSpan(returnKeyword, semicolon);
+
+		return new(_tree, span, returnKeyword, expression, semicolon);
 	}
 
 	private NextStatementSyntax ParseNextStatement()
@@ -1293,10 +1261,9 @@ internal sealed class SourceParser
 		Token nextKeyword = EatToken(TokenKind.NextKeyword);
 		Token semicolon = EatToken(TokenKind.SemicolonToken);
 
-		return new(nextKeyword, semicolon)
-		{
-			Position = nextKeyword.Position,
-		};
+		TextSpan span = GetSpan(nextKeyword, semicolon);
+
+		return new(_tree, span, nextKeyword, semicolon);
 	}
 
 	private StopStatementSyntax ParseStopStatement()
@@ -1304,10 +1271,9 @@ internal sealed class SourceParser
 		Token stopKeyword = EatToken(TokenKind.StopKeyword);
 		Token semicolon = EatToken(TokenKind.SemicolonToken);
 
-		return new(stopKeyword, semicolon)
-		{
-			Position = stopKeyword.Position,
-		};
+		TextSpan span = GetSpan(stopKeyword, semicolon);
+
+		return new(_tree, span, stopKeyword, semicolon);
 	}
 
 	private StatementSyntax ParseLocalOrExpressionStatement()
@@ -1322,10 +1288,9 @@ internal sealed class SourceParser
 		ExpressionSyntax expr = ParseExpression();
 		Token semicolonToken = EatToken();
 
-		return new ExpressionStatementSyntax(expr, semicolonToken)
-		{
-			Position = expr.Position,
-		};
+		TextSpan span = GetSpan(token, semicolonToken);
+
+		return new ExpressionStatementSyntax(_tree, span, expr, semicolonToken);
 	}
 
 	private LocalDeclarationStatementSyntax ParseLocalDeclaration()
@@ -1336,7 +1301,7 @@ internal sealed class SourceParser
 
 		int position = modifiers.IsDefaultOrEmpty
 			? variable.Position
-			: modifiers.GetPosition();
+			: modifiers.Position;
 
 		Token semicolon = EatToken(TokenKind.SemicolonToken);
 
@@ -1345,10 +1310,9 @@ internal sealed class SourceParser
 			AddError(ErrorCode.ERR_SyntaxError);
 		}
 
-		return new(modifiers, variable, semicolon)
-		{
-			Position = position
-		};
+		TextSpan span = GetSpan(position, semicolon);
+
+		return new(_tree, span, modifiers, variable, semicolon);
 	}
 
 	private VariableDeclarationSyntax ParseVariable()
@@ -1359,27 +1323,26 @@ internal sealed class SourceParser
 
 		EqualsValueClauseSyntax? initializer = TryParseEqualsValueClause();
 
-		return new(type, identifier, initializer)
-		{
-			Position = type.Position
-		};
+		TextSpan span = initializer is null
+			? GetSpan(type, identifier)
+			: GetSpan(type, initializer);
+
+		return new(_tree, span, type, identifier, initializer);
 	}
 
 	private EqualsValueClauseSyntax? TryParseEqualsValueClause()
 	{
-		Token equalsToken = Peek();
-
-		if (!equalsToken.IsKind(TokenKind.EqualsToken))
+		if (!PeekKind(TokenKind.EqualsToken))
 		{
 			return null;
 		}
 
-		EatToken();
+		Token equalsToken = EatToken();
+		ExpressionSyntax expr = ParseExpression();
 
-		return new(equalsToken, ParseExpression())
-		{
-			Position = equalsToken.Position
-		};
+		TextSpan span = GetSpan(equalsToken, expr);
+
+		return new(_tree, span, equalsToken, expr);
 	}
 
 	private WhileStatementSyntax ParseWhileStatement()
@@ -1393,10 +1356,9 @@ internal sealed class SourceParser
 
 		StatementSyntax statement = ParseStatement();
 
-		return new(whileKeyword, openParen, condition, closeParen, statement)
-		{
-			Position = whileKeyword.Position
-		};
+		TextSpan span = GetSpan(whileKeyword, statement);
+
+		return new(_tree, span, whileKeyword, openParen, condition, closeParen, statement);
 	}
 
 	private DoStatementSyntax ParseDoStatement()
@@ -1413,10 +1375,9 @@ internal sealed class SourceParser
 		Token closeParen = EatToken(TokenKind.CloseParenToken);
 		Token semicolon = EatToken(TokenKind.SemicolonToken);
 
-		return new(doKeyword, statement, whileKeyword, openParen, condition, closeParen, semicolon)
-		{
-			Position = doKeyword.Position
-		};
+		TextSpan span = GetSpan(doKeyword, semicolon);
+
+		return new(_tree, span, doKeyword, statement, whileKeyword, openParen, condition, closeParen, semicolon);
 	}
 
 	private ForStatementSyntax ParseForStatement()
@@ -1424,14 +1385,7 @@ internal sealed class SourceParser
 		Token forKeyword = EatToken(TokenKind.ForKeyword);
 
 		Token openParen = EatToken(TokenKind.OpenParenToken);
-
-		TypeSyntax type = ParseType();
-		Token identifier = EatToken(TokenKind.IdentifierToken);
-
-		VariableExpressionSyntax variable = new(type, identifier)
-		{
-			Position = type.Position
-		};
+		VariableExpressionSyntax variable = ParseVariableExpression();
 
 		Token colon = EatToken(TokenKind.ColonToken);
 
@@ -1441,7 +1395,29 @@ internal sealed class SourceParser
 
 		StatementSyntax statement = ParseStatement();
 
-		return new(forKeyword, openParen, variable, colon, expression, closeParen, statement);
+		TextSpan span = GetSpan(forKeyword, statement);
+
+		return new(_tree, span, forKeyword, openParen, variable, colon, expression, closeParen, statement);
+	}
+
+	private VariableExpressionSyntax ParseVariableExpression()
+	{
+		TypeSyntax type = ParseType();
+
+		if(type.IsKind(SyntaxKind.IdentifierName))
+		{
+			// The type is actually a typeless variable.
+			if(!PeekKind(TokenKind.IdentifierToken))
+			{
+				return new(_tree, type.Span, null, (type as IdentifierNameSyntax)!.Identifier);
+			}
+		}
+
+		Token identifier = EatToken();
+
+		TextSpan span = GetSpan(type, identifier);
+
+		return new(_tree, span, type, identifier);
 	}
 
 	private IfStatementSyntax ParseIfStatement()
@@ -1473,25 +1449,25 @@ internal sealed class SourceParser
 
 		if (PeekKind(TokenKind.ElseKeyword))
 		{
-			Token elseKeyword = EatToken();
-
-			StatementSyntax elseStatement = ParseStatement();
-
-			if (elseStatement.IsKind(SyntaxKind.IfStatement))
-			{
-				AddError(ErrorCode.ERR_ElseIfNotSupported, statement.Position);
-			}
-
-			@else = new(elseKeyword, elseStatement)
-			{
-				Position = elseKeyword.Position
-			};
+			@else = ParseElseClause();
 		}
 
-		return new(ifKeyword, openParen, condition, closeParen, statement, ListIfNotNull(elifs), @else)
+		TextSpan span;
+
+		if(@else is not null)
 		{
-			Position = ifKeyword.Position
-		};
+			span = GetSpan(ifKeyword, @else);
+		}
+		else if(elifs is not null)
+		{
+			span = GetSpan(ifKeyword, elifs);
+		}
+		else
+		{
+			span = GetSpan(ifKeyword, statement);
+		}
+
+		return new(_tree, span, ifKeyword, openParen, condition, closeParen, statement, ListIfNotNull(elifs), @else);
 	}
 
 	private ElifClauseSyntax ParseElifClause()
@@ -1505,7 +1481,25 @@ internal sealed class SourceParser
 
 		StatementSyntax statement = ParseStatement();
 
-		return new(elifKeyword, openParen, condition, closeParen, statement);
+		TextSpan span = GetSpan(elifKeyword, statement);
+
+		return new(_tree, span, elifKeyword, openParen, condition, closeParen, statement);
+	}
+
+	private ElseClauseSyntax ParseElseClause()
+	{
+		Token elseKeyword = EatToken();
+
+		StatementSyntax statement = ParseStatement();
+
+		if (statement.IsKind(SyntaxKind.IfStatement))
+		{
+			AddError(ErrorCode.ERR_ElseIfNotSupported, statement.Position);
+		}
+
+		TextSpan span = GetSpan(elseKeyword, statement);
+
+		return new(_tree, span, elseKeyword, statement);
 	}
 
 	private SyntaxList<AttributeSyntax> ParseAttributes()
@@ -1545,10 +1539,9 @@ internal sealed class SourceParser
 
 		Token closeBracket = EatToken(TokenKind.CloseBracketToken);
 
-		return new(openBracket, target, name, argumentList, closeBracket)
-		{
-			Position = openBracket.Position
-		};
+		TextSpan span = GetSpan(openBracket, closeBracket);
+
+		return new(_tree, span, openBracket, target, name, argumentList, closeBracket);
 	}
 
 	private AttributeTargetSyntax? TryParseAttributeTarget()
@@ -1564,10 +1557,9 @@ internal sealed class SourceParser
 				Token targetKeyword = EatToken();
 				Token colonToken = EatToken(TokenKind.ColonToken);
 
-				return new(targetKeyword, colonToken)
-				{
-					Position = targetKeyword.Position,
-				};
+				TextSpan span = GetSpan(targetKeyword, colonToken);
+
+				return new(_tree, span, targetKeyword, colonToken);
 
 			default:
 				return null;
@@ -1608,18 +1600,16 @@ internal sealed class SourceParser
 		}
 
 		Token closeParen = EatToken(TokenKind.CloseParenToken);
+		TextSpan span = GetSpan(openParen, closeParen);
 
-		return new(openParen, List(args), closeParen)
-		{
-			Position = openParen.Position
-		};
+		return new(_tree, span, openParen, List(args), closeParen);
 	}
 
 	private AttributeArgumentSyntax ParseAttributeArgument()
 	{
 		ExpressionSyntax expr = ParseExpression();
 
-		return new(expr);
+		return new(_tree, expr.Span, expr);
 	}
 
 	private ExpressionSyntax ParseExpression(Precedence precedence = default)
@@ -1627,40 +1617,40 @@ internal sealed class SourceParser
 		Token token = Peek();
 		SyntaxKind kind = SyntaxFacts.GetPrefixUnaryExpressionKind(token.Kind);
 
+		ExpressionSyntax expr;
+
 		if (kind != default)
 		{
 			EatToken();
-			ExpressionSyntax expr = ParseExpression(GetPrecedence(kind));
-			return new PrefixUnaryExpression(kind, token, expr)
-			{
-				Position = token.Position
-			};
+			expr = ParseExpression(GetPrecedence(kind));
+			TextSpan span = GetSpan(token, expr);
+			return new PrefixUnaryExpressionSyntax(_tree, span, kind, token, expr);
 		}
 
 		ExpressionSyntax primary = ParsePrimaryExpression();
 		primary = ParsePostfixExpression(primary);
 
-		ExpressionSyntax current = primary;
+		expr = primary;
 
-		while (TryParseSubExpression(current, precedence) is ExpressionSyntax expr)
+		while (TryParseSubExpression(expr, precedence) is ExpressionSyntax sub)
 		{
-			current = expr;
+			expr = sub;
 		}
 
 		if (PeekKind(TokenKind.QuestionToken) && precedence <= Precedence.Conditional)
 		{
 			Token questionToken = EatToken();
 			ExpressionSyntax trueExpression = ParseExpression();
+
 			Token colonToken = EatToken(TokenKind.ColonToken);
 			ExpressionSyntax falseExpression = ParseExpression();
 
-			current = new ConditionalExpressionSyntax(current, questionToken, trueExpression, colonToken, falseExpression)
-			{
-				Position = current.Position
-			};
+			TextSpan span = GetSpan(expr, falseExpression);
+
+			expr = new ConditionalExpressionSyntax(_tree, span, expr, questionToken, trueExpression, colonToken, falseExpression);
 		}
 
-		return current;
+		return expr;
 	}
 
 	private ExpressionSyntax? TryParseSubExpression(ExpressionSyntax left, Precedence precedence)
@@ -1684,41 +1674,45 @@ internal sealed class SourceParser
 			return null;
 		}
 
-		Token operatorToken = EatToken();
-
 		if(exprKind == SyntaxKind.RangeExpression)
 		{
-			Token comparisonToken = Peek();
+			return ParseRangeExpression(left, newPrecedence);
+		}
 
-			if(comparisonToken.IsComparisonOperator())
-			{
-				EatToken();
-			}
-			else
-			{
-				comparisonToken = default;
-			}
+		Token operatorToken = EatToken();
 
-			return new RangeExpressionSyntax(left, operatorToken, comparisonToken, ParseExpression(newPrecedence))
-			{
-				Position = left.Position
-			};
+		ExpressionSyntax right = ParseExpression(newPrecedence);
+
+		TextSpan span = GetSpan(left, right);
+
+		if (operatorToken.IsAssignmentOperator())
+		{
+			return new AssignmentExpressionSyntax(_tree, span, left, operatorToken, right);
+		}
+
+		return new BinaryExpressionSyntax(_tree, span, exprKind, left, operatorToken, right);
+	}
+
+	private RangeExpressionSyntax ParseRangeExpression(ExpressionSyntax left, Precedence newPrecedence)
+	{
+		Token operatorToken = EatToken(TokenKind.DotDotToken);
+
+		Token comparisonToken = Peek();
+
+		if (comparisonToken.IsComparisonOperator())
+		{
+			EatToken();
+		}
+		else
+		{
+			comparisonToken = default;
 		}
 
 		ExpressionSyntax right = ParseExpression(newPrecedence);
 
-		if (operatorToken.IsAssignmentOperator())
-		{
-			return new AssignmentExpressionSyntax(left, operatorToken, right)
-			{
-				Position = left.Position
-			};
-		}
+		TextSpan span = GetSpan(left, right);
 
-		return new BinaryExpressionSyntax(exprKind, left, operatorToken, right)
-		{
-			Position = left.Position,
-		};
+		return new RangeExpressionSyntax(_tree, span, left, operatorToken, comparisonToken, right);
 	}
 
 	private ExpressionSyntax ParsePrimaryExpression()
@@ -1733,18 +1727,12 @@ internal sealed class SourceParser
 			case TokenKind.SelfKeyword:
 				EatToken();
 
-				return new SelfExpressionSyntax(token)
-				{
-					Position = token.Position
-				};
+				return new SelfExpressionSyntax(_tree, token.Span, token);
 
 			case TokenKind.BaseKeyword:
 				EatToken();
 
-				return new BaseExpressionSyntax(token)
-				{
-					Position = token.Position
-				};
+				return new BaseExpressionSyntax(_tree, token.Span, token);
 
 			case TokenKind.NewKeyword:
 				return ParseNewExpression();
@@ -1757,10 +1745,7 @@ internal sealed class SourceParser
 			case TokenKind.CharLiteralToken:
 				EatToken();
 
-				return new LiteralExpressionSyntax(SyntaxFacts.GetLiteralExpressionKind(token.Kind), token)
-				{
-					Position = token.Position
-				};
+				return new LiteralExpressionSyntax(_tree, token.Span, SyntaxFacts.GetLiteralExpressionKind(token.Kind), token);
 
 			case TokenKind.OpenBracketToken:
 				return ParseCollectionExpression();
@@ -1776,24 +1761,17 @@ internal sealed class SourceParser
 				ExpressionSyntax expr = ParseExpression();
 				Token closeParen = EatToken(TokenKind.CloseParenToken);
 
-				return new ParenthesizedExpressionSyntax(openParen, expr, closeParen)
-				{
-					Position = openParen.Position,
-				};
+				TextSpan span = GetSpan(openParen, closeParen);
+
+				return new ParenthesizedExpressionSyntax(_tree, span, openParen, expr, closeParen);
 
 			default:
 				if (token.IsPredefinedType())
 				{
-					return new PredefinedTypeSyntax(token)
-					{
-						Position = token.Position
-					};
+					return new PredefinedTypeSyntax(_tree, token.Span, token);
 				}
 
-				return new IdentifierNameSyntax(MissingToken(token))
-				{
-					Position = token.Position
-				};
+				return new IdentifierNameSyntax(_tree, token.Span, MissingToken(token));
 		}
 	}
 
@@ -1808,35 +1786,40 @@ internal sealed class SourceParser
 			switch (token.Kind)
 			{
 				case TokenKind.OpenParenToken:
-					expr = new InvocationExpressionSyntax(expr, ParseArgumentList())
 					{
-						Position = expr.Position,
-					};
+						ArgumentListSyntax argumentList = ParseArgumentList();
+						TextSpan span = GetSpan(expr, argumentList);
+						expr = new InvocationExpressionSyntax(_tree, span, expr, argumentList);
+					}
 
 					break;
 
 				case TokenKind.OpenBracketToken:
-					expr = new ElementAccessExpressionSyntax(expr, ParseBracketArgumentList())
 					{
-						Position = expr.Position
-					};
+						BracketArgumentListSyntax argumentList = ParseBracketArgumentList();
+						TextSpan span = GetSpan(expr, argumentList);
+						expr = new ElementAccessExpressionSyntax(_tree, span, expr, argumentList);
+					}
 
 					break;
 
 				case TokenKind.PlusPlusToken:
 				case TokenKind.MinusMinusToken:
-					expr = new PostfixUnaryExpression(SyntaxFacts.GetPostfixUnaryExpressionKind(token.Kind), expr, EatToken())
 					{
-						Position = expr.Position,
-					};
+						TextSpan span = GetSpan(expr, token);
+						expr = new PostfixUnaryExpressionSyntax(_tree, span, SyntaxFacts.GetPostfixUnaryExpressionKind(token.Kind), expr, EatToken());
+					}
 
 					break;
 
 				case TokenKind.DotToken:
-					expr = new MemberAccessExpressionSyntax(expr, EatToken(), ParseSimpleName())
 					{
-						Position = expr.Position,
-					};
+						EatToken();
+
+						SimpleNameSyntax name = ParseSimpleName();
+						TextSpan span = GetSpan(expr, name);
+						expr = new MemberAccessExpressionSyntax(_tree, span, expr, token, name);
+					}
 
 					break;
 
@@ -1876,10 +1859,10 @@ internal sealed class SourceParser
 		}
 
 		Token closeBracket = EatToken(TokenKind.CloseBracketToken);
-		return new(openBracket, List(expressions), closeBracket)
-		{
-			Position = openBracket.Position
-		};
+
+		TextSpan span = GetSpan(openBracket, closeBracket);
+
+		return new(_tree, span, openBracket, List(expressions), closeBracket);
 	}
 
 	private ExpressionSyntax ParseNewExpression()
@@ -1895,29 +1878,39 @@ internal sealed class SourceParser
 				{
 					SyntaxList<ArrayRankSyntax> ranks = ParseArrayRanks();
 
-					return new ArrayCreationExpressionSyntax(keyword, null, ranks, TryParseInitializer())
-					{
-						Position = keyword.Position
-					};
+					InitializerExpressionSyntax? initializer = TryParseInitializer();
+
+					TextSpan span = initializer is null
+						? GetSpan(keyword, ranks)
+						: GetSpan(keyword, initializer);
+
+					return new ArrayCreationExpressionSyntax(_tree, span, keyword, null, ranks, initializer);
 				}
 
 			// Object with no type, but with argument list.
 			case TokenKind.OpenParenToken:
 				{
 					ArgumentListSyntax argumentList = ParseArgumentList();
+					InitializerExpressionSyntax? initializer = TryParseInitializer();
 
-					return new ObjectCreationExpressionSyntax(keyword, null, argumentList, TryParseInitializer())
-					{
-						Position = keyword.Position
-					};
+					TextSpan span = initializer is null
+						? GetSpan(keyword, argumentList)
+						: GetSpan(keyword, initializer);
+
+					return new ObjectCreationExpressionSyntax(_tree, span, keyword, null, argumentList, initializer);
 				}
 
 			// Anonymous object.
 			case TokenKind.OpenBraceToken:
-				return new ObjectCreationExpressionSyntax(keyword, null, null, TryParseInitializer())
 				{
-					Position = keyword.Position
-				};
+					InitializerExpressionSyntax? initializer = TryParseInitializer();
+
+					TextSpan span = initializer is null
+						? keyword.Span
+						: GetSpan(keyword, initializer);
+
+					return new ObjectCreationExpressionSyntax(_tree, span, keyword, null, null, initializer);
+				}
 
 			default:
 				{
@@ -1929,18 +1922,26 @@ internal sealed class SourceParser
 					{
 						SyntaxList<ArrayRankSyntax> ranks = ParseArrayRanks();
 
-						return new ArrayCreationExpressionSyntax(keyword, type, ranks, TryParseInitializer())
-						{
-							Position = keyword.Position
-						};
+						InitializerExpressionSyntax? initializer = TryParseInitializer();
+
+						TextSpan span = initializer is null
+							? GetSpan(keyword, ranks)
+							: GetSpan(keyword, initializer);
+
+						return new ArrayCreationExpressionSyntax(_tree, span, keyword, type, ranks, initializer);
 					}
-
-					ArgumentListSyntax argumentList = ParseArgumentList();
-
-					return new ObjectCreationExpressionSyntax(keyword, type, argumentList, TryParseInitializer())
+					else
 					{
-						Position = keyword.Position
-					};
+						ArgumentListSyntax argumentList = ParseArgumentList();
+
+						InitializerExpressionSyntax? initializer = TryParseInitializer();
+
+						TextSpan span = initializer is null
+							? GetSpan(keyword, argumentList)
+							: GetSpan(keyword, initializer);
+
+						return new ObjectCreationExpressionSyntax(_tree, span, keyword, type, argumentList, initializer);
+					}
 				}
 		}
 	}
@@ -1964,10 +1965,9 @@ internal sealed class SourceParser
 
 			Token closeBracket = EatToken(TokenKind.CloseBracketToken);
 
-			ranks.Add(new(token, sizes, closeBracket)
-			{
-				Position = token.Position
-			});
+			TextSpan span = GetSpan(token, closeBracket);
+
+			ranks.Add(new(_tree, span, token, sizes, closeBracket));
 		}
 
 		return List(ranks);
@@ -1986,10 +1986,8 @@ internal sealed class SourceParser
 				if(expressions.Count == 0)
 				{
 					Token skippedToken = SkippedToken(token);
-					ExpressionSyntax expr = new SkippedArraySizeExpressionSyntax(skippedToken)
-					{
-						Position = skippedToken.Position,
-					};
+					TextSpan span = skippedToken.Span;
+					ExpressionSyntax expr = new SkippedArraySizeExpressionSyntax(_tree, span, skippedToken);
 
 					expressions.Add((expr, default));
 				}
@@ -2001,10 +1999,8 @@ internal sealed class SourceParser
 			{
 				EatToken();
 				Token skippedToken = SkippedToken(token);
-				ExpressionSyntax expr = new SkippedArraySizeExpressionSyntax(skippedToken)
-				{
-					Position = skippedToken.Position,
-				};
+				TextSpan span = skippedToken.Span;
+				ExpressionSyntax expr = new SkippedArraySizeExpressionSyntax(_tree, span, skippedToken);
 
 				expressions.Add((expr, token));
 				continue;
@@ -2052,10 +2048,9 @@ internal sealed class SourceParser
 
 		Token closeBrace = EatToken(TokenKind.CloseBraceToken);
 
-		return new(openBrace, List(expressions), closeBrace)
-		{
-			Position = openBrace.Position
-		};
+		TextSpan span = GetSpan(openBrace, closeBrace);
+
+		return new(_tree, span, openBrace, List(expressions), closeBrace);
 	}
 
 	private ArgumentListSyntax? TryParseArgumentList()
@@ -2066,42 +2061,6 @@ internal sealed class SourceParser
 		}
 
 		return ParseArgumentList();
-	}
-
-	private BracketArgumentListSyntax ParseBracketArgumentList()
-	{
-		Token openParen = EatToken(TokenKind.OpenBracketToken);
-
-		List<(ArgumentSyntax, Token)> args = new();
-
-		while (true)
-		{
-			Token token = Peek();
-
-			if (token.IsKind(TokenKind.CloseBracketToken))
-			{
-				break;
-			}
-
-			ArgumentSyntax arg = ParseArgument();
-
-			token = Peek();
-
-			if (token.IsKind(TokenKind.CommaToken))
-			{
-				args.Add((arg, token));
-				continue;
-			}
-
-			args.Add((arg, default));
-		}
-
-		Token closeParen = EatToken(TokenKind.CloseBracketToken);
-
-		return new(openParen, List(args), closeParen)
-		{
-			Position = openParen.Position
-		};
 	}
 
 	private ArgumentListSyntax ParseArgumentList()
@@ -2135,17 +2094,53 @@ internal sealed class SourceParser
 
 		Token closeParen = EatToken(TokenKind.CloseParenToken);
 
-		return new(openParen, List(args), closeParen)
+		TextSpan span = GetSpan(openParen, closeParen);
+
+		return new(_tree, span, openParen, List(args), closeParen);
+	}
+
+	private BracketArgumentListSyntax ParseBracketArgumentList()
+	{
+		Token openBracket = EatToken(TokenKind.OpenBracketToken);
+
+		List<(ArgumentSyntax, Token)> args = new();
+
+		while (true)
 		{
-			Position = openParen.Position
-		};
+			Token token = Peek();
+
+			if (token.IsKind(TokenKind.CloseBracketToken))
+			{
+				break;
+			}
+
+			ArgumentSyntax arg = ParseArgument();
+
+			token = Peek();
+
+			if (token.IsKind(TokenKind.CommaToken))
+			{
+				args.Add((arg, token));
+				continue;
+			}
+
+			args.Add((arg, default));
+		}
+
+		Token closeBracket = EatToken(TokenKind.CloseBracketToken);
+
+		TextSpan span = GetSpan(openBracket, closeBracket);
+
+		return new(_tree, span, openBracket, List(args), closeBracket);
 	}
 
 	private ArgumentSyntax ParseArgument()
 	{
 		ExpressionSyntax expr = ParseExpression();
 
-		return new(expr);
+		TextSpan span = expr.Span;
+
+		return new(_tree, span, expr);
 	}
 
 	private CastExpressionSyntax? TryParseCastExpression()
@@ -2178,10 +2173,10 @@ internal sealed class SourceParser
 		snapshot.Accept();
 
 		ExpressionSyntax expr = ParseExpression(Precedence.Cast);
-		return new(openParen, type, closeParen, expr)
-		{
-			Position = openParen.Position,
-		};
+
+		TextSpan span = GetSpan(openParen, expr);
+
+		return new(_tree, span, openParen, type, closeParen, expr);
 	}
 
 	private TypeSyntax ParseType()
@@ -2190,20 +2185,20 @@ internal sealed class SourceParser
 
 		if(PeekKind(TokenKind.QuestionToken))
 		{
-			return new NullableTypeSyntax(type, EatToken())
-			{
-				Position = type.Position
-			};
+			Token questionToken = EatToken();
+
+			TextSpan span = GetSpan(type, questionToken);
+
+			return new NullableTypeSyntax(_tree, span, type, questionToken);
 		}
 
 		if(PeekKind(TokenKind.OpenBracketToken))
 		{
 			SyntaxList<ArrayRankSyntax> ranks = ParseArrayRanks();
 
-			return new ArrayTypeSyntax(type, ranks)
-			{
-				Position = type.Position
-			};
+			TextSpan span = GetSpan(type, ranks);
+	
+			return new ArrayTypeSyntax(_tree, span, type, ranks);
 		}
 
 		return type;
@@ -2214,18 +2209,19 @@ internal sealed class SourceParser
 
 			if (token.IsPredefinedType())
 			{
-				EatToken();
+				return ParsePredefinedType();
+			}
 
-				return new PredefinedTypeSyntax(token)
-				{
-					Position = token.Position
-				};
-			}
-			else
-			{
-				return ParseName();
-			}
+			return ParseName();
 		}
+	}
+
+	private PredefinedTypeSyntax ParsePredefinedType()
+	{
+		Token token = EatToken();
+
+		TextSpan span = token.Span;
+		return new PredefinedTypeSyntax(_tree, span, token);
 	}
 
 	private NameSyntax ParseName()
@@ -2237,10 +2233,10 @@ internal sealed class SourceParser
 			Token dot = EatToken();
 
 			SimpleNameSyntax right = ParseSimpleName();
-			name = new QualifiedNameSyntax(name, dot, right)
-			{
-				Position = name.Position
-			};
+
+			TextSpan span = GetSpan(name, right);
+
+			name = new QualifiedNameSyntax(_tree, span, name, dot, right);
 		}
 
 		return name;
@@ -2248,16 +2244,26 @@ internal sealed class SourceParser
 
 	private SimpleNameSyntax ParseSimpleName()
 	{
-		Token identifier = EatToken(TokenKind.IdentifierToken);
-
-		if (!PeekKind(TokenKind.LessThanToken))
+		if (PeekKind(TokenKind.LessThanToken, 1))
 		{
-			return new IdentifierNameSyntax(identifier)
-			{
-				Position = identifier.Position
-			};
+			return ParseGenericName();
 		}
 
+		return ParseIdentifierName();
+	}
+
+	private GenericNameSyntax ParseGenericName()
+	{
+		Token identifier = EatToken(TokenKind.IdentifierToken);
+		TypeArgumentListSyntax list = ParseTypeArgumentList();
+
+		TextSpan span = GetSpan(identifier, list);
+
+		return new GenericNameSyntax(_tree, span, identifier, list);
+	}
+
+	private TypeArgumentListSyntax ParseTypeArgumentList()
+	{
 		Token lessThanToken = EatToken();
 		List<(TypeSyntax, Token)> args = new();
 
@@ -2280,34 +2286,33 @@ internal sealed class SourceParser
 
 		Token greaterThanToken = EatToken(TokenKind.GreaterThanToken);
 
-		TypeArgumentListSyntax list = new(lessThanToken, List(args), greaterThanToken)
-		{
-			Position = lessThanToken.Position
-		};
+		TextSpan span = GetSpan(lessThanToken, greaterThanToken);
 
-		return new GenericNameSyntax(identifier, list)
-		{
-			Position = identifier.Position
-		};
+		return new(_tree, span, lessThanToken, List(args), greaterThanToken);
 	}
 
 	private IdentifierNameSyntax ParseIdentifierName()
 	{
 		Token identifier = EatToken(TokenKind.IdentifierToken);
 
-		return new(identifier)
-		{
-			Position = identifier.Position
-		};
+		TextSpan span = identifier.Span;
+
+		return new(_tree, span, identifier);
 	}
 
 	private static int GetMemberPosition(in SyntaxList<AttributeSyntax> attributes, in TokenList modifiers, in Token token)
 	{
-		return attributes.IsDefaultOrEmpty
-			? modifiers.IsDefaultOrEmpty
-				? token.Position
-				: modifiers.GetPosition()
-			: attributes.GetPosition();
+		if(!attributes.IsDefaultOrEmpty)
+		{
+			return attributes.Position;
+		}
+
+		if (!modifiers.IsDefaultOrEmpty)
+		{
+			return modifiers.Position;
+		}
+
+		return token.Position;
 	}
 
 	private static Precedence GetPrecedence(SyntaxKind kind)
@@ -2427,6 +2432,87 @@ internal sealed class SourceParser
 			kind == SyntaxKind.UnsignedRightShiftAssignmentExpression;
 	}
 
+	private static TextSpan GetSpan(int start, Token end)
+	{
+		int endPosition = end.Position + end.Length;
+		int length = endPosition - start;
+		return new(start, length);
+	}
+
+	private static TextSpan GetSpan(in Token start, in Token end)
+	{
+		return GetSpan(start.Position, end);
+	}
+
+	private static TextSpan GetSpan(int start, int end)
+	{
+		int length = end - start + 1;
+		return new(start, length);
+	}
+
+	private static TextSpan GetSpan(int start, SyntaxNode end)
+	{
+		return GetSpan(start, end.Span.End);
+	}
+
+
+	private static TextSpan GetSpan(Token start, SyntaxNode end)
+	{
+		return GetSpan(start.Position, end.Span.End);
+	}
+
+	private static TextSpan GetSpan(SyntaxNode start, Token end)
+	{
+		return GetSpan(start.Position, end.Span.End);
+	}
+
+	private static TextSpan GetSpan(SyntaxNode start, SyntaxNode end)
+	{
+		return GetSpan(start.Span.Start, end.Span.End);
+	}
+
+	private static TextSpan GetSpan<TNode>(Token start, SyntaxList<TNode> end) where TNode : SyntaxNode
+	{
+		return end.IsDefaultOrEmpty
+			? start.Span
+			: GetSpan(start, end[^1]);
+	}
+
+	private static TextSpan GetSpan<TNode>(SyntaxNode start, SyntaxList<TNode> end) where TNode : SyntaxNode
+	{
+		return end.IsDefaultOrEmpty
+			? start.Span
+			: GetSpan(start, end[^1]);
+	}
+
+	private static TextSpan GetSpan<TNode>(Token start, List<TNode>? end) where TNode : SyntaxNode
+	{
+		return end is null || end.Count == 0
+			? start.Span
+			: GetSpan(start, end[^1]);
+	}
+
+	private static TextSpan GetSpan<TNode>(SyntaxNode start, List<TNode>? end) where TNode : SyntaxNode
+	{
+		return end is null || end.Count == 0
+			? start.Span
+			: GetSpan(start, end[^1]);
+	}
+
+	private static TextSpan GetSpan<TNode>(Token start, List<(TNode node, Token)>? end) where TNode : SyntaxNode
+	{
+		return end is null || end.Count == 0
+			? start.Span
+			: GetSpan(start, end[^1].node);
+	}
+
+	private static TextSpan GetSpan<TNode>(SyntaxNode start, List<(TNode node, Token)>? end) where TNode : SyntaxNode
+	{
+		return end is null || end.Count == 0
+			? start.Span
+			: GetSpan(start, end[^1].node);
+	}
+
 	private static SyntaxList<TNode> List<TNode>(List<TNode> nodes) where TNode : SyntaxNode
 	{
 		return new(nodes.ToArray());
@@ -2516,6 +2602,12 @@ internal sealed class SourceParser
 	private bool PeekKind(TokenKind kind)
 	{
 		ref readonly Token token = ref Peek();
+		return token.Kind == kind;
+	}
+
+	private bool PeekKind(TokenKind kind, int pos)
+	{
+		ref readonly Token token = ref Peek(pos);
 		return token.Kind == kind;
 	}
 

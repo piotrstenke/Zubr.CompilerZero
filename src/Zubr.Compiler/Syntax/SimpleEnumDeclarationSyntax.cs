@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -25,6 +26,8 @@ public sealed class SimpleEnumDeclarationSyntax : BaseEnumDeclarationSyntax
 	public override Token CloseBraceToken { get; }
 
 	internal SimpleEnumDeclarationSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		SyntaxList<AttributeSyntax> attributes,
 		TokenList modifiers,
 		Token keyword,
@@ -33,7 +36,7 @@ public sealed class SimpleEnumDeclarationSyntax : BaseEnumDeclarationSyntax
 		Token openBraceToken,
 		SeparatedSyntaxList<EnumMemberDeclarationSyntax> members,
 		Token closeBraceToken
-	)
+	) : base(tree, span)
 	{
 		Modifiers = modifiers;
 		Keyword = keyword;

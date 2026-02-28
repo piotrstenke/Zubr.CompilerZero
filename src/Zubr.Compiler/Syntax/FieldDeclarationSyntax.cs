@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -17,12 +18,14 @@ public sealed class FieldDeclarationSyntax : MemberDeclarationSyntax
 	public Token SemicolonToken { get; }
 
 	internal FieldDeclarationSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		SyntaxList<AttributeSyntax> attributes,
 		TokenList modifiers,
 		Token fieldKeyword,
 		VariableDeclarationSyntax variable,
 		Token semicolonToken
-	)
+	) : base(tree, span)
 	{
 		Attributes = attributes;
 		Modifiers = modifiers;

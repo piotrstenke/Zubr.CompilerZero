@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -8,7 +9,7 @@ public sealed class ClassConstraintSyntax : TypeParameterConstraintSyntax
 
 	public Token ClassKeyword { get; }
 
-	internal ClassConstraintSyntax(Token classKeyword)
+	internal ClassConstraintSyntax(SyntaxTree tree, TextSpan span, Token classKeyword) : base(tree, span)
 	{
 		ClassKeyword = classKeyword;
 	}

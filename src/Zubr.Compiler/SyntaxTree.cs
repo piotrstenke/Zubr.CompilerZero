@@ -5,14 +5,16 @@ using System.Text;
 using Zubr.Compiler.Diagnostics;
 using Zubr.Compiler.Parser;
 using Zubr.Compiler.Syntax;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler;
 
 public sealed class SyntaxTree
 {
-	private readonly DiagnosticMessage[]? _diagnostics;
+	private DiagnosticMessage[]? _diagnostics;
+	private readonly int[] _lineStartPositions;
 
-	public CompilationUnitSyntax Root { get; }
+	public SyntaxNode Root { get; private set; } = default!;
 
 	public Encoding Encoding { get; }
 
@@ -20,22 +22,37 @@ public sealed class SyntaxTree
 
 	public bool HasDiagnostics => _diagnostics is not null && _diagnostics.Length > 0;
 
-	internal SyntaxTree(
-		CompilationUnitSyntax root,
-		string? sourcePath,
-		Encoding encoding,
-		DiagnosticMessage[]? diagnostics
-	)
+	public int Length => Root.Span.Length;
+
+	private SyntaxTree(string? sourcePath, Encoding encoding, int[] lineStartPositions)
 	{
-		Root = root;
-		SourcePath = sourcePath;
 		Encoding = encoding;
-		_diagnostics = diagnostics;
+		SourcePath = sourcePath;
+		_lineStartPositions = lineStartPositions;
 	}
 
 	public DiagnosticMessage[] GetDiagnostics()
 	{
 		return _diagnostics ?? Array.Empty<DiagnosticMessage>();
+	}
+
+	public Location GetLocation(int position)
+	{
+		return GetLocation(new TextSpan(position, position));
+	}
+
+	public Location GetLocation(TextSpan span)
+	{
+		int line = GetLine(span.Start);
+
+		if(line == -1)
+		{
+			return Location.Invalid;
+		}
+
+		int linePosition = GetLinePosition(line, span.Start);
+
+		return new(SourcePath ?? string.Empty, span, line, linePosition);
 	}
 
 	public static SyntaxTree Parse(SourceText source)
@@ -58,17 +75,51 @@ public sealed class SyntaxTree
 		}
 
 		List<InternalDiagnostic>? diagnostics = lexer.GetErrors();
+		SyntaxTree tree = new(source.SourcePath, source.Encoding, lexer.GetLineStartPositions());
 
-		SourceParser parser = new(tokens.ToArray(), diagnostics);
+		SourceParser parser = new(tree, tokens.ToArray(), diagnostics);
 		CompilationUnitSyntax root = parser.ParseCompilationUnit();
 
 		diagnostics = parser.GetDiagnostics();
 
-		return new(root, source.SourcePath, source.Encoding, GetDiagnostics(diagnostics, source.SourcePath));
+		tree.AttachRoot(root, GetDiagnostics(diagnostics, tree));
+		return tree;
+	}
+
+	private int GetLine(int position)
+	{
+		int i = 0;
+
+		while (i < _lineStartPositions.Length)
+		{
+			if (_lineStartPositions[i] > position)
+			{
+				return i;
+			}
+
+			i++;
+		}
+
+		return -1;
+	}
+
+	private int GetLinePosition(int line, int absolutePosition)
+	{
+		int lineStart = _lineStartPositions[line];
+		return absolutePosition - lineStart;
+	}
+
+	private void AttachRoot(
+		CompilationUnitSyntax root,
+		DiagnosticMessage[]? diagnostics
+	)
+	{
+		Root = root;
+		_diagnostics = diagnostics;
 	}
 
 	[return: NotNullIfNotNull(nameof(diagnostics))]
-	private static DiagnosticMessage[]? GetDiagnostics(List<InternalDiagnostic>? diagnostics, string? sourcePath)
+	private static DiagnosticMessage[]? GetDiagnostics(List<InternalDiagnostic>? diagnostics, SyntaxTree tree)
 	{
 		if (diagnostics is null)
 		{
@@ -83,10 +134,9 @@ public sealed class SyntaxTree
 
 			array[i] = new DiagnosticMessage(
 				((int)diag.Code).ToString(),
-				diag.Position,
 				KnownDiagnostics.GetMessage(diag.Code),
 				DiagnosticSeverity.Error,
-				sourcePath
+				tree.GetLocation(diag.Position)
 			);
 		}
 

@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -12,7 +13,7 @@ public sealed class ReturnStatementSyntax : StatementSyntax
 
 	public Token SemicolonToken { get; }
 
-	internal ReturnStatementSyntax(Token returnKeyword, ExpressionSyntax? expression, Token semicolonToken)
+	internal ReturnStatementSyntax(SyntaxTree tree, TextSpan span, Token returnKeyword, ExpressionSyntax? expression, Token semicolonToken) : base(tree, span)
 	{
 		ReturnKeyword = returnKeyword;
 		Expression = expression;

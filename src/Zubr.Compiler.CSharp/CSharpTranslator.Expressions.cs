@@ -24,8 +24,8 @@ internal sealed partial class CSharpTranslator
 				TypeSyntax t => Type(t),
 				LiteralExpressionSyntax l => Literal(l),
 				BinaryExpressionSyntax b => Binary(b),
-				PostfixUnaryExpression postfix => PostfixUnary(postfix),
-				PrefixUnaryExpression prefix => PrefixUnary(prefix),
+				PostfixUnaryExpressionSyntax postfix => PostfixUnary(postfix),
+				PrefixUnaryExpressionSyntax prefix => PrefixUnary(prefix),
 				MemberAccessExpressionSyntax m => MemberAccess(m),
 				SelfExpressionSyntax s => This(s),
 				CastExpressionSyntax c => Cast(c),
@@ -88,20 +88,24 @@ internal sealed partial class CSharpTranslator
 			);
 		}
 
-		public static Sharp.ArrayCreationExpressionSyntax ArrayCreation(ArrayCreationExpressionSyntax node)
+		public static Sharp.ExpressionSyntax ArrayCreation(ArrayCreationExpressionSyntax node)
 		{
-			if(node.ElementType is null)
+			Sharp.ArgumentListSyntax argumentList = SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(node.Ranks
+				.Where(x => x.Sizes.Any() && !x.Sizes.HasKind(SyntaxKind.SkippedArraySizeExpression))
+				.SelectMany(x => x.Sizes)
+				.Select(x => SyntaxFactory.Argument(Expression(x)))));
+
+			if (node.ElementType is null)
 			{
-				// TODO: Handle array creation with implicit type.
-				// Returning int[] for now.
-				return SyntaxFactory.ArrayCreationExpression(
-					ArrayType(PredefinedType(CSyntaxKind.IntKeyword), node.Ranks),
-					Initializer(node.Initializer, CSyntaxKind.ArrayInitializerExpression)
+				return SyntaxFactory.ImplicitObjectCreationExpression(
+					argumentList,
+					Initializer(node.Initializer, CSyntaxKind.ObjectInitializerExpression)
 				);
 			}
 
-			return SyntaxFactory.ArrayCreationExpression(
+			return SyntaxFactory.ObjectCreationExpression(
 				ArrayType(node.ElementType, node.Ranks),
+				SyntaxFactory.ArgumentList(),
 				Initializer(node.Initializer, CSyntaxKind.ArrayInitializerExpression)
 			);
 		}
@@ -164,13 +168,13 @@ internal sealed partial class CSharpTranslator
 			return SyntaxFactory.AssignmentExpression(kind, Expression(node.Left), Expression(node.Right));
 		}
 
-		public static Sharp.PostfixUnaryExpressionSyntax PostfixUnary(PostfixUnaryExpression node)
+		public static Sharp.PostfixUnaryExpressionSyntax PostfixUnary(PostfixUnaryExpressionSyntax node)
 		{
 			CSyntaxKind kind = GetPostfixUnaryKind(node.Kind);
 			return SyntaxFactory.PostfixUnaryExpression(kind, Expression(node.Operand));
 		}
 
-		public static Sharp.PrefixUnaryExpressionSyntax PrefixUnary(PrefixUnaryExpression node)
+		public static Sharp.PrefixUnaryExpressionSyntax PrefixUnary(PrefixUnaryExpressionSyntax node)
 		{
 			CSyntaxKind kind = GetPrefixUnaryKind(node.Kind);
 			return SyntaxFactory.PrefixUnaryExpression(kind, Expression(node.Operand));
@@ -225,11 +229,6 @@ internal sealed partial class CSharpTranslator
 		public static Sharp.NullableTypeSyntax NullableType(NullableTypeSyntax node)
 		{
 			return SyntaxFactory.NullableType(Type(node.ElementType));
-		}
-
-		public static Sharp.TypeSyntax ArrayType(ArrayTypeSyntax node)
-		{
-			return ArrayType(node.ElementType, node.Ranks);
 		}
 
 		public static Sharp.TypeSyntax PredefinedType(PredefinedTypeSyntax node)
@@ -300,6 +299,33 @@ internal sealed partial class CSharpTranslator
 			return SyntaxFactory.IdentifierName(name);
 		}
 
+		public static Sharp.QualifiedNameSyntax ArrayType(ArrayTypeSyntax node)
+		{
+			return ArrayType(node.ElementType, node.Ranks);
+		}
+
+		private static Sharp.QualifiedNameSyntax ArrayType(TypeSyntax elementType, SyntaxList<ArrayRankSyntax> ranks)
+		{
+			// TODO: Support multi-dimensional arrays.
+			Sharp.QualifiedNameSyntax name = SyntaxFactory.QualifiedName(
+				GlobalQualifiedName("zubr", "interop", "csharp"),
+				SyntaxFactory.GenericName(
+					SyntaxFactory.Identifier("CSharpArray"),
+					SyntaxFactory.TypeArgumentList(SyntaxFactory.SingletonSeparatedList(Type(elementType))))
+			);
+
+			for (int i = 1; i < ranks.Count; i++)
+			{
+				name = SyntaxFactory.QualifiedName(
+					GlobalQualifiedName("zubr", "interop", "csharp"),
+					SyntaxFactory.GenericName(
+						SyntaxFactory.Identifier("CSharpArray"),
+						SyntaxFactory.TypeArgumentList(SyntaxFactory.SingletonSeparatedList<Sharp.TypeSyntax>(name))));
+			}
+
+			return name;
+		}
+
 		internal static Sharp.NameSyntax GlobalQualifiedName(params ReadOnlySpan<string> identifiers)
 		{
 			Sharp.NameSyntax name = SyntaxFactory.AliasQualifiedName(
@@ -313,21 +339,6 @@ internal sealed partial class CSharpTranslator
 			}
 
 			return name;
-		}
-
-		private static Sharp.ArrayTypeSyntax ArrayType(TypeSyntax elementType, SyntaxList<ArrayRankSyntax> ranks)
-		{
-			return ArrayType(Type(elementType), ranks);
-		}
-
-		private static Sharp.ArrayTypeSyntax ArrayType(Sharp.TypeSyntax elementType, SyntaxList<ArrayRankSyntax> ranks)
-		{
-			return SyntaxFactory.ArrayType(
-				elementType,
-				SyntaxFactory.List(ranks.Select(x =>
-					SyntaxFactory.ArrayRankSpecifier(SyntaxFactory.SeparatedList(x.Sizes.Select(x =>
-						Expression(x)
-			))))));
 		}
 
 		private static Sharp.PredefinedTypeSyntax PredefinedType(CSyntaxKind kind)

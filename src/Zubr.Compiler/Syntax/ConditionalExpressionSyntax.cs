@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -16,7 +17,7 @@ public sealed class ConditionalExpressionSyntax : ExpressionSyntax
 
 	public ExpressionSyntax FalseExpression { get; }
 
-	internal ConditionalExpressionSyntax(ExpressionSyntax condition, Token questionToken, ExpressionSyntax trueExpression, Token colonToken, ExpressionSyntax falseExpression)
+	internal ConditionalExpressionSyntax(SyntaxTree tree, TextSpan span, ExpressionSyntax condition, Token questionToken, ExpressionSyntax trueExpression, Token colonToken, ExpressionSyntax falseExpression) : base(tree, span)
 	{
 		Condition = condition;
 		QuestionToken = questionToken;

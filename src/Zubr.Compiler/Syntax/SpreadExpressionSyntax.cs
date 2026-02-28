@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -10,7 +11,7 @@ public sealed class SpreadExpressionSyntax : ExpressionSyntax
 
 	public ExpressionSyntax Expression { get; }
 
-	internal SpreadExpressionSyntax(Token @operator, ExpressionSyntax expression)
+	internal SpreadExpressionSyntax(SyntaxTree tree, TextSpan span, Token @operator, ExpressionSyntax expression) : base(tree, span)
 	{
 		Operator = @operator;
 		Expression = expression;

@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -10,7 +11,7 @@ public sealed class GenericNameSyntax : SimpleNameSyntax
 
 	public TypeArgumentListSyntax TypeArgumentList { get; }
 
-	internal GenericNameSyntax(Token identifier, TypeArgumentListSyntax typeArgumentList)
+	internal GenericNameSyntax(SyntaxTree tree, TextSpan span, Token identifier, TypeArgumentListSyntax typeArgumentList) : base(tree, span)
 	{
 		Identifier = identifier;
 		TypeArgumentList = typeArgumentList;

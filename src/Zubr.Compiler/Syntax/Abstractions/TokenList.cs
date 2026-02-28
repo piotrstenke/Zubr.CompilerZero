@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax.Abstractions;
 
@@ -11,6 +12,10 @@ namespace Zubr.Compiler.Syntax.Abstractions;
 public readonly struct TokenList : IReadOnlyCollection<Token>
 {
 	private readonly Token[] _tokens;
+
+	public static TokenList Default => default;
+
+	public static TokenList Empty => new(Array.Empty<Token>());
 
 	public int Count => _tokens.Length;
 
@@ -22,9 +27,36 @@ public readonly struct TokenList : IReadOnlyCollection<Token>
 
 	private int CountWithCheck => _tokens is null ? 0 : _tokens.Length;
 
-	public Token this[int index] => _tokens[index];
+	public int Position
+	{
+		get
+		{
+			if (IsDefaultOrEmpty)
+			{
+				return default;
+			}
 
-	public static TokenList Empty => new(Array.Empty<Token>());
+			return _tokens[0].Position;
+		}
+	}
+
+	public TextSpan Span
+	{
+		get
+		{
+			if (IsDefaultOrEmpty)
+			{
+				return default;
+			}
+
+			ref readonly Token first = ref _tokens[0];
+			ref readonly Token last = ref _tokens[^1];
+
+			return first.Span.MoveEnd(last.Span.End);
+		}
+	}
+
+	public Token this[int index] => _tokens[index];
 
 	internal TokenList(Token[] tokens)
 	{
@@ -56,16 +88,6 @@ public readonly struct TokenList : IReadOnlyCollection<Token>
 		return sb.ToString();
 	}
 
-	public int GetPosition()
-	{
-		if(IsDefaultOrEmpty)
-		{
-			return default;
-		}
-
-		return _tokens[0].Position;
-	}
-
 	public bool Any()
 	{
 		return !IsDefaultOrEmpty;
@@ -73,7 +95,7 @@ public readonly struct TokenList : IReadOnlyCollection<Token>
 
 	public bool HasKind(TokenKind kind)
 	{
-		if(IsDefaultOrEmpty)
+		if (IsDefault)
 		{
 			return false;
 		}

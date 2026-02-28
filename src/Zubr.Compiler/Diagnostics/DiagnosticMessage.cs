@@ -1,29 +1,27 @@
-﻿namespace Zubr.Compiler.Diagnostics;
+﻿using Zubr.Compiler.Text;
+
+namespace Zubr.Compiler.Diagnostics;
 
 public sealed class DiagnosticMessage
 {
 	public string Code { get; }
 
-	public int Position { get; }
-
 	public string Message { get; }
 
 	public DiagnosticSeverity Severity { get; }
 
-	public string? SourceFile { get; }
+	public Location Location { get; }
 
 	internal DiagnosticMessage(
 		string code,
-		int position,
 		string message,
 		DiagnosticSeverity severity,
-		string? sourceFile
+		Location location
 	)
 	{
 		Code = code;
-		Position = position;
 		Message = message;
 		Severity = severity;
-		SourceFile = sourceFile;
+		Location = location;
 	}
 }

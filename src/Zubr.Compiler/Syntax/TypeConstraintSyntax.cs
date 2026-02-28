@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -8,7 +9,7 @@ public sealed class TypeConstraintSyntax : TypeParameterConstraintSyntax
 
 	public TypeSyntax Type { get; }
 
-	internal TypeConstraintSyntax(TypeSyntax type)
+	internal TypeConstraintSyntax(SyntaxTree tree, TextSpan span, TypeSyntax type) : base(tree, span)
 	{
 		Type = type;
 

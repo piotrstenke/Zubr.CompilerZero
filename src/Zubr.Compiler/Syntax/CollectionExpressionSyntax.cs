@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -13,10 +14,12 @@ public sealed class CollectionExpressionSyntax : ExpressionSyntax
 	public Token CloseBracketToken { get; }
 
 	internal CollectionExpressionSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		Token openBracketToken,
 		SeparatedSyntaxList<ExpressionSyntax> elements,
 		Token closeBracketToken
-	)
+	) : base(tree, span)
 	{
 		OpenBracketToken = openBracketToken;
 		Elements = elements;

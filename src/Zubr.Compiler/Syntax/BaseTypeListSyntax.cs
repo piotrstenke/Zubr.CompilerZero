@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -10,7 +11,7 @@ public sealed class BaseTypeListSyntax : SyntaxNode
 
 	public SeparatedSyntaxList<BaseTypeSyntax> Types { get; }
 
-	internal BaseTypeListSyntax(Token colonToken, SeparatedSyntaxList<BaseTypeSyntax> types)
+	internal BaseTypeListSyntax(SyntaxTree tree, TextSpan span, Token colonToken, SeparatedSyntaxList<BaseTypeSyntax> types) : base(tree, span)
 	{
 		ColonToken = colonToken;
 		Types = types;

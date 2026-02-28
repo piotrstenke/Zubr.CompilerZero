@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -15,11 +16,13 @@ public sealed class CompilationUnitSyntax : SyntaxNode
 	public Token EndOfFileToken { get; }
 
 	internal CompilationUnitSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		SyntaxList<UseDirectiveSyntax> uses,
 		SyntaxList<AliasDirectiveSyntax> aliases,
 		SyntaxList<MemberDeclarationSyntax> members,
 		Token endOfFileToken
-	)
+	) : base(tree, span)
 	{
 		Uses = uses;
 		Aliases = aliases;

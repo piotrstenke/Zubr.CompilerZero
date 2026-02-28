@@ -1,4 +1,6 @@
-﻿namespace Zubr.Compiler.Syntax.Abstractions;
+﻿using Zubr.Compiler.Text;
+
+namespace Zubr.Compiler.Syntax.Abstractions;
 
 public abstract class TypeDeclarationSyntax : BaseTypeDeclarationSyntax
 {
@@ -10,7 +12,7 @@ public abstract class TypeDeclarationSyntax : BaseTypeDeclarationSyntax
 
 	public abstract SyntaxList<MemberDeclarationSyntax> Members { get; }
 
-	internal TypeDeclarationSyntax()
+	internal TypeDeclarationSyntax(SyntaxTree tree, TextSpan span) : base(tree, span)
 	{
 	}
 }

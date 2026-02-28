@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -17,12 +18,14 @@ public sealed class AttributeSyntax : SyntaxNode
 	public Token CloseBracketToken { get; }
 
 	internal AttributeSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		Token openBracketToken,
 		AttributeTargetSyntax? target,
 		NameSyntax name,
 		AttributeArgumentListSyntax? argumentList,
 		Token closeBracketToken
-	)
+	) : base(tree, span)
 	{
 		OpenBracketToken = openBracketToken;
 		Target = target;

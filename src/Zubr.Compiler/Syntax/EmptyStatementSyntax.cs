@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -8,7 +9,7 @@ public sealed class EmptyStatementSyntax : StatementSyntax
 
 	public Token SemicolonToken { get; }
 
-	internal EmptyStatementSyntax(Token semicolonToken)
+	internal EmptyStatementSyntax(SyntaxTree tree, TextSpan span, Token semicolonToken) : base(tree, span)
 	{
 		SemicolonToken = semicolonToken;
 	}

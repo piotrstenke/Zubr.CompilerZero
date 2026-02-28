@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -25,6 +26,8 @@ public sealed class OperatorDeclarationSyntax : BaseFunctionDeclarationSyntax
 	public override Token SemicolonToken { get; }
 
 	internal OperatorDeclarationSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		SyntaxList<AttributeSyntax> attributes,
 		TokenList modifiers,
 		TypeSyntax returnType,
@@ -34,7 +37,7 @@ public sealed class OperatorDeclarationSyntax : BaseFunctionDeclarationSyntax
 		BlockSyntax? body,
 		ArrowExpressionClauseSyntax? expressionBody,
 		Token semicolonToken
-	)
+	) : base(tree, span)
 	{
 		Attributes = attributes;
 		Modifiers = modifiers;

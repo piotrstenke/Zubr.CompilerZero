@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -12,7 +13,7 @@ public sealed class MemberAccessExpressionSyntax : ExpressionSyntax
 
 	public SimpleNameSyntax Name { get; }
 
-	internal MemberAccessExpressionSyntax(ExpressionSyntax expression, Token operatorToken, SimpleNameSyntax name)
+	internal MemberAccessExpressionSyntax(SyntaxTree tree, TextSpan span, ExpressionSyntax expression, Token operatorToken, SimpleNameSyntax name) : base(tree, span)
 	{
 		Expression = expression;
 		OperatorToken = operatorToken;

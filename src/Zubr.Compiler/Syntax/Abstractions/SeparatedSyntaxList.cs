@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax.Abstractions;
 
@@ -21,6 +22,48 @@ public readonly struct SeparatedSyntaxList<TNode> : IReadOnlyList<TNode> where T
 	public bool IsDefaultOrEmpty => _nodes is null || _nodes.Length == 0;
 
 	private int CountWithCheck => _nodes is null ? 0 : _nodes.Length;
+
+	public int Position
+	{
+		get
+		{
+			if (IsDefaultOrEmpty)
+			{
+				return default;
+			}
+
+			return _nodes[0].node.Span.Start;
+		}
+	}
+
+	public Location Location
+	{
+		get
+		{
+			if (IsDefaultOrEmpty)
+			{
+				return Location.Invalid;
+			}
+
+			Location location = _nodes[0].node.Location;
+			TextSpan end = _nodes[^1].node.Span;
+
+			return location.MoveEnd(end.End);
+		}
+	}
+
+	public TextSpan Span
+	{
+		get
+		{
+			if (IsDefaultOrEmpty)
+			{
+				return default;
+			}
+
+			return _nodes[0].node.Span.MoveEnd(_nodes[^1].node.Span.End);
+		}
+	}
 
 	public TNode this[int index] => _nodes[index].node;
 
@@ -50,19 +93,27 @@ public readonly struct SeparatedSyntaxList<TNode> : IReadOnlyList<TNode> where T
 		return sb.ToString();
 	}
 
-	public int GetPosition()
-	{
-		if (IsDefaultOrEmpty)
-		{
-			return default;
-		}
-
-		return _nodes[0].node.Position;
-	}
-
 	public bool Any()
 	{
 		return !IsDefaultOrEmpty;
+	}
+
+	public bool HasKind(SyntaxKind kind)
+	{
+		if (IsDefault)
+		{
+			return false;
+		}
+
+		for (int i = 0; i < _nodes.Length; i++)
+		{
+			if (_nodes[0].node.Kind == kind)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public Token GetSeparator(int index)

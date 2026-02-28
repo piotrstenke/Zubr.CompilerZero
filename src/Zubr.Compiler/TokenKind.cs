@@ -344,15 +344,6 @@ public enum TokenKind : uint
 	// or
 	OrKeyword,
 
-	// // give
-	// GiveKeyword,
-
-	// // to
-	// ToKeyword,
-
-	// // type
-	// TypeKeyword,
-
 	// where
 	WhereKeyword,
 

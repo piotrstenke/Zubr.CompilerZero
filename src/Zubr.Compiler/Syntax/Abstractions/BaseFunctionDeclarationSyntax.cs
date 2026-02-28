@@ -1,4 +1,6 @@
-﻿namespace Zubr.Compiler.Syntax.Abstractions;
+﻿using Zubr.Compiler.Text;
+
+namespace Zubr.Compiler.Syntax.Abstractions;
 
 public abstract class BaseFunctionDeclarationSyntax : MemberDeclarationSyntax
 {
@@ -10,7 +12,7 @@ public abstract class BaseFunctionDeclarationSyntax : MemberDeclarationSyntax
 
 	public abstract Token SemicolonToken { get; }
 
-	internal BaseFunctionDeclarationSyntax()
+	internal BaseFunctionDeclarationSyntax(SyntaxTree tree, TextSpan span) : base(tree, span)
 	{
 	}
 }

@@ -69,14 +69,21 @@ internal sealed class CSharpEmitter : IEmitter
 
 			array[i] = new(
 				diagnostic.Descriptor.Id,
-				diagnostic.Location.SourceSpan.Start,
 				diagnostic.GetMessage(),
 				GetSeverity(diagnostic.Severity),
-				diagnostic.Location.SourceTree?.FilePath
+				GetLocation(diagnostic)
 			);
 		}
 
 		return array;
+	}
+
+	private static Text.Location GetLocation(Diagnostic diagnostic)
+	{
+		Location location = diagnostic.Location;
+		FileLinePositionSpan span = location.GetLineSpan();
+
+		return Text.Location.Create(location.SourceTree?.FilePath!, new(location.SourceSpan.Start, location.SourceSpan.End), span.StartLinePosition.Line, span.StartLinePosition.Character);
 	}
 
 	private static Diagnostics.DiagnosticSeverity GetSeverity(Microsoft.CodeAnalysis.DiagnosticSeverity value)

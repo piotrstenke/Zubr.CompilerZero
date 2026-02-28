@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -12,7 +13,7 @@ public sealed class BlockSyntax : StatementSyntax
 
 	public Token CloseBraceToken { get; }
 
-	internal BlockSyntax(Token openBraceToken, SyntaxList<StatementSyntax> statements, Token closeBraceToken)
+	internal BlockSyntax(SyntaxTree tree, TextSpan span, Token openBraceToken, SyntaxList<StatementSyntax> statements, Token closeBraceToken) : base(tree, span)
 	{
 		OpenBraceToken = openBraceToken;
 		Statements = statements;

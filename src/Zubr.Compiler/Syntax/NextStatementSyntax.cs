@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -10,7 +11,7 @@ public sealed class NextStatementSyntax : StatementSyntax
 
 	public Token SemicolonToken { get; }
 
-	internal NextStatementSyntax(Token nextKeyword, Token semicolonToken)
+	internal NextStatementSyntax(SyntaxTree tree, TextSpan span, Token nextKeyword, Token semicolonToken) : base(tree, span)
 	{
 		NextKeyword = nextKeyword;
 		SemicolonToken = semicolonToken;

@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -17,12 +18,14 @@ public sealed class ParameterSyntax : SyntaxNode
 	public EqualsValueClauseSyntax? Default { get; }
 
 	internal ParameterSyntax(
+		SyntaxTree tree,
+		TextSpan span,
 		SyntaxList<AttributeSyntax> attributes,
 		TokenList modifiers,
 		TypeSyntax type,
 		Token identifier,
 		EqualsValueClauseSyntax? @default
-	)
+	) : base(tree, span)
 	{
 		Attributes = attributes;
 		Modifiers = modifiers;

@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -12,7 +13,7 @@ public sealed class ArrayRankSyntax : SyntaxNode
 
 	public Token CloseBracketToken { get; }
 
-	internal ArrayRankSyntax(Token openBracketToken, SeparatedSyntaxList<ExpressionSyntax> sizes, Token closeBracketToken)
+	internal ArrayRankSyntax(SyntaxTree tree, TextSpan span, Token openBracketToken, SeparatedSyntaxList<ExpressionSyntax> sizes, Token closeBracketToken) : base(tree, span)
 	{
 		OpenBracketToken = openBracketToken;
 		Sizes = sizes;

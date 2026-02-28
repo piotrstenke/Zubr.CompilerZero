@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -12,7 +13,7 @@ public sealed class ParenthesizedExpressionSyntax : ExpressionSyntax
 
 	public Token CloseParenToken { get; }
 
-	internal ParenthesizedExpressionSyntax(Token openParenToken, ExpressionSyntax expression, Token closeParenToken)
+	internal ParenthesizedExpressionSyntax(SyntaxTree tree, TextSpan span, Token openParenToken, ExpressionSyntax expression, Token closeParenToken) : base(tree, span)
 	{
 		OpenParenToken = openParenToken;
 		Expression = expression;

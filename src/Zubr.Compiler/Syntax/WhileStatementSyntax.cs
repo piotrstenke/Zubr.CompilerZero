@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -16,7 +17,7 @@ public sealed class WhileStatementSyntax : StatementSyntax
 
 	public StatementSyntax Statement { get; }
 
-	internal WhileStatementSyntax(Token whileKeyword, Token openParenToken, ExpressionSyntax condition, Token closeParenToken, StatementSyntax statement)
+	internal WhileStatementSyntax(SyntaxTree tree, TextSpan span, Token whileKeyword, Token openParenToken, ExpressionSyntax condition, Token closeParenToken, StatementSyntax statement) : base(tree, span)
 	{
 		WhileKeyword = whileKeyword;
 		OpenParenToken = openParenToken;

@@ -12,6 +12,7 @@ internal struct Lexer
 	private readonly SourceReader _reader;
 	private readonly StringBuilder _builder;
 	private List<InternalDiagnostic>? _errors;
+	private readonly List<int> _lineStartPositions;
 
 	private int _tokenStartPos;
 
@@ -26,6 +27,10 @@ internal struct Lexer
 		_reader = reader;
 		_builder = new(32);
 		_errors = errors;
+		_lineStartPositions = new(32)
+		{
+			0 // First line always start on position 0
+		};
 	}
 
 	public Token Lex()
@@ -37,6 +42,11 @@ internal struct Lexer
 	internal readonly List<InternalDiagnostic>? GetErrors()
 	{
 		return _errors;
+	}
+
+	internal readonly int[] GetLineStartPositions()
+	{
+		return _lineStartPositions.ToArray();
 	}
 
 	private Token ReadToken()
@@ -898,6 +908,13 @@ internal struct Lexer
 
 		while ((c = _reader.Peek()) != SourceReader.InvalidChar)
 		{
+			if (IsNewLine(c))
+			{
+				_lineStartPositions.Add(_reader.Position + 1);
+				_reader.Move();
+				continue;
+			}
+
 			if (char.IsWhiteSpace(c))
 			{
 				_reader.Move();
@@ -941,6 +958,11 @@ internal struct Lexer
 			// End of trivia.
 			break;
 		}
+	}
+
+	private static bool IsNewLine(char c)
+	{
+		return c == '\n';
 	}
 
 	private readonly void ReadUntilNewLine()

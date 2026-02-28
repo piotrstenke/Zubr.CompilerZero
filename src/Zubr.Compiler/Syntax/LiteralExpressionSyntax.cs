@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -8,7 +9,7 @@ public sealed class LiteralExpressionSyntax : ExpressionSyntax
 
 	public Token Value { get; }
 
-	internal LiteralExpressionSyntax(SyntaxKind kind, Token value)
+	internal LiteralExpressionSyntax(SyntaxTree tree, TextSpan span, SyntaxKind kind, Token value) : base(tree, span)
 	{
 		Kind = kind;
 		Value = value;

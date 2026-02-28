@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -8,7 +9,7 @@ public sealed class IdentifierNameSyntax : SimpleNameSyntax
 
 	public override Token Identifier { get; }
 
-	internal IdentifierNameSyntax(Token identifier)
+	internal IdentifierNameSyntax(SyntaxTree tree, TextSpan span, Token identifier) : base(tree, span)
 	{
 		Identifier = identifier;
 	}

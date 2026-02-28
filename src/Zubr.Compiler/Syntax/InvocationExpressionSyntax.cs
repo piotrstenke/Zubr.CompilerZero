@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -10,7 +11,7 @@ public sealed class InvocationExpressionSyntax : ExpressionSyntax
 
 	public ArgumentListSyntax ArgumentList { get; }
 
-	internal InvocationExpressionSyntax(ExpressionSyntax expression, ArgumentListSyntax argumentList)
+	internal InvocationExpressionSyntax(SyntaxTree tree, TextSpan span, ExpressionSyntax expression, ArgumentListSyntax argumentList) : base(tree, span)
 	{
 		Expression = expression;
 		ArgumentList = argumentList;

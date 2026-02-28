@@ -1,4 +1,5 @@
 ﻿using Zubr.Compiler.Syntax.Abstractions;
+using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
@@ -10,7 +11,7 @@ public sealed class EqualsValueClauseSyntax : SyntaxNode
 
 	public ExpressionSyntax Value { get; }
 
-	internal EqualsValueClauseSyntax(Token equalsToken, ExpressionSyntax value)
+	internal EqualsValueClauseSyntax(SyntaxTree tree, TextSpan span, Token equalsToken, ExpressionSyntax value) : base(tree, span)
 	{
 		EqualsToken = equalsToken;
 		Value = value;
