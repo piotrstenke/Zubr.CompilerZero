@@ -373,22 +373,27 @@ internal struct Lexer
 
 		TokenKind keyword = SyntaxFacts.GetKeyword(identifier);
 
-		if (keyword != TokenKind.None)
+		if (keyword == TokenKind.None)
 		{
-			if (keyword == TokenKind.TrueKeyword)
-			{
-				return new(keyword, identifier, _tokenStartPos, true);
-			}
-
-			if (keyword == TokenKind.FalseKeyword)
-			{
-				return new(keyword, identifier, _tokenStartPos, false);
-			}
-
-			return new(keyword, identifier, _tokenStartPos);
+			return new(TokenKind.IdentifierToken, identifier, _tokenStartPos);
 		}
 
-		return new(TokenKind.IdentifierToken, identifier, _tokenStartPos);
+		if (keyword == TokenKind.TrueKeyword)
+		{
+			return new(keyword, identifier, _tokenStartPos, true);
+		}
+
+		if (keyword == TokenKind.FalseKeyword)
+		{
+			return new(keyword, identifier, _tokenStartPos, false);
+		}
+
+		if (SyntaxFacts.IsContextualKeyword(keyword))
+		{
+			return new(TokenKind.IdentifierToken, identifier, _tokenStartPos);
+		}
+
+		return new(keyword, identifier, _tokenStartPos);
 	}
 
 	private readonly string ReadIdentifier()

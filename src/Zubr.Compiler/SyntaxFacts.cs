@@ -10,7 +10,7 @@ public static class SyntaxFacts
 
 	public static bool IsKeyword(string value)
 	{
-		return GetKeywordKind(value) != TokenKind.None;
+		return GetKeyword(value) != TokenKind.None;
 	}
 
 	public static bool IsKeyword(this in Token token)
@@ -21,6 +21,42 @@ public static class SyntaxFacts
 	public static bool IsKeyword(TokenKind value)
 	{
 		return IsBetween(value, KEYWORDS_START, KEYWORDS_END);
+	}
+
+	public static TokenKind GetContextualKeyword(this in Token token)
+	{
+		if (!token.IsKind(TokenKind.IdentifierToken))
+		{
+			return token.Kind;
+		}
+
+		return GetKeyword(token.Text);
+	}
+
+	public static bool IsContextualKeyword(this in Token token)
+	{
+		if(!token.IsKind(TokenKind.IdentifierToken))
+		{
+			return false;
+		}
+
+		return GetKeyword(token.Text) != TokenKind.None;
+	}
+
+	public static bool IsContextualKeyword(TokenKind value)
+	{
+		return
+			value == TokenKind.FreeKeyword ||
+			value == TokenKind.GetKeyword ||
+			value == TokenKind.SetKeyword ||
+			value == TokenKind.InitKeyword ||
+			value == TokenKind.ValueKeyword ||
+			value == TokenKind.StopKeyword ||
+			value == TokenKind.NextKeyword ||
+			value == TokenKind.FileKeyword ||
+			value == TokenKind.AssemblyKeyword ||
+			value == TokenKind.OverKeyword ||
+			value == TokenKind.FlagKeyword;
 	}
 
 	public static bool IsLiteralExpression(SyntaxKind value)
@@ -275,7 +311,7 @@ public static class SyntaxFacts
 
 	public static bool IsAccessor(this in Token token)
 	{
-		return IsAccessModifier(token.Kind);
+		return IsAccessor(token.Kind);
 	}
 
 	public static bool IsAccessor(TokenKind value)
@@ -294,7 +330,8 @@ public static class SyntaxFacts
 			value == TokenKind.PubKeyword ||
 			value == TokenKind.ProtKeyword ||
 			value == TokenKind.PrivKeyword ||
-			value == TokenKind.ScopedKeyword;
+			value == TokenKind.ScopedKeyword ||
+			value == TokenKind.FileKeyword;
 	}
 
 	public static bool IsModifier(this in Token token)
@@ -426,6 +463,7 @@ public static class SyntaxFacts
 			"cast" => TokenKind.CastKeyword,
 			"oper" => TokenKind.OperKeyword,
 			"goto" => TokenKind.GotoKeyword,
+			"value" => TokenKind.ValueKeyword,
 			_ => TokenKind.None
 		};
 	}

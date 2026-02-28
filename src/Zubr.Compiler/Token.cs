@@ -14,6 +14,8 @@ public readonly struct Token
 
 	public TokenKind Kind { get; }
 
+	public TokenKind ContextualKind => SyntaxFacts.GetContextualKeyword(this);
+
 	public int Length => Text.Length;
 
 	public bool IsNone => Kind == TokenKind.None;
@@ -47,5 +49,10 @@ public readonly struct Token
 	public bool IsKind(TokenKind kind)
 	{
 		return Kind == kind;
+	}
+
+	public bool IsContextualKind(TokenKind kind)
+	{
+		return ContextualKind == kind;
 	}
 }

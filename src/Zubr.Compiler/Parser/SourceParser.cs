@@ -198,7 +198,7 @@ internal sealed class SourceParser
 				return ParseFunctionOrPropertyDeclaration(attributes, modifiers, position);
 			}
 
-			return token.Kind switch
+			return token.ContextualKind switch
 			{
 				TokenKind.ClassKeyword
 					=> ParseClassDeclaration(attributes, modifiers, position),
@@ -262,7 +262,7 @@ internal sealed class SourceParser
 
 	private DestructorDeclarationSyntax ParseDestructorDeclaration(SyntaxList<AttributeSyntax> attributes, TokenList modifiers, int position)
 	{
-		Token keyword = EatToken();
+		Token keyword = EatContextualKeyword();
 
 		ParameterListSyntax parameterList = ParseParameterList();
 
@@ -444,7 +444,7 @@ internal sealed class SourceParser
 			SyntaxList<AttributeSyntax> attributes = ParseAttributes();
 			TokenList modifiers = ParseModifiers();
 
-			Token keyword = EatToken();
+			Token keyword = EatContextualKeyword();
 
 			int position = GetMemberPosition(attributes, modifiers, keyword);
 
@@ -830,23 +830,21 @@ internal sealed class SourceParser
 
 	private TokenList ParseModifiers()
 	{
-		Token token = Peek();
-
-		if(!token.IsModifier())
+		if(!Peek().IsModifier())
 		{
 			return TokenList.Empty;
 		}
 
-		EatToken();
+		Token token = EatContextualKeyword();
 
 		List<Token> tokens = new()
 		{
 			token
 		};
 
-		while((token = Peek()).IsModifier())
+		while(Peek().IsModifier())
 		{
-			EatToken();
+			token = EatContextualKeyword();
 			tokens.Add(token);
 		}
 
@@ -1223,7 +1221,7 @@ internal sealed class SourceParser
 	{
 		Token token = Peek();
 
-		return token.Kind switch
+		return token.ContextualKind switch
 		{
 			TokenKind.OpenBraceToken => ParseBlock(),
 			TokenKind.IfKeyword => ParseIfStatement(),
@@ -1259,7 +1257,7 @@ internal sealed class SourceParser
 
 	private NextStatementSyntax ParseNextStatement()
 	{
-		Token nextKeyword = EatToken(TokenKind.NextKeyword);
+		Token nextKeyword = EatContextualKeyword(TokenKind.NextKeyword);
 		Token semicolon = EatToken(TokenKind.SemicolonToken);
 
 		TextSpan span = GetSpan(nextKeyword, semicolon);
@@ -1269,7 +1267,7 @@ internal sealed class SourceParser
 
 	private StopStatementSyntax ParseStopStatement()
 	{
-		Token stopKeyword = EatToken(TokenKind.StopKeyword);
+		Token stopKeyword = EatContextualKeyword(TokenKind.StopKeyword);
 		Token semicolon = EatToken(TokenKind.SemicolonToken);
 
 		TextSpan span = GetSpan(stopKeyword, semicolon);
@@ -1588,12 +1586,12 @@ internal sealed class SourceParser
 		Token token = Peek();
 
 		// TODO: Handle all attribute target specifiers.
-		switch (token.Kind)
+		switch (token.ContextualKind)
 		{
 			case TokenKind.ReturnKeyword:
 			case TokenKind.AssemblyKeyword:
 			case TokenKind.FieldKeyword:
-				Token targetKeyword = EatToken();
+				Token targetKeyword = EatContextualKeyword();
 				Token colonToken = EatToken(TokenKind.ColonToken);
 
 				TextSpan span = GetSpan(targetKeyword, colonToken);
@@ -2582,26 +2580,46 @@ internal sealed class SourceParser
 		return new(nodes.ToArray());
 	}
 
-	private Token EatToken(TokenKind kind)
-	{
-		ref readonly Token current = ref Peek();
-
-		if (current.Kind != kind)
-		{
-			return MissingTokenWithError(current);
-		}
-
-		EatToken();
-
-		return current;
-	}
-
 	private void EnsureKind(ref Token token, TokenKind kind)
 	{
 		if (token.Kind != kind)
 		{
 			token = MissingTokenWithError(token);
 		}
+	}
+
+	private Token EatContextualKeyword()
+	{
+		Token token = EatToken();
+		AcceptContextualKeyword(ref token);
+		return token;
+	}
+
+	private Token EatContextualKeyword(TokenKind kind)
+	{
+		Token token = Peek();
+
+		if (token.Kind != kind)
+		{
+			return MissingTokenWithError(token);
+		}
+
+		AcceptContextualKeyword(ref token);
+		return token;
+	}
+
+	private Token EatToken(TokenKind kind)
+	{
+		ref readonly Token token = ref Peek();
+
+		if (token.Kind != kind)
+		{
+			return MissingTokenWithError(token);
+		}
+
+		EatToken();
+
+		return token;
 	}
 
 	private ref readonly Token EatToken()
@@ -2648,6 +2666,23 @@ internal sealed class SourceParser
 	{
 		ref readonly Token token = ref Peek(pos);
 		return token.Kind == kind;
+	}
+
+	private static void AcceptContextualKeyword(ref Token token)
+	{
+		TokenKind kind = token.ContextualKind;
+
+		if(kind == token.Kind)
+		{
+			return;
+		}
+
+		ChangeKind(ref token, token.ContextualKind);
+	}
+
+	private static void ChangeKind(ref Token token, TokenKind kind)
+	{
+		token = new(kind, token.Text, token.Position, token.Value);
 	}
 
 	private Token MissingTokenWithError(in Token token)
