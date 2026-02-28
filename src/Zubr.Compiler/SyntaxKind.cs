@@ -406,6 +406,12 @@ public enum SyntaxKind : uint
 	// int x = 1;
 	LocalDeclarationStatement,
 
+	// goto DEFAULT;
+	GotoStatement,
+
+	// DEFAULT: ...;
+	LabelStatement,
+
 	// do { } while (condition);
 	DoStatement,
 
