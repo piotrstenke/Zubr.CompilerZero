@@ -12,8 +12,18 @@ public enum SyntaxKind : uint
 	// Directives & Attributes
 	// -----------------------------
 
-	// use Module as M;
-	UseDirective,
+	// use Module.Inner;
+	// use Module.Inner as I;
+	SimpleUseDirective,
+
+	// use { X, Y, Z as Z1 } from Module;
+	ComplexUseDirective,
+
+	// the '{ X, Y, Z as Z1 }' in 'use { X, Y, Z as Z1 } from Module;'
+	UseDirectiveElementList,
+
+	// the 'X', 'Y', 'Z as Z1' in 'use { X, Y, Z as Z1 } from Module;'
+	UseDirectiveElement,
 
 	// pub alias Test = LongTestName;
 	AliasDirective,

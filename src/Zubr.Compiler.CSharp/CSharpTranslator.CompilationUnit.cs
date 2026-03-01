@@ -1,7 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Collections.Generic;
-using System.Linq;
 using Zubr.Compiler.Syntax;
 using Zubr.Compiler.Syntax.Abstractions;
 
@@ -14,28 +13,76 @@ internal sealed partial class CSharpTranslator
 {
 	private static Sharp.CompilationUnitSyntax Translate(CompilationUnitSyntax node)
 	{
-		return SyntaxFactory.CompilationUnit()
-			.WithUsings(SyntaxFactory.List(node.Uses.Select(UsingDirective)))
-			.WithMembers(SyntaxFactory.List(GetCompilationUnitMembers(node)))
-			.NormalizeWhitespace();
+		return SyntaxFactory.CompilationUnit(
+			externs: default,
+			SyntaxFactory.List(GetUsingDirectives(node)),
+			attributeLists: default,
+			SyntaxFactory.List(GetCompilationUnitMembers(node))
+		).NormalizeWhitespace();
 	}
 
-	private static Sharp.UsingDirectiveSyntax UsingDirective(UseDirectiveSyntax x)
+	private static IEnumerable<Sharp.UsingDirectiveSyntax> GetUsingDirectives(CompilationUnitSyntax node)
 	{
-		if (x.Alias is null)
+		foreach (UseDirectiveSyntax directive in node.Uses)
 		{
-			return SyntaxFactory.UsingDirective(Expressions.Name(x.Name));
+			switch(directive)
+			{
+				case SimpleUseDirectiveSyntax s:
+					yield return UsingDirective(s);
+					break;
+
+				case ComplexUseDirectiveSyntax c:
+					foreach (Sharp.UsingDirectiveSyntax item in UsingDirectives(c))
+					{
+						yield return item;
+					}
+
+					break;
+			}
+		}
+	}
+
+	private static Sharp.UsingDirectiveSyntax UsingDirective(SimpleUseDirectiveSyntax node)
+	{
+		if(node.Alias is null)
+		{
+			// TODO: Handle usings for non-namespace members.
+			return SyntaxFactory.UsingDirective(Expressions.Name(node.Name));
 		}
 
-		if (x.ModuleName is null)
-		{
-			return SyntaxFactory.UsingDirective(SyntaxFactory.NameEquals(Expressions.IdentifierName(x.Alias)), Expressions.Name(x.Name));
-		}
-
+		// TODO: Support non-simple names.
 		return SyntaxFactory.UsingDirective(
-			SyntaxFactory.NameEquals(Expressions.IdentifierName(x.Alias)),
-			SyntaxFactory.QualifiedName(Expressions.Name(x.ModuleName), Expressions.SimpleName((SimpleNameSyntax)x.Name)) // TODO: Support non-simple names.
+			SyntaxFactory.NameEquals(Expressions.IdentifierName(node.Alias)),
+			Expressions.Name(node.Name)
 		);
+	}
+
+	private static IEnumerable<Sharp.UsingDirectiveSyntax> UsingDirectives(ComplexUseDirectiveSyntax node)
+	{
+		foreach (UseDirectiveElementSyntax element in node.ElementList.Elements)
+		{
+			IdentifierNameSyntax alias;
+
+			if (element.Alias is null)
+			{
+				// TODO: Handle non-identifier names (e.g. generic names).
+				if (element.Name is not IdentifierNameSyntax n)
+				{
+					continue;
+				}
+
+				alias = n;
+			}
+			else
+			{
+				alias = element.Alias;
+			}
+
+			yield return SyntaxFactory.UsingDirective(
+				SyntaxFactory.NameEquals(Expressions.IdentifierName(alias)),
+				SyntaxFactory.QualifiedName(Expressions.Name(node.Module), Expressions.SimpleName(element.Name))
+			);
+		}
 	}
 
 	private static List<Sharp.MemberDeclarationSyntax> GetCompilationUnitMembers(CompilationUnitSyntax node)

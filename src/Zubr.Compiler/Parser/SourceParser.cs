@@ -131,6 +131,16 @@ internal sealed class SourceParser
 
 	private UseDirectiveSyntax ParseUseDirective()
 	{
+		if(PeekKind(TokenKind.OpenBraceToken, 1))
+		{
+			return ParseComplexUseDirective();
+		}
+
+		return ParseSimpleUseDirective();
+	}
+
+	private SimpleUseDirectiveSyntax ParseSimpleUseDirective()
+	{
 		Token useKeyword = EatToken(TokenKind.UseKeyword);
 
 		NameSyntax name = ParseName();
@@ -138,25 +148,96 @@ internal sealed class SourceParser
 		Token asKeyword = default;
 		IdentifierNameSyntax? alias = null;
 
-		Token fromKeyword = default;
-		NameSyntax? moduleName = null;
-
 		if (PeekKind(TokenKind.AsKeyword))
 		{
 			asKeyword = EatToken();
 			alias = ParseIdentifierName();
 		}
 
-		if(PeekKind(TokenKind.FromKeyword))
-		{
-			fromKeyword = EatToken();
-			moduleName = ParseName();
-		}
-
 		Token semicolon = EatToken(TokenKind.SemicolonToken);
 		TextSpan span = GetSpan(useKeyword, semicolon);
 
-		return new(_tree, span, useKeyword, name, asKeyword, alias, fromKeyword, moduleName, semicolon);
+		return new(_tree, span, useKeyword, name, asKeyword, alias, semicolon);
+	}
+
+	private ComplexUseDirectiveSyntax ParseComplexUseDirective()
+	{
+		Token useKeyword = EatToken(TokenKind.UseKeyword);
+		UseDirectiveElementListSyntax elementList = ParseUseDirectiveElementList();
+
+		Token fromKeyword = EatToken(TokenKind.FromKeyword);
+
+		NameSyntax module = ParseName();
+
+		Token semicolon = EatToken(TokenKind.SemicolonToken);
+
+		TextSpan span = GetSpan(useKeyword, semicolon);
+
+		return new(_tree, span, useKeyword, elementList, fromKeyword, module, semicolon);
+	}
+
+	private UseDirectiveElementListSyntax ParseUseDirectiveElementList()
+	{
+		Token openBrace = EatToken(TokenKind.OpenBraceToken);
+
+		if (PeekKind(TokenKind.CloseBraceToken))
+		{
+			return Close(openBrace, null);
+		}
+
+		List<(UseDirectiveElementSyntax, Token)> elements = new();
+
+		while (true)
+		{
+			UseDirectiveElementSyntax element = ParseUseDirectiveElement();
+
+			ref readonly Token token = ref Peek();
+
+			if(token.IsKind(TokenKind.CloseBraceToken))
+			{
+				elements.Add((element, default));
+				break;
+			}
+
+			if(!token.IsKind(TokenKind.CommaToken))
+			{
+				elements.Add((element, default));
+				break;
+			}
+
+			elements.Add((element, token));
+		}
+
+		return Close(openBrace, elements);
+
+		UseDirectiveElementListSyntax Close(Token openBrace, List<(UseDirectiveElementSyntax, Token)>? elements)
+		{
+			Token closeBrace = EatToken(TokenKind.CloseBraceToken);
+
+			TextSpan span = GetSpan(openBrace, closeBrace);
+
+			return new(_tree, span, openBrace, elements is null ? default : List(elements), closeBrace);
+		}
+	}
+
+	private UseDirectiveElementSyntax ParseUseDirectiveElement()
+	{
+		SimpleNameSyntax name = ParseSimpleName();
+
+		Token asKeyword = default;
+		IdentifierNameSyntax? alias = null;
+
+		if(PeekKind(TokenKind.AsKeyword))
+		{
+			asKeyword = EatToken();
+			alias = ParseIdentifierName();
+		}
+
+		TextSpan span = alias is null
+			? name.Span
+			: GetSpan(name, alias);
+
+		return new(_tree, span, name, asKeyword, alias);
 	}
 
 	private AliasDirectiveSyntax ParseAliasDirective()
