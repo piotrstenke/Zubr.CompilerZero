@@ -159,7 +159,14 @@ internal sealed partial class CSharpTranslator
 
 		public static Sharp.MemberAccessExpressionSyntax MemberAccess(MemberAccessExpressionSyntax node)
 		{
-			return SyntaxFactory.MemberAccessExpression(CSyntaxKind.SimpleMemberAccessExpression, Expression(node.Expression), SimpleName(node.Name));
+			CSyntaxKind kind = node.Kind switch
+			{
+				SyntaxKind.SimpleMemberAccessExpression => CSyntaxKind.SimpleMemberAccessExpression,
+				SyntaxKind.PointerMemberAccessExpression => CSyntaxKind.PointerMemberAccessExpression,
+				_ => throw new UnreachableException()
+			};
+
+			return SyntaxFactory.MemberAccessExpression(kind, Expression(node.Expression), SimpleName(node.Name));
 		}
 
 		public static Sharp.AssignmentExpressionSyntax Assignment(AssignmentExpressionSyntax node)
@@ -222,6 +229,8 @@ internal sealed partial class CSharpTranslator
 				PredefinedTypeSyntax p => PredefinedType(p),
 				NullableTypeSyntax n => NullableType(n),
 				ArrayTypeSyntax a => ArrayType(a),
+				PointerTypeSyntax pr => PointerType(pr),
+				ReferenceTypeSyntax r => RefType(r),
 				_ => throw new UnreachableException()
 			};
 		}
@@ -229,6 +238,16 @@ internal sealed partial class CSharpTranslator
 		public static Sharp.NullableTypeSyntax NullableType(NullableTypeSyntax node)
 		{
 			return SyntaxFactory.NullableType(Type(node.ElementType));
+		}
+
+		public static Sharp.PointerTypeSyntax PointerType(PointerTypeSyntax node)
+		{
+			return SyntaxFactory.PointerType(Type(node.ElementType));
+		}
+
+		public static Sharp.RefTypeSyntax RefType(ReferenceTypeSyntax node)
+		{
+			return SyntaxFactory.RefType(Type(node.ElementType));
 		}
 
 		public static Sharp.TypeSyntax PredefinedType(PredefinedTypeSyntax node)
@@ -410,6 +429,8 @@ internal sealed partial class CSharpTranslator
 				SyntaxKind.PreDecrementExpression => CSyntaxKind.PreDecrementExpression,
 				SyntaxKind.LogicalNotExpression => CSyntaxKind.LogicalNotExpression,
 				SyntaxKind.BitwiseNotExpression => CSyntaxKind.BitwiseNotExpression,
+				SyntaxKind.AddressOfExpression => CSyntaxKind.AddressOfExpression,
+				SyntaxKind.PointerIndirectionExpression => CSyntaxKind.PointerIndirectionExpression,
 				_ => throw new UnreachableException()
 			};
 		}

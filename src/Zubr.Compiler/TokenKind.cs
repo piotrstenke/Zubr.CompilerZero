@@ -74,6 +74,9 @@ public enum TokenKind : uint
 	// -=
 	MinusEqualsToken,
 
+	// ->
+	MinutGreaterThanToken,
+
 	// *
 	AsteriskToken,
 

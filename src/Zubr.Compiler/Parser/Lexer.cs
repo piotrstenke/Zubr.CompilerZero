@@ -93,6 +93,13 @@ internal struct Lexer
 					return new(TokenKind.MinusEqualsToken, "-=", _tokenStartPos);
 				}
 
+				if (_reader.Peek() == '>')
+				{
+					_reader.Move();
+
+					return new(TokenKind.MinutGreaterThanToken, "->", _tokenStartPos);
+				}
+
 				return new(TokenKind.MinusToken, "-", _tokenStartPos);
 
 			case '=':

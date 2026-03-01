@@ -245,6 +245,12 @@ public enum SyntaxKind : uint
 	// !a
 	LogicalNotExpression,
 
+	// *a
+	PointerIndirectionExpression,
+
+	// &b
+	AddressOfExpression,
+
 	// ++a
 	PreIncrementExpression,
 
@@ -333,7 +339,10 @@ public enum SyntaxKind : uint
 	SpreadExpression,
 
 	// a.b
-	MemberAccessExpression,
+	SimpleMemberAccessExpression,
+
+	// a->b
+	PointerMemberAccessExpression,
 
 	// a(1, 2)
 	InvocationExpression,
@@ -380,6 +389,12 @@ public enum SyntaxKind : uint
 
 	// the '[,]' in 'int[,]' 
 	ArrayRank,
+
+	// int*
+	PointerType,
+
+	// int&
+	ReferenceType,
 
 	// -----------------------------
 	// Statements

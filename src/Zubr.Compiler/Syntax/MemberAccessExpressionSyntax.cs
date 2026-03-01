@@ -5,7 +5,7 @@ namespace Zubr.Compiler.Syntax;
 
 public sealed class MemberAccessExpressionSyntax : ExpressionSyntax
 {
-	public override SyntaxKind Kind => SyntaxKind.MemberAccessExpression;
+	public override SyntaxKind Kind { get; }
 
 	public ExpressionSyntax Expression { get; }
 
@@ -13,8 +13,9 @@ public sealed class MemberAccessExpressionSyntax : ExpressionSyntax
 
 	public SimpleNameSyntax Name { get; }
 
-	internal MemberAccessExpressionSyntax(SyntaxTree tree, TextSpan span, ExpressionSyntax expression, Token operatorToken, SimpleNameSyntax name) : base(tree, span)
+	internal MemberAccessExpressionSyntax(SyntaxTree tree, TextSpan span, SyntaxKind kind, ExpressionSyntax expression, Token operatorToken, SimpleNameSyntax name) : base(tree, span)
 	{
+		Kind = kind;
 		Expression = expression;
 		OperatorToken = operatorToken;
 		Name = name;

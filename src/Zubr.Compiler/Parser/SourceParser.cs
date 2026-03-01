@@ -1859,7 +1859,18 @@ internal sealed class SourceParser
 
 						SimpleNameSyntax name = ParseSimpleName();
 						TextSpan span = GetSpan(expr, name);
-						expr = new MemberAccessExpressionSyntax(_tree, span, expr, token, name);
+						expr = new MemberAccessExpressionSyntax(_tree, span, SyntaxKind.SimpleMemberAccessExpression, expr, token, name);
+					}
+
+					break;
+
+				case TokenKind.MinutGreaterThanToken:
+					{
+						EatToken();
+
+						SimpleNameSyntax name = ParseSimpleName();
+						TextSpan span = GetSpan(expr, name);
+						expr = new MemberAccessExpressionSyntax(_tree, span, SyntaxKind.PointerMemberAccessExpression, expr, token, name);
 					}
 
 					break;
@@ -2224,25 +2235,40 @@ internal sealed class SourceParser
 	{
 		TypeSyntax type = ParseNameOrTypeKeyword();
 
-		if(PeekKind(TokenKind.QuestionToken))
+		ref readonly Token token = ref Peek();
+
+		switch(token.Kind)
 		{
-			Token questionToken = EatToken();
+			case TokenKind.QuestionToken:
+				{
+					TextSpan span = GetSpan(type, token);
+					return new NullableTypeSyntax(_tree, span, type, token);
+				}
 
-			TextSpan span = GetSpan(type, questionToken);
+			case TokenKind.AsteriskToken:
+				{
+					TextSpan span = GetSpan(type, token);
+					return new PointerTypeSyntax(_tree, span, type, token);
+				}
 
-			return new NullableTypeSyntax(_tree, span, type, questionToken);
+			case TokenKind.AmpersandToken:
+				{
+					TextSpan span = GetSpan(type, token);
+					return new ReferenceTypeSyntax(_tree, span, type, token);
+				}
+
+			case TokenKind.OpenBracketToken:
+				{
+					SyntaxList<ArrayRankSyntax> ranks = ParseArrayRanks();
+
+					TextSpan span = GetSpan(type, ranks);
+
+					return new ArrayTypeSyntax(_tree, span, type, ranks);
+				}
+
+			default:
+				return type;
 		}
-
-		if(PeekKind(TokenKind.OpenBracketToken))
-		{
-			SyntaxList<ArrayRankSyntax> ranks = ParseArrayRanks();
-
-			TextSpan span = GetSpan(type, ranks);
-	
-			return new ArrayTypeSyntax(_tree, span, type, ranks);
-		}
-
-		return type;
 
 		TypeSyntax ParseNameOrTypeKeyword()
 		{
@@ -2378,8 +2404,15 @@ internal sealed class SourceParser
 			SyntaxKind.ArrayCreationExpression or
 			SyntaxKind.ObjectCreationExpression or
 			SyntaxKind.CollectionExpression or
-			SyntaxKind.ElementAccessExpression
+			SyntaxKind.ElementAccessExpression or
+			SyntaxKind.PointerMemberAccessExpression
 				=> Precedence.Primary,
+
+			SyntaxKind.AddressOfExpression
+				=> Precedence.AddressOf,
+
+			SyntaxKind.PointerIndirectionExpression
+				=> Precedence.PointerIndirection,
 
 			SyntaxKind.CastExpression
 				=> Precedence.Cast,
@@ -2389,7 +2422,9 @@ internal sealed class SourceParser
 			SyntaxKind.BitwiseNotExpression or
 			SyntaxKind.LogicalNotExpression or
 			SyntaxKind.PreIncrementExpression or
-			SyntaxKind.PreDecrementExpression
+			SyntaxKind.PreDecrementExpression or
+			SyntaxKind.AddressOfExpression or
+			SyntaxKind.PointerIndirectionExpression
 				=> Precedence.Unary,
 
 			SyntaxKind.RangeExpression
@@ -2835,6 +2870,12 @@ internal sealed class SourceParser
 
 		// (int) a
 		Cast,
+
+		// *a
+		PointerIndirection,
+
+		// &a
+		AddressOf,
 
 		// a.b, a++, etc.
 		Primary

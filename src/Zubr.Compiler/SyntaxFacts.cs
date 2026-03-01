@@ -134,6 +134,8 @@ public static class SyntaxFacts
 			TokenKind.MinusMinusToken => SyntaxKind.PreDecrementExpression,
 			TokenKind.ExclamationToken => SyntaxKind.LogicalNotExpression,
 			TokenKind.TildeToken => SyntaxKind.BitwiseNotExpression,
+			TokenKind.AmpersandToken => SyntaxKind.AddressOfExpression,
+			TokenKind.AsteriskToken => SyntaxKind.PointerIndirectionExpression,
 			_ => default
 		};
 	}
