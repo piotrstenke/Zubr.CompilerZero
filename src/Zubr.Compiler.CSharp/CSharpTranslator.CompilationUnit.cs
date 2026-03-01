@@ -109,7 +109,7 @@ internal sealed partial class CSharpTranslator
 	private static Sharp.ClassDeclarationSyntax GlobalFunctionContainerType(List<Sharp.MethodDeclarationSyntax> globalFunctions)
 	{
 		return SyntaxFactory.ClassDeclaration(SyntaxFactory.Identifier("TopLevel"))
-			.WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(CSyntaxKind.StaticKeyword), SyntaxFactory.Token(CSyntaxKind.PartialKeyword)))
+			.WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(CSyntaxKind.PublicKeyword), SyntaxFactory.Token(CSyntaxKind.StaticKeyword), SyntaxFactory.Token(CSyntaxKind.PartialKeyword)))
 			.WithMembers(SyntaxFactory.List<Sharp.MemberDeclarationSyntax>(globalFunctions));
 	}
 
