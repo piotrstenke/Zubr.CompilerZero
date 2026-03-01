@@ -114,12 +114,11 @@ public sealed partial class ZubrWorkspace
 
 	private static string GetOutputPath(ZubrManifest manifest, string rootPath)
 	{
-		if(string.IsNullOrWhiteSpace(manifest.Settings?.OutputPath))
-		{
-			return Path.Combine(rootPath, "out");
-		}
+		string targetPath = string.IsNullOrWhiteSpace(manifest.Settings?.OutputPath)
+			? "out"
+			: FormatPath(manifest.Settings.OutputPath);
 
-		return Path.Combine(rootPath, FormatPath(manifest.Settings.OutputPath));
+		return Path.GetFullPath(Path.Combine(rootPath, targetPath));
 	}
 
 	private static string FormatPath(string template)
