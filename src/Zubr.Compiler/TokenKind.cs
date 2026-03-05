@@ -281,6 +281,9 @@ public enum TokenKind : uint
 	// flag
 	FlagKeyword,
 
+	// local
+	LocalKeyword,
+
 	// managed
 	ManagedKeyword,
 

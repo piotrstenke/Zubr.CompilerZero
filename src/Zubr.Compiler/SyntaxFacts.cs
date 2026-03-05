@@ -71,7 +71,8 @@ public static class SyntaxFacts
 			value == TokenKind.ScopedKeyword ||
 			value == TokenKind.FinalKeyword ||
 			value == TokenKind.ManagedKeyword ||
-			value == TokenKind.UnmanagedKeyword;
+			value == TokenKind.UnmanagedKeyword ||
+			value == TokenKind.LocalKeyword;
 	}
 
 	public static void A<T>(int length) where T : unmanaged
@@ -384,7 +385,8 @@ public static class SyntaxFacts
 			TokenKind.AutoKeyword or
 			TokenKind.ManagedKeyword or
 			TokenKind.UnmanagedKeyword or
-			TokenKind.UnsafeKeyword;
+			TokenKind.UnsafeKeyword or
+			TokenKind.LocalKeyword;
 	}
 
 	public static bool IsValid(this in Token token)
@@ -492,6 +494,7 @@ public static class SyntaxFacts
 			"managed" => TokenKind.ManagedKeyword,
 			"unmanaged" => TokenKind.UnmanagedKeyword,
 			"unsafe" =>	TokenKind.UnsafeKeyword,
+			"local" => TokenKind.LocalKeyword,
 			_ => TokenKind.None
 		};
 	}

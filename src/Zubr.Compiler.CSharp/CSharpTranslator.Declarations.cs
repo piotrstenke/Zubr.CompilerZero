@@ -935,6 +935,10 @@ internal sealed partial class CSharpTranslator
 
 						break;
 
+					case TokenKind.LocalKeyword:
+						targetModifiers.Add(SyntaxFactory.Token(CSyntaxKind.RefKeyword));
+						break;
+
 					case TokenKind.UnsafeKeyword:
 						targetModifiers.Add(SyntaxFactory.Token(CSyntaxKind.UnsafeKeyword));
 						break;
@@ -1005,6 +1009,13 @@ internal sealed partial class CSharpTranslator
 			else if(node is DestructorDeclarationSyntax)
 			{
 				targetModifiers.Add(SyntaxFactory.Token(CSyntaxKind.PrivateKeyword));
+			}
+			else if(node is StructDeclarationSyntax)
+			{
+				if(!flags.HasFlag(ModifierFlags.Mut))
+				{
+					targetModifiers.Add(SyntaxFactory.Token(CSyntaxKind.ReadOnlyKeyword));
+				}
 			}
 
 			if (!isStatic && ShouldAddStatic(node))
