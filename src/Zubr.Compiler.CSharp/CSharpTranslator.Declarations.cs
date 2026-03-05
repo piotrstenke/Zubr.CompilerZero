@@ -76,7 +76,7 @@ internal sealed partial class CSharpTranslator
 			CSyntaxTokenList modifiers = GetModifiers(node, out ModifierFlags flags);
 
 			Sharp.TypeParameterListSyntax? typeParameterList = TypeParameterList(node.TypeParameterList);
-			var constraints = ConstraintList(node.ConstraintList);
+			var constraints = ConstraintList(node.TypeParameterList, node.ConstraintList);
 
 			Sharp.ParameterListSyntax? parameters = node.ParameterList is null
 				? null
@@ -114,7 +114,7 @@ internal sealed partial class CSharpTranslator
 			CSyntaxTokenList modifiers = GetModifiers(node, out ModifierFlags flags);
 
 			Sharp.TypeParameterListSyntax? typeParameterList = TypeParameterList(node.TypeParameterList);
-			var constraints = ConstraintList(node.ConstraintList);
+			var constraints = ConstraintList(node.TypeParameterList, node.ConstraintList);
 
 			Sharp.ParameterListSyntax? parameters = node.ParameterList is null
 				? null
@@ -166,7 +166,7 @@ internal sealed partial class CSharpTranslator
 			CSyntaxTokenList modifiers = GetModifiers(node, out _);
 
 			Sharp.TypeParameterListSyntax? typeParameterList = TypeParameterList(node.TypeParameterList);
-			var constraints = ConstraintList(node.ConstraintList);
+			var constraints = ConstraintList(node.TypeParameterList, node.ConstraintList);
 
 			Sharp.ParameterListSyntax parameterList = SyntaxFactory.ParameterList(SyntaxFactory.SingletonSeparatedList(
 				SyntaxFactory.Parameter(
@@ -192,7 +192,7 @@ internal sealed partial class CSharpTranslator
 			CSyntaxTokenList modifiers = GetModifiers(node, out ModifierFlags flags);
 
 			Sharp.TypeParameterListSyntax? typeParameterList = TypeParameterList(node.TypeParameterList);
-			var constraints = ConstraintList(node.ConstraintList);
+			var constraints = ConstraintList(node.TypeParameterList, node.ConstraintList);
 
 			Sharp.ParameterListSyntax? parameters = node.ParameterList is null
 				? null
@@ -236,7 +236,7 @@ internal sealed partial class CSharpTranslator
 			CSyntaxTokenList modifiers = GetModifiers(node, out _);
 
 			Sharp.TypeParameterListSyntax? typeParameterList = TypeParameterList(node.TypeParameterList);
-			var constraints = ConstraintList(node.ConstraintList);
+			var constraints = ConstraintList(node.TypeParameterList, node.ConstraintList);
 
 			return SyntaxFactory.InterfaceDeclaration(
 				Attributes(node.Attributes),
@@ -492,7 +492,7 @@ internal sealed partial class CSharpTranslator
 
 			Sharp.TypeParameterListSyntax? typeParameterList = TypeParameterList(node.TypeParameterList);
 			Sharp.ParameterListSyntax parameters = SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(node.ParameterList.Parameters.Select(Parameter)));
-			var constraints = ConstraintList(node.ConstraintList);
+			var constraints = ConstraintList(node.TypeParameterList, node.ConstraintList);
 
 			return SyntaxFactory.MethodDeclaration(
 				attributes,
@@ -696,32 +696,148 @@ internal sealed partial class CSharpTranslator
 
 		public static Sharp.TypeParameterSyntax TypeParameter(TypeParameterSyntax node)
 		{
-			return SyntaxFactory.TypeParameter(SyntaxFactory.Identifier(node.Identifier.Text));
+			var attributes = Attributes(node.Attributes);
+
+			if(node.DefaultType is not null)
+			{
+				attributes = attributes.Add(Interop.DefaultTypeParameterAttribute(node.DefaultType.Type));
+			}
+
+			return SyntaxFactory.TypeParameter(
+				attributes,
+				default,
+				SyntaxFactory.Identifier(node.Identifier.Text)
+			);
 		}
 
-		public static Microsoft.CodeAnalysis.SyntaxList<Sharp.TypeParameterConstraintClauseSyntax> ConstraintList(TypeParameterConstraintListSyntax? node)
+		public static Microsoft.CodeAnalysis.SyntaxList<Sharp.TypeParameterConstraintClauseSyntax> ConstraintList(TypeParameterListSyntax? typeParameterList, TypeParameterConstraintListSyntax? constraintList)
 		{
-			if (node is null)
+			if(typeParameterList is null)
 			{
 				return default;
 			}
 
-			return SyntaxFactory.List(node.Clauses
-				.Select(x => SyntaxFactory.TypeParameterConstraintClause(
-					SyntaxFactory.IdentifierName(x.Identifier.Text),
-					SyntaxFactory.SeparatedList(x.Constraints
-						.Select<TypeParameterConstraintSyntax, Sharp.TypeParameterConstraintSyntax>(x => x switch
-						{
-							ClassConstraintSyntax c => SyntaxFactory.ClassOrStructConstraint(CSyntaxKind.ClassConstraint),
-							StructConstraintSyntax s => SyntaxFactory.ClassOrStructConstraint(CSyntaxKind.StructConstraint),
-							TypeConstraintSyntax t => SyntaxFactory.TypeConstraint(Expressions.Type(t.Type)),
-							_ => throw new UnreachableException()
-						})
-						// class and struct constraints must be defined first in C#
-						.OrderBy(x => x is Sharp.ClassOrStructConstraintSyntax ? 0 : 1)
-					)
-				))
-			);
+			List<Sharp.TypeParameterConstraintClauseSyntax> clauses = new(typeParameterList.Parameters.Count);
+
+			foreach (TypeParameterSyntax typeParameter in typeParameterList.Parameters)
+			{
+				if (typeParameter.InlineConstraint is null)
+				{
+					continue;
+				}
+
+				ConstraintFlags flags = default;
+				Sharp.TypeParameterConstraintSyntax constraint = Constraint(typeParameter.InlineConstraint.Constraint, ref flags);
+				Sharp.TypeParameterConstraintSyntax? additionalConstraint = GetAdditionalConstraint(flags);
+
+				if (additionalConstraint is null)
+				{
+					clauses.Add(SyntaxFactory.TypeParameterConstraintClause(
+						SyntaxFactory.IdentifierName(typeParameter.Identifier.Text),
+						SyntaxFactory.SingletonSeparatedList(constraint)));
+				}
+				else
+				{
+
+					clauses.Add(SyntaxFactory.TypeParameterConstraintClause(
+						SyntaxFactory.IdentifierName(typeParameter.Identifier.Text),
+						SyntaxFactory.SeparatedList([constraint, additionalConstraint])));
+				}
+			}
+
+			if (constraintList is not null)
+			{
+				foreach (TypeParameterConstraintClauseSyntax clause in constraintList.Clauses)
+				{
+					ConstraintFlags flags = default;
+
+					List<Sharp.TypeParameterConstraintSyntax> constraints = new(clause.Constraints.Count);
+
+					foreach (TypeParameterConstraintSyntax constraint in clause.Constraints)
+					{
+						constraints.Add(Constraint(constraint, ref flags));
+					}
+
+					Sharp.TypeParameterConstraintSyntax? additionalConstraint = GetAdditionalConstraint(flags);
+
+					if(additionalConstraint is not null)
+					{
+						constraints.Add(additionalConstraint);
+					}
+
+					clauses.Add(SyntaxFactory.TypeParameterConstraintClause(
+						SyntaxFactory.IdentifierName(clause.Identifier.Text),
+						SyntaxFactory.SeparatedList(constraints
+							// class and struct constraints must be defined first in C#
+							.OrderBy(x => x is Sharp.ClassOrStructConstraintSyntax ? 0 : 1)
+						)
+					));
+				}
+			}
+
+			return SyntaxFactory.List(clauses);
+
+			static Sharp.TypeParameterConstraintSyntax Constraint(TypeParameterConstraintSyntax constraint, ref ConstraintFlags flags)
+			{
+				return constraint switch
+				{
+					KeywordConstraintSyntax c => KeywordConstraint(c, ref flags),
+					TypeConstraintSyntax t => SyntaxFactory.TypeConstraint(Expressions.Type(t.Type)),
+					_ => throw new UnreachableException()
+				};
+			}
+
+			static Sharp.TypeParameterConstraintSyntax KeywordConstraint(KeywordConstraintSyntax constraint, ref ConstraintFlags flags)
+			{
+				switch(constraint.Kind)
+				{
+					case SyntaxKind.ClassConstraint:
+						return SyntaxFactory.ClassOrStructConstraint(
+							CSyntaxKind.ClassConstraint,
+							SyntaxFactory.Token(CSyntaxKind.ClassKeyword),
+							constraint.QuestionToken.IsAny
+								? SyntaxFactory.Token(CSyntaxKind.QuestionToken) 
+								: default
+						);
+
+					case SyntaxKind.StructConstraint:
+
+						flags |= ConstraintFlags.StructOrUnmanaged;
+
+						return SyntaxFactory.ClassOrStructConstraint(
+							CSyntaxKind.StructConstraint,
+							SyntaxFactory.Token(CSyntaxKind.StructKeyword),
+							constraint.QuestionToken.IsAny
+								? SyntaxFactory.Token(CSyntaxKind.QuestionToken) 
+								: default
+						);
+
+					case SyntaxKind.EnumConstraint:
+
+						flags |= ConstraintFlags.Enum;
+
+						return SyntaxFactory.TypeConstraint(Expressions.GlobalQualifiedName("System", "Enum"));
+
+					case SyntaxKind.UnmanagedConstraint:
+
+						flags |= ConstraintFlags.StructOrUnmanaged;
+
+						return SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName(SyntaxFactory.Identifier("unmanaged")));
+
+					default:
+						throw new UnreachableException();
+				}
+			}
+
+			static Sharp.TypeParameterConstraintSyntax? GetAdditionalConstraint(ConstraintFlags flags)
+			{
+				if (flags.HasFlag(ConstraintFlags.Enum) && !flags.HasFlag(ConstraintFlags.StructOrUnmanaged))
+				{
+					return SyntaxFactory.ClassOrStructConstraint(CSyntaxKind.StructConstraint);
+				}
+
+				return null;
+			}
 		}
 
 		public static CSyntaxTokenList GetModifiers(MemberDeclarationSyntax node, out ModifierFlags flags)
@@ -819,6 +935,10 @@ internal sealed partial class CSharpTranslator
 
 						break;
 
+					case TokenKind.UnsafeKeyword:
+						targetModifiers.Add(SyntaxFactory.Token(CSyntaxKind.UnsafeKeyword));
+						break;
+
 					case TokenKind.OpenKeyword:
 						isOpen = true;
 						break;
@@ -846,6 +966,11 @@ internal sealed partial class CSharpTranslator
 					case TokenKind.FlagKeyword:
 						flags |= ModifierFlags.Flag;
 						break;
+
+					// C# determines whether a struct is managed/unmanaged without any keywords.
+					case TokenKind.ManagedKeyword:
+					case TokenKind.UnmanagedKeyword:
+						continue;
 				}
 			}
 
@@ -1253,5 +1378,15 @@ internal sealed partial class CSharpTranslator
 		Disposable = 1,
 
 		Destructor = 2,
+	}
+
+	[Flags]
+	private enum ConstraintFlags
+	{
+		None = 0,
+
+		StructOrUnmanaged = 1,
+
+		Enum = 2
 	}
 }

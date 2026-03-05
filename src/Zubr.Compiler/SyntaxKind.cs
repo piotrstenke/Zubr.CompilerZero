@@ -125,6 +125,9 @@ public enum SyntaxKind : uint
 	// the 'int' and 'string' in 'Test<int, string>'
 	TypeParameter,
 
+	// the ': Stringable' in 'class A<T : Stringable>'
+	TypeParameterInlineConstraint,
+
 	// where T : X, class, U : T, struct
 	TypeParameterConstraintList,
 
@@ -136,6 +139,15 @@ public enum SyntaxKind : uint
 
 	// the 'struct' in 'where T : struct'
 	StructConstraint,
+
+	// the 'enum' in 'where T : enum'
+	EnumConstraint,
+
+	// the 'unmanaged' in 'where T : unmanaged'
+	UnmanagedConstraint,
+
+	// the 'self' in 'where T : self'
+	SelfConstraint,
 
 	// the 'X' in 'where T : X'
 	TypeConstraint,
@@ -467,6 +479,9 @@ public enum SyntaxKind : uint
 
 	// = value
 	EqualsValueClause,
+
+	// = int
+	EqualsTypeClause,
 
 	// => 1 + 1
 	ArrowExpressionClause,

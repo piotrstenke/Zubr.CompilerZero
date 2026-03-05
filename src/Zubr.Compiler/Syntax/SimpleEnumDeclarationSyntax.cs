@@ -52,7 +52,7 @@ public sealed class SimpleEnumDeclarationSyntax : BaseEnumDeclarationSyntax
 
 	public override string ToString()
 	{
-		if(SemicolonToken.IsFound)
+		if(SemicolonToken.IsAny)
 		{
 			return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{Keyword} {Identifier}{(BaseTypeList is null ? "" : $" {BaseTypeList}")}{SemicolonToken}";
 		}

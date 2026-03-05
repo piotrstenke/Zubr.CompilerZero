@@ -20,7 +20,7 @@ public readonly struct Token
 
 	public bool IsNone => Kind == TokenKind.None;
 
-	public bool IsFound => !IsNone;
+	public bool IsAny => !IsNone;
 
 	public bool IsEmpty => Text.Length == 0;
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Xml.Linq;
 using Zubr.Compiler.Diagnostics;
 using Zubr.Compiler.Syntax;
 using Zubr.Compiler.Syntax.Abstractions;
@@ -655,11 +656,9 @@ internal sealed class SourceParser
 
 		while (true)
 		{
-			Token identifier = EatToken(TokenKind.IdentifierToken);
+			TypeParameterSyntax typeParameter = ParseTypeParameter();
 
 			Token token = Peek();
-
-			TypeParameterSyntax typeParameter = new(_tree, identifier.Span, identifier);
 
 			if (token.IsKind(TokenKind.GreaterThanToken))
 			{
@@ -667,7 +666,7 @@ internal sealed class SourceParser
 				break;
 			}
 
-			if(!EatToken(TokenKind.CommaToken, out token))
+			if (!EatToken(TokenKind.CommaToken, out token))
 			{
 				parameters.Add((typeParameter, default));
 				break;
@@ -681,6 +680,56 @@ internal sealed class SourceParser
 		TextSpan span = GetSpan(lessThanToken, greaterThanToken);
 
 		return new(_tree, span, lessThanToken, List(parameters), greaterThanToken);
+	}
+
+	private TypeParameterSyntax ParseTypeParameter()
+	{
+		SyntaxList<AttributeSyntax> attributes = ParseAttributes();
+		Token identifier = EatToken(TokenKind.IdentifierToken);
+
+		TypeParameterInlineConstraintSyntax? constraint = null;
+		EqualsTypeClauseSyntax? defaultType = null;
+
+		if (PeekKind(TokenKind.ColonToken))
+		{
+			Token colonToken = EatToken();
+
+			if(TryParseConstraint() is not TypeParameterConstraintSyntax innerConstraint)
+			{
+				AddError(ErrorCode.ERR_SyntaxError);
+				EatToken();
+				constraint = null;
+			}
+			else
+			{
+				constraint = new(_tree, GetSpan(colonToken, innerConstraint), colonToken, innerConstraint);
+			}
+		}
+
+		if(PeekKind(TokenKind.EqualsToken))
+		{
+			Token equalsToken = EatToken();
+			NameSyntax name = ParseName();
+
+			defaultType = new(_tree, GetSpan(equalsToken, name), equalsToken, name);
+		}
+
+		TextSpan span;
+
+		if(defaultType is not null)
+		{
+			span = GetSpan(identifier, defaultType);
+		}
+		else if(constraint is not null)
+		{
+			span = GetSpan(identifier, constraint);
+		}
+		else
+		{
+			span = Peek().Span;
+		}
+
+		return new(_tree, span, attributes, identifier, constraint, defaultType);
 	}
 
 	private TypeParameterConstraintListSyntax? TryParseConstraintList()
@@ -708,7 +757,7 @@ internal sealed class SourceParser
 
 			while (true)
 			{
-				if (TryParseConstraint(Peek()) is not TypeParameterConstraintSyntax constraint)
+				if (TryParseConstraint() is not TypeParameterConstraintSyntax constraint)
 				{
 					break;
 				}
@@ -761,19 +810,26 @@ internal sealed class SourceParser
 		return new(_tree, span, whereKeyword, List(clauses));
 	}
 
-	private TypeParameterConstraintSyntax? TryParseConstraint(Token token)
+	private TypeParameterConstraintSyntax? TryParseConstraint()
 	{
-		switch (token.Kind)
+		Token token = Peek();
+
+		TokenKind kind = token.ContextualKind;
+
+		switch (kind)
 		{
 			case TokenKind.ClassKeyword:
-				EatToken();
-
-				return new ClassConstraintSyntax(_tree, token.Span, token);
+				return Keyword(token, SyntaxKind.ClassConstraint, true);
 
 			case TokenKind.StructKeyword:
-				EatToken();
+				return Keyword(token, SyntaxKind.StructConstraint, true);
 
-				return new StructConstraintSyntax(_tree, token.Span, token);
+			case TokenKind.EnumKeyword:
+				return Keyword(token, SyntaxKind.EnumConstraint, true);
+
+			case TokenKind.UnmanagedKeyword:
+				ChangeKind(ref token, TokenKind.UnmanagedKeyword);
+				return Keyword(token, SyntaxKind.UnmanagedConstraint, false);
 
 			case TokenKind.IdentifierToken:
 				NameSyntax name = ParseName();
@@ -781,6 +837,32 @@ internal sealed class SourceParser
 
 			default:
 				return null;
+		}
+
+		KeywordConstraintSyntax Keyword(in Token token, SyntaxKind kind, bool allowQuestion)
+		{
+			EatToken();
+
+			Token questionToken;
+			
+			if(PeekKind(TokenKind.QuestionToken))
+			{
+				if(allowQuestion)
+				{
+					questionToken = EatToken();
+				}
+				else
+				{
+					AddError(ErrorCode.ERR_SyntaxError);
+					questionToken = UnexpectedToken();
+				}
+			}
+			else
+			{
+				questionToken = default;
+			}
+
+			return new KeywordConstraintSyntax(_tree, token.Span, kind, token, questionToken);
 		}
 	}
 
@@ -1670,13 +1752,15 @@ internal sealed class SourceParser
 	{
 		Token token = Peek();
 
+		TokenKind kind = token.ContextualKind;
+
 		// TODO: Handle all attribute target specifiers.
-		switch (token.ContextualKind)
+		switch (kind)
 		{
 			case TokenKind.ReturnKeyword:
 			case TokenKind.AssemblyKeyword:
 			case TokenKind.FieldKeyword:
-				Token targetKeyword = EatContextualKeyword();
+				Token targetKeyword = AcceptContextualKeyword(kind);
 				Token colonToken = EatToken(TokenKind.ColonToken);
 
 				TextSpan span = GetSpan(targetKeyword, colonToken);
@@ -2812,7 +2896,14 @@ internal sealed class SourceParser
 			return;
 		}
 
-		ChangeKind(ref token, token.ContextualKind);
+		ChangeKind(ref token, kind);
+	}
+
+	private Token AcceptContextualKeyword(TokenKind kind)
+	{
+		Token token = Peek();
+		ChangeKind(ref token, kind);
+		return token;
 	}
 
 	private static void ChangeKind(ref Token token, TokenKind kind)

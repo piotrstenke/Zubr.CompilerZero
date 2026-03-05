@@ -67,7 +67,7 @@ public sealed class ImplementationDeclarationSyntax : MemberDeclarationSyntax
 
 	public override string ToString()
 	{
-		if (SemicolonToken.IsFound)
+		if (SemicolonToken.IsAny)
 		{
 			return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{Keyword} {Type}{(BaseTypeList is null ? "" : $" {BaseTypeList}")}{(ConstraintList is null ? "" : $" {ConstraintList}")}{SemicolonToken}";
 		}

@@ -1,4 +1,6 @@
-﻿namespace Zubr.Compiler;
+﻿using System;
+
+namespace Zubr.Compiler;
 
 public static class SyntaxFacts
 {
@@ -67,7 +69,14 @@ public static class SyntaxFacts
 			value == TokenKind.OpenKeyword ||
 			value == TokenKind.LimitKeyword ||
 			value == TokenKind.ScopedKeyword ||
-			value == TokenKind.FinalKeyword;
+			value == TokenKind.FinalKeyword ||
+			value == TokenKind.ManagedKeyword ||
+			value == TokenKind.UnmanagedKeyword;
+	}
+
+	public static void A<T>(int length) where T : unmanaged
+	{
+		Span<T> s = stackalloc T[length];
 	}
 
 	public static bool IsLiteralExpression(SyntaxKind value)
@@ -372,7 +381,10 @@ public static class SyntaxFacts
 			TokenKind.OverKeyword or
 			TokenKind.ReqKeyword or
 			TokenKind.StatKeyword or
-			TokenKind.AutoKeyword;
+			TokenKind.AutoKeyword or
+			TokenKind.ManagedKeyword or
+			TokenKind.UnmanagedKeyword or
+			TokenKind.UnsafeKeyword;
 	}
 
 	public static bool IsValid(this in Token token)
@@ -477,6 +489,9 @@ public static class SyntaxFacts
 			"oper" => TokenKind.OperKeyword,
 			"goto" => TokenKind.GotoKeyword,
 			"value" => TokenKind.ValueKeyword,
+			"managed" => TokenKind.ManagedKeyword,
+			"unmanaged" => TokenKind.UnmanagedKeyword,
+			"unsafe" =>	TokenKind.UnsafeKeyword,
 			_ => TokenKind.None
 		};
 	}

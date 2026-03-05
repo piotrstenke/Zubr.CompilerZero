@@ -65,7 +65,7 @@ public sealed class EnumClassDeclarationSyntax : ComplexEnumDeclarationSyntax
 
 	public override string ToString()
 	{
-		if (SemicolonToken.IsFound)
+		if (SemicolonToken.IsAny)
 		{
 			return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{Keyword} {ClassKeyword} {Identifier}{ParameterList}{(BaseTypeList is null ? "" : $" {BaseTypeList}")}{SemicolonToken}";
 		}

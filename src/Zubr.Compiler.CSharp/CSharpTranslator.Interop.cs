@@ -2,7 +2,8 @@
 using Microsoft.CodeAnalysis.CSharp;
 using System;
 using System.Collections.Generic;
-
+using System.Linq;
+using Zubr.Compiler.Syntax.Abstractions;
 using CSyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
 using Sharp = Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -31,6 +32,11 @@ partial class CSharpTranslator
 		public static Sharp.AttributeListSyntax InvokerAttribute()
 		{
 			return Attribute("zubr", "interop", "csharp", "Invoker");
+		}
+
+		public static Sharp.AttributeListSyntax DefaultTypeParameterAttribute(TypeSyntax type)
+		{
+			return AttributeWithArgs([SyntaxFactory.TypeOfExpression(Expressions.Type(type))], "zubr", "interop", "csharp", "DefaultTypeParameter");
 		}
 
 		public static Sharp.SimpleBaseTypeSyntax ImplementIDisposable()
@@ -118,6 +124,13 @@ modifiers + @" void free(bool disposing)
 		private static Sharp.AttributeListSyntax Attribute(params ReadOnlySpan<string> names)
 		{
 			return SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Attribute(Expressions.GlobalQualifiedName(names))));
+		}
+
+		private static Sharp.AttributeListSyntax AttributeWithArgs(Sharp.ExpressionSyntax[] args, params ReadOnlySpan<string> names)
+		{
+			return SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Attribute(
+				Expressions.GlobalQualifiedName(names),
+				SyntaxFactory.AttributeArgumentList(SyntaxFactory.SeparatedList(args.Select(SyntaxFactory.AttributeArgument))))));
 		}
 	}
 }

@@ -281,6 +281,15 @@ public enum TokenKind : uint
 	// flag
 	FlagKeyword,
 
+	// managed
+	ManagedKeyword,
+
+	// unmanaged
+	UnmanagedKeyword,
+
+	// unsafe
+	UnsafeKeyword,
+
 	// new
 	NewKeyword,
 

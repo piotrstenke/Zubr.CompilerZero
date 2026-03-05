@@ -71,7 +71,7 @@ public sealed class AttributeDeclarationSyntax : TypeDeclarationSyntax
 
 	public override string ToString()
 	{
-		if (SemicolonToken.IsFound)
+		if (SemicolonToken.IsAny)
 		{
 			return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{Keyword} {Identifier}{TypeParameterList}{ParameterList}{(BaseTypeList is null ? "" : $" {BaseTypeList}")}{(ConstraintList is null ? "" : $" {ConstraintList}")}{SemicolonToken}";
 		}
