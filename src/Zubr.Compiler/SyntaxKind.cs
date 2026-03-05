@@ -17,7 +17,7 @@ public enum SyntaxKind : uint
 	SimpleUseDirective,
 
 	// use { X, Y, Z as Z1 } from Module;
-	ComplexUseDirective,
+	ListedUseDirective,
 
 	// the '{ X, Y, Z as Z1 }' in 'use { X, Y, Z as Z1 } from Module;'
 	UseDirectiveElementList,
@@ -396,6 +396,9 @@ public enum SyntaxKind : uint
 
 	// Test<T>
 	GenericName,
+
+	// the empty in type argument in Test<>
+	SkippedTypeArgument,
 
 	// '<T>' in 'Test<T>'
 	TypeArgumentList,

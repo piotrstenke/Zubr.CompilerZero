@@ -231,6 +231,7 @@ internal sealed partial class CSharpTranslator
 				ArrayTypeSyntax a => ArrayType(a),
 				PointerTypeSyntax pr => PointerType(pr),
 				ReferenceTypeSyntax r => RefType(r),
+				SkippedTypeArgumentSyntax s => SyntaxFactory.OmittedTypeArgument(),
 				_ => throw new UnreachableException()
 			};
 		}

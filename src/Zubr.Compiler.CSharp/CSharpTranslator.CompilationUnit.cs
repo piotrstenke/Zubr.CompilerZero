@@ -31,7 +31,7 @@ internal sealed partial class CSharpTranslator
 					yield return UsingDirective(s);
 					break;
 
-				case ComplexUseDirectiveSyntax c:
+				case ListedUseDirectiveSyntax c:
 					foreach (Sharp.UsingDirectiveSyntax item in UsingDirectives(c))
 					{
 						yield return item;
@@ -57,7 +57,7 @@ internal sealed partial class CSharpTranslator
 		);
 	}
 
-	private static IEnumerable<Sharp.UsingDirectiveSyntax> UsingDirectives(ComplexUseDirectiveSyntax node)
+	private static IEnumerable<Sharp.UsingDirectiveSyntax> UsingDirectives(ListedUseDirectiveSyntax node)
 	{
 		foreach (UseDirectiveElementSyntax element in node.ElementList.Elements)
 		{

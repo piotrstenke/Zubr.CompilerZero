@@ -3,9 +3,9 @@ using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
-public sealed class ComplexUseDirectiveSyntax : UseDirectiveSyntax
+public sealed class ListedUseDirectiveSyntax : UseDirectiveSyntax
 {
-	public override SyntaxKind Kind => SyntaxKind.ComplexUseDirective;
+	public override SyntaxKind Kind => SyntaxKind.ListedUseDirective;
 
 	public override Token UseKeyword { get; }
 
@@ -17,7 +17,7 @@ public sealed class ComplexUseDirectiveSyntax : UseDirectiveSyntax
 
 	public override Token SemicolonToken { get; }
 
-	internal ComplexUseDirectiveSyntax(
+	internal ListedUseDirectiveSyntax(
 		SyntaxTree tree,
 		TextSpan span,
 		Token useKeyword,

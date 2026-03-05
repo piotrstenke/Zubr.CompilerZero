@@ -161,7 +161,7 @@ internal sealed class SourceParser
 		return new(_tree, span, useKeyword, name, asKeyword, alias, semicolon);
 	}
 
-	private ComplexUseDirectiveSyntax ParseComplexUseDirective()
+	private ListedUseDirectiveSyntax ParseComplexUseDirective()
 	{
 		Token useKeyword = EatToken(TokenKind.UseKeyword);
 		UseDirectiveElementListSyntax elementList = ParseUseDirectiveElementList();
@@ -2496,12 +2496,22 @@ internal sealed class SourceParser
 
 	private TypeArgumentListSyntax ParseTypeArgumentList()
 	{
-		Token lessThanToken = EatToken();
+		Token lessThanToken = EatToken(TokenKind.LessThanToken);
+
 		List<(TypeSyntax, Token)> args = new();
 
 		while (true)
 		{
-			TypeSyntax type = ParseType();
+			TypeSyntax type;
+
+			if (PeekKind(TokenKind.GreaterThanToken) || PeekKind(TokenKind.CommaToken))
+			{
+				type = SkippedTypeArgument();
+			}
+			else
+			{
+				type = ParseType();
+			}
 
 			if (PeekKind(TokenKind.CommaToken))
 			{
@@ -2521,6 +2531,12 @@ internal sealed class SourceParser
 		TextSpan span = GetSpan(lessThanToken, greaterThanToken);
 
 		return new(_tree, span, lessThanToken, List(args), greaterThanToken);
+
+		TypeSyntax SkippedTypeArgument()
+		{
+			Token skippedToken = SkippedToken();
+			return new SkippedTypeArgumentSyntax(_tree, skippedToken.Span, skippedToken);
+		}
 	}
 
 	private IdentifierNameSyntax ParseIdentifierName()
@@ -2939,6 +2955,11 @@ internal sealed class SourceParser
 	private static Token UnexpectedToken(in Token token)
 	{
 		return new(TokenKind.BadToken, token.Text, token.Position);
+	}
+
+	private Token SkippedToken()
+	{
+		return SkippedToken(Peek());
 	}
 
 	private static Token SkippedToken(in Token token)
