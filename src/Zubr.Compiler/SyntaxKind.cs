@@ -476,8 +476,8 @@ public enum SyntaxKind : uint
 	// x = 1
 	VariableDeclaration,
 
-	// int main() { int test() { } }
-	LocalFunctionStatement,
+	// unsafe { }
+	UnsafeStatement,
 
 	// -----------------------------
 	// Clauses

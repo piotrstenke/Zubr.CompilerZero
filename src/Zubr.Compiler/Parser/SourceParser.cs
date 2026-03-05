@@ -1400,8 +1400,18 @@ internal sealed class SourceParser
 			TokenKind.ReturnKeyword => ParseReturnStatement(),
 			TokenKind.NextKeyword => ParseNextStatement(),
 			TokenKind.StopKeyword => ParseStopStatement(),
+			TokenKind.UnsafeKeyword => ParseUnsafeStatement(),
 			_ => ParseLocalOrExpressionStatement(),
 		};
+	}
+
+	private UnsafeStatementSyntax ParseUnsafeStatement()
+	{
+		Token unsafeKeyword = EatToken(TokenKind.UnsafeKeyword);
+
+		BlockSyntax block = ParseBlock();
+
+		return new(_tree, GetSpan(unsafeKeyword, block), unsafeKeyword, block);
 	}
 
 	private ReturnStatementSyntax ParseReturnStatement()

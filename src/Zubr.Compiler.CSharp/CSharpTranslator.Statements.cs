@@ -34,6 +34,7 @@ internal sealed partial class CSharpTranslator
 				FunctionDeclarationSyntax lf => LocalFunction(lf, context),
 				GotoStatementSyntax g => Goto(g),
 				LabelStatementSyntax l => Label(l, context),
+				UnsafeStatementSyntax u => Unsafe(u, context),
 				_ => throw new UnreachableException()
 			};
 		}
@@ -183,6 +184,11 @@ internal sealed partial class CSharpTranslator
 		public static Sharp.ContinueStatementSyntax Continue()
 		{
 			return SyntaxFactory.ContinueStatement();
+		}
+
+		public static Sharp.UnsafeStatementSyntax Unsafe(UnsafeStatementSyntax node, TypeContext context)
+		{
+			return SyntaxFactory.UnsafeStatement(Block(node.Block, context));
 		}
 
 		public static Sharp.ReturnStatementSyntax Return(ReturnStatementSyntax node)
