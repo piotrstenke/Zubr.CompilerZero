@@ -36,4 +36,9 @@ public sealed class LockStatementSyntax : StatementSyntax
 		SetParent(expression);
 		SetParent(statement);
 	}
+
+	public override string ToString()
+	{
+		return $"{LockKeyword} {OpenParenToken}{Expression}{CloseParenToken} {Statement}";
+	}
 }

@@ -18,4 +18,9 @@ public sealed class UnsafeStatementSyntax : StatementSyntax
 
 		SetParent(block);
 	}
+
+	public override string ToString()
+	{
+		return $"{UnsafeKeyword} {Block}";
+	}
 }
