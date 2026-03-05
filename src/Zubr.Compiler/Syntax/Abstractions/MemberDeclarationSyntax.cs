@@ -2,7 +2,7 @@
 
 namespace Zubr.Compiler.Syntax.Abstractions;
 
-public abstract class MemberDeclarationSyntax : NameSyntax
+public abstract class MemberDeclarationSyntax : StatementSyntax
 {
 	public abstract SyntaxList<AttributeSyntax> Attributes { get; }
 

@@ -394,6 +394,9 @@ public enum SyntaxKind : uint
 	// Module.Test
 	QualifiedName,
 
+	// ::Module.Test
+	TopQualifiedName,
+
 	// Test<T>
 	GenericName,
 

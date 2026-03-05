@@ -93,7 +93,7 @@ internal sealed partial class CSharpTranslator
 
 		List<Sharp.MethodDeclarationSyntax> globalFunctions = new();
 
-		TypeFlags typeFlags = default;
+		TypeContext context = new();
 
 		foreach (MemberDeclarationSyntax member in node.Members)
 		{
@@ -114,11 +114,11 @@ internal sealed partial class CSharpTranslator
 
 				case FunctionDeclarationSyntax func:
 					// Top-level functions are added later inside of a partial class.
-					globalFunctions.Add(Declarations.Method(func));
+					globalFunctions.Add(Declarations.Method(func, context));
 					break;
 
 				default:
-					members.Add(Declarations.Member(member, ref typeFlags));
+					members.Add(Declarations.Member(member, context));
 					break;
 			}
 		}
@@ -126,6 +126,11 @@ internal sealed partial class CSharpTranslator
 		if (globalFunctions.Count > 0)
 		{
 			members.Add(GlobalFunctionContainerType(globalFunctions));
+		}
+
+		if (context.HasAddedMembers)
+		{
+			members.AddRange(context.GetAddedMembers());
 		}
 
 		return members;
@@ -166,18 +171,23 @@ internal sealed partial class CSharpTranslator
 		List<Sharp.MethodDeclarationSyntax> globalFunctions
 	)
 	{
-		TypeFlags typeFlags = default;
+		TypeContext context = new();
 
 		foreach (MemberDeclarationSyntax member in node.Members)
 		{
 			if (member is FunctionDeclarationSyntax func)
 			{
-				globalFunctions.Add(Declarations.Method(func));
+				globalFunctions.Add(Declarations.Method(func, context));
 			}
 			else
 			{
-				members.Add(Declarations.Member(member, ref typeFlags));
+				members.Add(Declarations.Member(member, context));
 			}
+		}
+
+		if (context.HasAddedMembers)
+		{
+			members.AddRange(context.GetAddedMembers());
 		}
 	}
 }

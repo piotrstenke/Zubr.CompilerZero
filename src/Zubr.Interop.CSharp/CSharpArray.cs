@@ -1,5 +1,10 @@
-﻿namespace zubr.interop.csharp;
+﻿using System;
+using System.ComponentModel;
 
+namespace zubr.interop.csharp;
+
+[Obsolete(Constants.ObsoleteMessage, DiagnosticId = Constants.ObsoleteDiagnosticId)]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public readonly struct CSharpArray<T>
 {
 	private readonly T[] _array;

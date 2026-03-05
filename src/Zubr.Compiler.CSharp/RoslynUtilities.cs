@@ -40,7 +40,9 @@ internal static class RoslynUtilities
 			typeof(Enumerable).Assembly.Location,
 			typeof(List<>).Assembly.Location,
 			Path.Combine(directory, "System.Runtime.dll"),
+#pragma warning disable ZUBR0001 // Type or member is obsolete
 			typeof(InternalInheritAttribute).Assembly.Location
+#pragma warning restore ZUBR0001 // Type or member is obsolete
 		};
 
 		List<MetadataReference> references = new(locations.Length);

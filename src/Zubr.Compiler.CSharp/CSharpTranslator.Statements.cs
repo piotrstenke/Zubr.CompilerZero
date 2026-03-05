@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Zubr.Compiler.Syntax;
@@ -15,31 +16,33 @@ internal sealed partial class CSharpTranslator
 {
 	private static class Statements
 	{
-		public static Sharp.StatementSyntax Statement(StatementSyntax node)
+		public static Sharp.StatementSyntax Statement(StatementSyntax node, TypeContext context)
 		{
 			return node switch
 			{
-				BlockSyntax b => Block(b),
+				BlockSyntax b => Block(b, context),
 				ReturnStatementSyntax r => Return(r),
-				StopStatementSyntax s => Break(s),
-				NextStatementSyntax n => Continue(n),
-				EmptyStatementSyntax e => Empty(e),
-				IfStatementSyntax i => If(i),
+				StopStatementSyntax => Break(),
+				NextStatementSyntax => Continue(),
+				EmptyStatementSyntax => Empty(),
+				IfStatementSyntax i => If(i, context),
 				LocalDeclarationStatementSyntax l => Local(l),
-				WhileStatementSyntax w => While(w),
-				DoStatementSyntax d => Do(d),
-				ForStatementSyntax f => ForEach(f),
+				WhileStatementSyntax w => While(w, context),
+				DoStatementSyntax d => Do(d, context),
+				ForStatementSyntax f => ForEach(f, context),
 				ExpressionStatementSyntax expr => Expression(expr),
-				LocalFunctionStatementSyntax lf => LocalFunction(lf),
+				FunctionDeclarationSyntax lf => LocalFunction(lf, context),
 				GotoStatementSyntax g => Goto(g),
-				LabelStatementSyntax l => Label(l),
+				LabelStatementSyntax l => Label(l, context),
 				_ => throw new UnreachableException()
 			};
 		}
 
-		public static Sharp.BlockSyntax Block(BlockSyntax node)
+		public static Sharp.BlockSyntax Block(BlockSyntax node, TypeContext context)
 		{
-			return SyntaxFactory.Block(node.Statements.Select(Statement));
+			return SyntaxFactory.Block(node.Statements
+				.Select(x => StatementOrType(node, context)!)
+				.Where(x => x is not null));
 		}
 
 		public static Sharp.ExpressionStatementSyntax Expression(ExpressionStatementSyntax node)
@@ -47,20 +50,20 @@ internal sealed partial class CSharpTranslator
 			return SyntaxFactory.ExpressionStatement(Expressions.Expression(node.Expression));
 		}
 
-		public static Sharp.IfStatementSyntax If(IfStatementSyntax node)
+		public static Sharp.IfStatementSyntax If(IfStatementSyntax node, TypeContext context)
 		{
 			var elifs = node.Elifs;
 
 			Sharp.ElseClauseSyntax? @else = node.Else is null
 				? null
-				: SyntaxFactory.ElseClause(Statement(node.Else.Statement));
+				: SyntaxFactory.ElseClause(Statement(node.Else.Statement, context));
 
 			if (elifs.IsDefaultOrEmpty)
 			{
 				return SyntaxFactory.IfStatement(
 					default,
 					Expressions.Expression(node.Condition),
-					Statement(node.Statement),
+					Statement(node.Statement, context),
 					@else
 				);
 			}
@@ -70,7 +73,7 @@ internal sealed partial class CSharpTranslator
 			Sharp.IfStatementSyntax @if = SyntaxFactory.IfStatement(
 				default,
 				Expressions.Expression(last.Condition),
-				Statement(last.Statement),
+				Statement(last.Statement, context),
 				@else
 			);
 
@@ -80,7 +83,7 @@ internal sealed partial class CSharpTranslator
 				@if = SyntaxFactory.IfStatement(
 					default,
 					Expressions.Expression(elifs[i].Condition),
-					Statement(elifs[i].Statement),
+					Statement(elifs[i].Statement, context),
 					SyntaxFactory.ElseClause(@if)
 				);
 			}
@@ -93,28 +96,32 @@ internal sealed partial class CSharpTranslator
 			return SyntaxFactory.GotoStatement(CSyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(node.Identifier.Text));
 		}
 
-		public static Sharp.LabeledStatementSyntax Label(LabelStatementSyntax node)
+		public static Sharp.LabeledStatementSyntax Label(LabelStatementSyntax node, TypeContext context)
 		{
-			return SyntaxFactory.LabeledStatement(node.Identifier.Text, Statement(node.Statement));
+			Sharp.StatementSyntax? statement = StatementOrType(node, context);
+
+			statement ??= SyntaxFactory.EmptyStatement();
+
+			return SyntaxFactory.LabeledStatement(node.Identifier.Text, statement);
 		}
 
-		public static Sharp.WhileStatementSyntax While(WhileStatementSyntax node)
+		public static Sharp.WhileStatementSyntax While(WhileStatementSyntax node, TypeContext context)
 		{
 			return SyntaxFactory.WhileStatement(
 				Expressions.Expression(node.Condition),
-				Statement(node.Statement)
+				Statement(node.Statement, context)
 			);
 		}
 
-		public static Sharp.DoStatementSyntax Do(DoStatementSyntax node)
+		public static Sharp.DoStatementSyntax Do(DoStatementSyntax node, TypeContext context)
 		{
 			return SyntaxFactory.DoStatement(
-				Statement(node.Statement),
+				Statement(node.Statement, context),
 				Expressions.Expression(node.Condition)
 			);
 		}
 
-		public static Sharp.CommonForEachStatementSyntax ForEach(ForStatementSyntax node)
+		public static Sharp.CommonForEachStatementSyntax ForEach(ForStatementSyntax node, TypeContext context)
 		{
 			if (node.Variable is VariableExpressionSyntax expr)
 			{
@@ -126,14 +133,14 @@ internal sealed partial class CSharpTranslator
 					type,
 					SyntaxFactory.Identifier(expr.Identifier.Text),
 					Expressions.Expression(node.Expression),
-					Statement(node.Statement)
+					Statement(node.Statement, context)
 				);
 			}
 
 			return SyntaxFactory.ForEachVariableStatement(
 				Expressions.Expression(node.Variable),
 				Expressions.Expression(node.Expression),
-				Statement(node.Statement)
+				Statement(node.Statement, context)
 			);
 		}
 
@@ -142,12 +149,12 @@ internal sealed partial class CSharpTranslator
 			return SyntaxFactory.LocalDeclarationStatement(Declarations.Variable(node.Variable));
 		}
 
-		public static Sharp.LocalFunctionStatementSyntax LocalFunction(LocalFunctionStatementSyntax node)
+		public static Sharp.LocalFunctionStatementSyntax LocalFunction(FunctionDeclarationSyntax node, TypeContext context)
 		{
 			Sharp.TypeParameterListSyntax? typeParameterList = Declarations.TypeParameterList(node.TypeParameterList);
 			Sharp.ParameterListSyntax parameters = SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(node.ParameterList.Parameters.Select(Declarations.Parameter)));
 
-			var constraints = Declarations.ConstraintList(node.ConstraintList);
+			var constraints = Declarations.ConstraintList(node.TypeParameterList, node.ConstraintList);
 
 			return SyntaxFactory.LocalFunctionStatement(
 				Declarations.Attributes(node.Attributes),
@@ -157,23 +164,23 @@ internal sealed partial class CSharpTranslator
 				typeParameterList,
 				parameters,
 				constraints,
-				node.Body is null ? null : Block(node.Body),
+				node.Body is null ? null : Block(node.Body, context),
 				node.ExpressionBody is null ? null : ExpressionBody(node.ExpressionBody),
 				node.Body is null && node.ExpressionBody is null ? SyntaxFactory.Token(CSyntaxKind.SemicolonToken) : default
 			);
 		}
 
-		public static Sharp.BreakStatementSyntax Break(StopStatementSyntax node)
+		public static Sharp.BreakStatementSyntax Break()
 		{
 			return SyntaxFactory.BreakStatement();
 		}
 
-		public static Sharp.EmptyStatementSyntax Empty(EmptyStatementSyntax node)
+		public static Sharp.EmptyStatementSyntax Empty()
 		{
 			return SyntaxFactory.EmptyStatement();
 		}
 
-		public static Sharp.ContinueStatementSyntax Continue(NextStatementSyntax node)
+		public static Sharp.ContinueStatementSyntax Continue()
 		{
 			return SyntaxFactory.ContinueStatement();
 		}
@@ -191,6 +198,17 @@ internal sealed partial class CSharpTranslator
 		public static Sharp.ArrowExpressionClauseSyntax ExpressionBody(ArrowExpressionClauseSyntax node)
 		{
 			return SyntaxFactory.ArrowExpressionClause(Expressions.Expression(node.Expression));
+		}
+
+		private static Sharp.StatementSyntax? StatementOrType(StatementSyntax node, TypeContext context)
+		{
+			if (node is BaseTypeDeclarationSyntax type)
+			{
+				context.AddMember(Declarations.Type(type));
+				return null;
+			}
+
+			return Statement(node, context);
 		}
 	}
 }
