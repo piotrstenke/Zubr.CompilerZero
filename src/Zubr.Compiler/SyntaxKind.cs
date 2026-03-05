@@ -424,6 +424,9 @@ public enum SyntaxKind : uint
 	// int&
 	ReferenceType,
 
+	// let
+	LetType,
+
 	// -----------------------------
 	// Statements
 	// -----------------------------

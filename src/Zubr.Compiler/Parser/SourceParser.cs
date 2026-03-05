@@ -2470,8 +2470,19 @@ internal sealed class SourceParser
 				return ParsePredefinedType();
 			}
 
+			if (token.IsKind(TokenKind.LetKeyword))
+			{
+				return ParseLetType();
+			}
+
 			return ParseName();
 		}
+	}
+
+	private LetTypeSyntax ParseLetType()
+	{
+		Token keyword = EatToken(TokenKind.LetKeyword);
+		return new(_tree, keyword.Span, keyword);
 	}
 
 	private PredefinedTypeSyntax ParsePredefinedType()
@@ -2479,7 +2490,7 @@ internal sealed class SourceParser
 		Token token = EatToken();
 
 		TextSpan span = token.Span;
-		return new PredefinedTypeSyntax(_tree, span, token);
+		return new(_tree, span, token);
 	}
 
 	private NameSyntax ParseName()

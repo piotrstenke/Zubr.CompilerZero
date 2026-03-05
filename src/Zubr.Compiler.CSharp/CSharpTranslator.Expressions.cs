@@ -27,7 +27,7 @@ internal sealed partial class CSharpTranslator
 				PostfixUnaryExpressionSyntax postfix => PostfixUnary(postfix),
 				PrefixUnaryExpressionSyntax prefix => PrefixUnary(prefix),
 				MemberAccessExpressionSyntax m => MemberAccess(m),
-				SelfExpressionSyntax s => This(s),
+				SelfExpressionSyntax => This(),
 				CastExpressionSyntax c => Cast(c),
 				InvocationExpressionSyntax i => Invocation(i),
 				ParenthesizedExpressionSyntax p => Parenthesized(p),
@@ -129,12 +129,12 @@ internal sealed partial class CSharpTranslator
 			return SyntaxFactory.ParenthesizedExpression(Expression(node.Expression));
 		}
 
-		public static Sharp.BaseExpressionSyntax Base(BaseExpressionSyntax node)
+		public static Sharp.BaseExpressionSyntax Base()
 		{
 			return SyntaxFactory.BaseExpression();
 		}
 
-		public static Sharp.ThisExpressionSyntax This(SelfExpressionSyntax node)
+		public static Sharp.ThisExpressionSyntax This()
 		{
 			return SyntaxFactory.ThisExpression();
 		}
@@ -231,7 +231,8 @@ internal sealed partial class CSharpTranslator
 				ArrayTypeSyntax a => ArrayType(a),
 				PointerTypeSyntax pr => PointerType(pr),
 				ReferenceTypeSyntax r => RefType(r),
-				SkippedTypeArgumentSyntax s => SyntaxFactory.OmittedTypeArgument(),
+				LetTypeSyntax => SyntaxFactory.IdentifierName("var"),
+				SkippedTypeArgumentSyntax => SyntaxFactory.OmittedTypeArgument(),
 				_ => throw new UnreachableException()
 			};
 		}
