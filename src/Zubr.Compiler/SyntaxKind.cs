@@ -479,6 +479,9 @@ public enum SyntaxKind : uint
 	// unsafe { }
 	UnsafeStatement,
 
+	// lock(obj) { }
+	LockStatement,
+
 	// -----------------------------
 	// Clauses
 	// -----------------------------

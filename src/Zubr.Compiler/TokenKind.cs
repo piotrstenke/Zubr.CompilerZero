@@ -293,6 +293,9 @@ public enum TokenKind : uint
 	// unsafe
 	UnsafeKeyword,
 
+	// lock
+	LockKeyword,
+
 	// new
 	NewKeyword,
 

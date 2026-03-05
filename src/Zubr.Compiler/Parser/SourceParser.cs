@@ -1401,8 +1401,24 @@ internal sealed class SourceParser
 			TokenKind.NextKeyword => ParseNextStatement(),
 			TokenKind.StopKeyword => ParseStopStatement(),
 			TokenKind.UnsafeKeyword => ParseUnsafeStatement(),
+			TokenKind.LockKeyword => ParseLockStatement(),
 			_ => ParseLocalOrExpressionStatement(),
 		};
+	}
+
+	private LockStatementSyntax ParseLockStatement()
+	{
+		Token keyword = EatToken(TokenKind.LockKeyword);
+
+		Token openParen = EatToken(TokenKind.OpenParenToken);
+		ExpressionSyntax expr = ParseExpression();
+		Token closeParen = EatToken(TokenKind.CloseParenToken);
+
+		StatementSyntax statement = ParseStatement();
+
+		TextSpan span = GetSpan(keyword, statement);
+
+		return new(_tree, span, keyword, openParen, expr, closeParen, statement);
 	}
 
 	private UnsafeStatementSyntax ParseUnsafeStatement()

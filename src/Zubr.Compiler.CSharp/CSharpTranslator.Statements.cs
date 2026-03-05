@@ -191,6 +191,11 @@ internal sealed partial class CSharpTranslator
 			return SyntaxFactory.UnsafeStatement(Block(node.Block, context));
 		}
 
+		public static Sharp.LockStatementSyntax Lock(LockStatementSyntax node, TypeContext context)
+		{
+			return SyntaxFactory.LockStatement(Expressions.Expression(node.Expression), Statement(node, context));
+		}
+
 		public static Sharp.ReturnStatementSyntax Return(ReturnStatementSyntax node)
 		{
 			if (node.Expression is null)

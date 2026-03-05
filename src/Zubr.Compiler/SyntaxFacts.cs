@@ -495,6 +495,7 @@ public static class SyntaxFacts
 			"unmanaged" => TokenKind.UnmanagedKeyword,
 			"unsafe" =>	TokenKind.UnsafeKeyword,
 			"local" => TokenKind.LocalKeyword,
+			"lock" => TokenKind.LockKeyword,
 			_ => TokenKind.None
 		};
 	}
