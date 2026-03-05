@@ -2495,7 +2495,18 @@ internal sealed class SourceParser
 
 	private NameSyntax ParseName()
 	{
-		NameSyntax name = ParseSimpleName();
+		NameSyntax name;
+
+		if(PeekKind(TokenKind.ColonColonToken))
+		{
+			Token token = EatToken();
+			SimpleNameSyntax right = ParseSimpleName();
+			name = new TopQualifiedNameSyntax(_tree, GetSpan(token, right), token, right);
+		}
+		else
+		{
+			name = ParseSimpleName();
+		}
 
 		while (PeekKind(TokenKind.DotToken))
 		{
