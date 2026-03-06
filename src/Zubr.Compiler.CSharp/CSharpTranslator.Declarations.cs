@@ -501,12 +501,12 @@ internal sealed partial class CSharpTranslator
 		public static Sharp.VariableDeclarationSyntax Variable(VariableDeclarationSyntax node)
 		{
 			return SyntaxFactory.VariableDeclaration(Expressions.Type(node.Type),
-				SyntaxFactory.SingletonSeparatedList(
+				SyntaxFactory.SeparatedList(node.Variables.Select(x => 
 					SyntaxFactory.VariableDeclarator(
-						SyntaxFactory.Identifier(node.Identifier.Text),
+						SyntaxFactory.Identifier(x.Identifier.Text),
 						null,
-						Initializer(node.Initializer)
-				)));
+						Initializer(x.Initializer)
+				))));
 		}
 
 		public static Sharp.BaseMethodDeclarationSyntax Method(BaseFunctionDeclarationSyntax node, TypeContext context)

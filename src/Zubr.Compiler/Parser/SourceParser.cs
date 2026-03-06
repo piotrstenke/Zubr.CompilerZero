@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Xml.Linq;
 using Zubr.Compiler.Diagnostics;
 using Zubr.Compiler.Syntax;
 using Zubr.Compiler.Syntax.Abstractions;
@@ -16,6 +15,9 @@ internal sealed class SourceParser
 	private int _current;
 
 	private List<InternalDiagnostic>? _errors;
+	private List<(ErrorCode code, int position)>? _snapshotErrorQueue;
+
+	private bool _hasSnapshot;
 
 	internal SourceParser(SyntaxTree tree, Token[] tokens) : this(tree, tokens, null)
 	{
@@ -322,7 +324,7 @@ internal sealed class SourceParser
 	{
 		Token fieldKeyword = EatToken(TokenKind.FieldKeyword);
 
-		VariableDeclarationSyntax variable = ParseVariable();
+		VariableDeclarationSyntax variable = ParseVariables();
 
 		Token semicolonToken = EatToken(TokenKind.SemicolonToken);
 		TextSpan span = GetSpan(position, semicolonToken);
@@ -1502,7 +1504,7 @@ internal sealed class SourceParser
 	{
 		TokenList modifiers = ParseModifiers();
 
-		VariableDeclarationSyntax variable = ParseVariable();
+		VariableDeclarationSyntax variable = ParseVariables();
 
 		int position = modifiers.IsDefaultOrEmpty
 			? variable.Position
@@ -1520,19 +1522,46 @@ internal sealed class SourceParser
 		return new(_tree, span, modifiers, variable, semicolon);
 	}
 
-	private VariableDeclarationSyntax ParseVariable()
+	private VariableDeclarationSyntax ParseVariables()
 	{
 		TypeSyntax type = ParseType();
+		return ParseVariables(type);
+	}
 
+	private VariableDeclarationSyntax ParseVariables(TypeSyntax type)
+	{
+		List<(VariableDeclaratorSyntax, Token)> declarators = new();
+
+		while (PeekKind(TokenKind.IdentifierToken))
+		{
+			VariableDeclaratorSyntax declarator = ParseVariableDeclarator();
+
+			if (PeekKind(TokenKind.CommaToken))
+			{
+				declarators.Add((declarator, EatToken()));
+			}
+			else
+			{
+				declarators.Add((declarator, default));
+			}
+		}
+
+		TextSpan span = GetSpan(type, declarators);
+
+		return new(_tree, span, type, List(declarators));
+	}
+
+	private VariableDeclaratorSyntax ParseVariableDeclarator()
+	{
 		Token identifier = EatToken(TokenKind.IdentifierToken);
 
 		EqualsValueClauseSyntax? initializer = TryParseEqualsValueClause();
 
 		TextSpan span = initializer is null
-			? GetSpan(type, identifier)
-			: GetSpan(type, initializer);
+			? identifier.Span
+			: GetSpan(identifier, initializer);
 
-		return new(_tree, span, type, identifier, initializer);
+		return new(_tree, span, identifier, initializer);
 	}
 
 	private EqualsValueClauseSyntax? TryParseEqualsValueClause()
@@ -1610,12 +1639,124 @@ internal sealed class SourceParser
 		return new(_tree, span, identifier, colon, statement);
 	}
 
-	private ForStatementSyntax ParseForStatement()
+	private BaseForStatementSyntax ParseForStatement()
 	{
 		Token forKeyword = EatToken(TokenKind.ForKeyword);
 
 		Token openParen = EatToken(TokenKind.OpenParenToken);
-		VariableExpressionSyntax variable = ParseVariableExpression();
+
+		using Snapshot snapshot = TakeSnapshot();
+
+		TypeSyntax type = ParseType();
+
+		VariableDeclarationSyntax? declaration = null;
+		SeparatedSyntaxList<ExpressionSyntax> initializers = default;
+
+		// for(int a = ...;
+		if(PeekKind(TokenKind.IdentifierToken))
+		{
+			ref readonly Token token = ref Peek(1);
+
+			if(token.Kind is TokenKind.CommaToken or TokenKind.SemicolonToken or TokenKind.EqualsToken)
+			{
+				declaration = ParseVariables(type);
+			}
+		}
+
+		if(declaration is null)
+		{
+			initializers = ParseExpressionList();
+		}
+
+		if (PeekKind(TokenKind.SemicolonToken))
+		{
+			// class, C-style loop
+
+			Token firstSemicolonToken = EatToken();
+
+			ExpressionSyntax? condition = PeekKind(TokenKind.SemicolonToken)
+				? null
+				: ParseExpression();
+
+			Token secondSemiclonToken = EatToken(TokenKind.SemicolonToken);
+			SeparatedSyntaxList<ExpressionSyntax> incrementors = ParseExpressionList();
+			Token closeParen = EatToken(TokenKind.CloseParenToken);
+
+			StatementSyntax statement = ParseStatement();
+
+			TextSpan span = GetSpan(forKeyword, statement);
+
+			snapshot.Accept();
+
+			return new ForStatementSyntax(_tree, span, forKeyword, openParen, declaration, initializers, firstSemicolonToken, condition, secondSemiclonToken, incrementors, closeParen, statement);
+		}
+
+		snapshot.Reset();
+		return ParseRangedForStatement(forKeyword, openParen);
+	}
+
+	private SeparatedSyntaxList<ExpressionSyntax> ParseExpressionList()
+	{
+		if(PeekKind(TokenKind.CloseParenToken))
+		{
+			return default;
+		}
+
+		List<(ExpressionSyntax, Token)> expressions = new();
+
+		while (true)
+		{
+			ExpressionSyntax expr = ParseExpression();
+
+			if (PeekKind(TokenKind.CloseParenToken))
+			{
+				expressions.Add((expr, default));
+				break;
+			}
+
+			if (!PeekKind(TokenKind.CommaToken))
+			{
+				expressions.Add((expr, default));
+				break;
+			}
+
+			expressions.Add((expr, EatToken()));
+		}
+
+		return List(expressions);
+	}
+
+	private RangedForStatementSyntax ParseRangedForStatement(Token forKeyword, Token openParen)
+	{
+		List<(ExpressionSyntax, Token)> variables = new();
+
+		if (PeekKind(TokenKind.IdentifierToken))
+		{
+			// for(item : collection)
+			if(PeekKind(TokenKind.ColonToken, 1))
+			{
+				variables.Add((VariableWithoutType(), default));
+			}
+			// for(item, index : collection)
+			else if(PeekKind(TokenKind.CommaToken, 1))
+			{
+				variables.Add((VariableWithoutType(), EatToken()));
+				variables.Add((VariableWithoutType(), default));
+			}
+			else
+			{
+				VariablesWithTypes(variables);
+			}
+		}
+		// for((a, b) : collection)
+		else if(PeekKind(TokenKind.OpenParenToken))
+		{
+			variables.Add((ParseExpressionOrDeclaration(), default));
+		}
+		else
+		{
+			VariablesWithTypes(variables);
+		}
 
 		Token colon = EatToken(TokenKind.ColonToken);
 
@@ -1627,19 +1768,43 @@ internal sealed class SourceParser
 
 		TextSpan span = GetSpan(forKeyword, statement);
 
-		return new(_tree, span, forKeyword, openParen, variable, colon, expression, closeParen, statement);
+		return new RangedForStatementSyntax(_tree, span, forKeyword, openParen, List(variables), colon, expression, closeParen, statement);
+
+		VariableExpressionSyntax VariableWithoutType()
+		{
+			Token name = EatToken(TokenKind.IdentifierToken);
+			return new(_tree, name.Span, null, name);
+		}
+
+		void VariablesWithTypes(List<(ExpressionSyntax, Token)> variables)
+		{
+			while (true)
+			{
+				VariableExpressionSyntax variable = ParseVariableExpression();
+
+				if (PeekKind(TokenKind.CommaToken))
+				{
+					variables.Add((variable, EatToken()));
+				}
+				else
+				{
+					variables.Add((variable, default));
+					break;
+				}
+			}
+		}
 	}
 
 	private VariableExpressionSyntax ParseVariableExpression()
 	{
 		TypeSyntax type = ParseType();
 
-		if(type.IsKind(SyntaxKind.IdentifierName))
+		if(type is IdentifierNameSyntax name)
 		{
 			// The type is actually a typeless variable.
 			if(!PeekKind(TokenKind.IdentifierToken))
 			{
-				return new(_tree, type.Span, null, (type as IdentifierNameSyntax)!.Identifier);
+				return new(_tree, type.Span, null, name.Identifier);
 			}
 		}
 
@@ -1987,6 +2152,11 @@ internal sealed class SourceParser
 				if (TryParseCastExpression() is CastExpressionSyntax castExpr)
 				{
 					return castExpr;
+				}
+
+				if (TryParseTupleExpression() is TupleExpressionSyntax tupleExpr)
+				{
+					return tupleExpr;
 				}
 
 				Token openParen = EatToken();
@@ -2386,32 +2556,109 @@ internal sealed class SourceParser
 		return new(_tree, span, expr);
 	}
 
+	private TupleExpressionSyntax? TryParseTupleExpression()
+	{
+		using Snapshot snapshot = TakeSnapshot();
+
+		if (!PeekKind(TokenKind.OpenParenToken))
+		{
+			return null;
+		}
+
+		Token openParen = EatToken();
+
+		ExpressionSyntax expr = ParseExpressionOrDeclaration();
+
+		if(!PeekKind(TokenKind.CommaToken))
+		{
+			return null;
+		}
+
+		List<(ArgumentSyntax, Token)> arguments = new()
+		{
+			(Argument(expr), EatToken())
+		};
+
+		while(true)
+		{
+			expr = ParseExpressionOrDeclaration();
+			ArgumentSyntax argument = Argument(expr);
+
+			if (PeekKind(TokenKind.CloseParenToken))
+			{
+				arguments.Add((argument, default));
+				break;
+			}
+
+			if (!PeekKind(TokenKind.CommaToken))
+			{
+				arguments.Add((argument, default));
+				break;
+			}
+
+			arguments.Add((argument, EatToken()));
+		}
+
+		Token closeParen = EatToken(TokenKind.CloseParenToken);
+
+		snapshot.Accept();
+
+		TextSpan span = GetSpan(openParen, closeParen);
+		return new(_tree, span, openParen, List(arguments), closeParen);
+
+		ArgumentSyntax Argument(ExpressionSyntax expr)
+		{
+			return new(_tree, expr.Span, expr);
+		}
+	}
+
+	private ExpressionSyntax ParseExpressionOrDeclaration()
+	{
+		if(TryParseDeclarationExpression() is DeclarationExpressionSyntax expr)
+		{
+			return expr;
+		}
+
+		return ParseExpression();
+	}
+
+	private DeclarationExpressionSyntax? TryParseDeclarationExpression()
+	{
+		using Snapshot snapshot = TakeSnapshot();
+
+		TypeSyntax type = ParseType();
+
+		if (!PeekKind(TokenKind.IdentifierToken))
+		{
+			return null;
+		}
+
+		Token identifier = EatToken();
+
+		snapshot.Accept();
+
+		return new(_tree, GetSpan(type, identifier), type, identifier);
+	}
+
 	private CastExpressionSyntax? TryParseCastExpression()
 	{
+		if (!PeekKind(TokenKind.OpenParenToken))
+		{
+			return null;
+		}
+
 		using Snapshot snapshot = TakeSnapshot();
 
 		Token openParen = EatToken();
 
-		if (openParen.Kind != TokenKind.OpenParenToken)
-		{
-			return null;
-		}
-
-		Token token = Peek();
-
-		if (!token.IsPredefinedType())
-		{
-			return null;
-		}
-
 		TypeSyntax type = ParseType();
 
-		Token closeParen = EatToken();
-
-		if (closeParen.Kind != TokenKind.CloseParenToken)
+		if (!PeekKind(TokenKind.CloseParenToken))
 		{
 			return null;
 		}
+
+		Token closeParen = EatToken();
 
 		snapshot.Accept();
 
@@ -2424,6 +2671,11 @@ internal sealed class SourceParser
 
 	private TypeSyntax ParseType()
 	{
+		if(PeekKind(TokenKind.OpenParenToken))
+		{
+			return ParseTupleType();
+		}
+
 		TypeSyntax type = ParseNameOrTypeKeyword();
 
 		ref readonly Token token = ref Peek();
@@ -2477,6 +2729,51 @@ internal sealed class SourceParser
 
 			return ParseName();
 		}
+	}
+
+	private TupleTypeSyntax ParseTupleType()
+	{
+		Token openParen = EatToken(TokenKind.OpenParenToken);
+
+		List<(TupleElementSyntax, Token)> elements = new();
+
+		while (true)
+		{
+			TypeSyntax type = ParseType();
+			Token identifier;
+			TextSpan span;
+
+			if(PeekKind(TokenKind.IdentifierToken))
+			{
+				identifier = EatToken();
+				span = GetSpan(type, identifier);
+			}
+			else
+			{
+				identifier = default;
+				span = type.Span;
+			}
+
+			TupleElementSyntax element = new(_tree, span, type, identifier);
+
+			if(PeekKind(TokenKind.CloseParenToken))
+			{
+				elements.Add((element, default));
+				break;
+			}
+
+			if(!PeekKind(TokenKind.CommaToken))
+			{
+				elements.Add((element, default));
+				break;
+			}
+
+			elements.Add((element, EatToken()));
+		}
+
+		Token closeParen = EatToken(TokenKind.CloseParenToken);
+
+		return new(_tree, GetSpan(openParen, closeParen), openParen, List(elements), closeParen);
 	}
 
 	private LetTypeSyntax ParseLetType()
@@ -2634,7 +2931,8 @@ internal sealed class SourceParser
 			SyntaxKind.ObjectCreationExpression or
 			SyntaxKind.CollectionExpression or
 			SyntaxKind.ElementAccessExpression or
-			SyntaxKind.PointerMemberAccessExpression
+			SyntaxKind.PointerMemberAccessExpression or
+			SyntaxKind.TupleExpression
 				=> Precedence.Primary,
 
 			SyntaxKind.AddressOfExpression
@@ -2930,7 +3228,9 @@ internal sealed class SourceParser
 
 	private Snapshot TakeSnapshot()
 	{
-		return new(this);
+		Snapshot snapshot = new(this);
+		_hasSnapshot = true;
+		return snapshot;
 	}
 
 	private TokenKind PeekKind()
@@ -3017,14 +3317,56 @@ internal sealed class SourceParser
 
 	private void AddError(ErrorCode code)
 	{
-		_errors ??= new();
-		_errors.Add(new(code, _tokens[_current].Position));
+		int position = _tokens[_current].Position;
+		AddError(code, position);
 	}
 
 	private void AddError(ErrorCode code, int position)
 	{
+		if (_hasSnapshot)
+		{
+			_snapshotErrorQueue ??= new();
+			_snapshotErrorQueue.Add((code, position));
+			return;
+		}
+
 		_errors ??= new();
 		_errors.Add(new(code, position));
+	}
+
+	private void ResetErrorQueue(int startIndex)
+	{
+		if(_snapshotErrorQueue is null)
+		{
+			return;
+		}
+
+		if(startIndex == 0)
+		{
+			_snapshotErrorQueue.Clear();
+		}
+		else
+		{
+			for (int i = _snapshotErrorQueue.Count - 1; i >= startIndex; i--)
+			{
+				_snapshotErrorQueue.RemoveAt(i);
+			}
+		}
+	}
+
+	private void ApplyErrorQueue()
+	{
+		if(_snapshotErrorQueue is null)
+		{
+			return;
+		}
+
+		_errors ??= new();
+
+		foreach ((ErrorCode code, int position) in _snapshotErrorQueue)
+		{
+			_errors.Add(new(code, position));
+		}
 	}
 
 	private ref struct Snapshot : IDisposable
@@ -3032,21 +3374,34 @@ internal sealed class SourceParser
 		private readonly SourceParser _parser;
 		private readonly int _pos;
 		private bool _isAccepted;
+		private readonly bool _parentHasSnapshot;
+		private readonly int _errorQueueStartIndex;
 
 		public Snapshot(SourceParser parser)
 		{
 			_parser = parser;
 			_pos = parser._current;
+			_parentHasSnapshot = parser._hasSnapshot;
+			_errorQueueStartIndex = parser._snapshotErrorQueue?.Count ?? 0;
 		}
 
 		public readonly void Reset()
 		{
 			_parser._current = _pos;
+			_parser._hasSnapshot = _parentHasSnapshot;
+			_parser.ResetErrorQueue(_errorQueueStartIndex);
 		}
 
 		public void Accept()
 		{
 			_isAccepted = true;
+
+			_parser._hasSnapshot = _parentHasSnapshot;
+
+			if(!_parser._hasSnapshot)
+			{
+				_parser.ApplyErrorQueue();
+			}
 		}
 
 		public readonly void Dispose()

@@ -9,22 +9,19 @@ public sealed class VariableDeclarationSyntax : SyntaxNode
 
 	public TypeSyntax Type { get; }
 
-	public Token Identifier { get; }
+	public SeparatedSyntaxList<VariableDeclaratorSyntax> Variables { get; }
 
-	public EqualsValueClauseSyntax? Initializer { get; }
-
-	internal VariableDeclarationSyntax(SyntaxTree tree, TextSpan span, TypeSyntax type, Token identifier, EqualsValueClauseSyntax? initializer) : base(tree, span)
+	internal VariableDeclarationSyntax(SyntaxTree tree, TextSpan span, TypeSyntax type, SeparatedSyntaxList<VariableDeclaratorSyntax> variables) : base(tree, span)
 	{
 		Type = type;
-		Identifier = identifier;
-		Initializer = initializer;
+		Variables = variables;
 
 		SetParent(type);
-		SetParentIfNotNull(initializer);
+		SetParent(variables);
 	}
 
 	public override string ToString()
 	{
-		return $"{Type} {Identifier}{(Initializer is null ? "" : $" {Initializer}")}";
+		return $"{Type} {Variables}";
 	}
 }

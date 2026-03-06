@@ -39,6 +39,8 @@ internal sealed partial class CSharpTranslator
 				CollectionExpressionSyntax co => Collection(co),
 				ElementAccessExpressionSyntax e => ElementAccess(e),
 				SkippedArraySizeExpressionSyntax => SyntaxFactory.OmittedArraySizeExpression(),
+				TupleExpressionSyntax t => Tuple(t),
+				DeclarationExpressionSyntax d => Declaration(d),
 				_ => throw new UnreachableException()
 			};
 		}
@@ -233,8 +235,27 @@ internal sealed partial class CSharpTranslator
 				ReferenceTypeSyntax r => RefType(r),
 				LetTypeSyntax => SyntaxFactory.IdentifierName("var"),
 				SkippedTypeArgumentSyntax => SyntaxFactory.OmittedTypeArgument(),
+				TupleTypeSyntax t => TupleType(t),
 				_ => throw new UnreachableException()
 			};
+		}
+
+		public static Sharp.DeclarationExpressionSyntax Declaration(DeclarationExpressionSyntax node)
+		{
+			return SyntaxFactory.DeclarationExpression(Type(node.Type), SyntaxFactory.SingleVariableDesignation(SyntaxFactory.Identifier(node.Identifier.Text)));
+		}
+
+		public static Sharp.TupleExpressionSyntax Tuple(TupleExpressionSyntax node)
+		{
+			return SyntaxFactory.TupleExpression(SyntaxFactory.SeparatedList(node.Arguments.Select(Argument)));
+		}
+
+		public static Sharp.TupleTypeSyntax TupleType(TupleTypeSyntax node)
+		{
+			return SyntaxFactory.TupleType(SyntaxFactory.SeparatedList(node.Elements.Select(x =>
+				SyntaxFactory.TupleElement(
+					Type(x.Type),
+					x.Identifier.IsNone ? default : SyntaxFactory.Identifier(x.Identifier.Text)))));
 		}
 
 		public static Sharp.NullableTypeSyntax NullableType(NullableTypeSyntax node)
@@ -360,6 +381,27 @@ internal sealed partial class CSharpTranslator
 			}
 
 			return name;
+		}
+
+		internal static Sharp.MemberAccessExpressionSyntax GlobalMemberAccess(params ReadOnlySpan<string> identifiers)
+		{
+			Sharp.NameSyntax name = SyntaxFactory.AliasQualifiedName(
+				SyntaxFactory.IdentifierName(SyntaxFactory.Token(CSyntaxKind.GlobalKeyword)),
+				SyntaxFactory.IdentifierName(identifiers[0])
+			);
+
+			Sharp.MemberAccessExpressionSyntax expr = SyntaxFactory.MemberAccessExpression(CSyntaxKind.SimpleMemberAccessExpression,
+				name,
+				SyntaxFactory.IdentifierName(SyntaxFactory.Identifier(identifiers[1])));
+
+			for (int i = 2; i < identifiers.Length; i++)
+			{
+				expr = SyntaxFactory.MemberAccessExpression(CSyntaxKind.SimpleMemberAccessExpression,
+					expr,
+					SyntaxFactory.IdentifierName(SyntaxFactory.Identifier(identifiers[i])));
+			}
+
+			return expr;
 		}
 
 		private static Sharp.PredefinedTypeSyntax PredefinedType(CSyntaxKind kind)

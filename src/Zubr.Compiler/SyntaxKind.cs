@@ -384,6 +384,12 @@ public enum SyntaxKind : uint
 	// the '[0]' in 'array[0]'
 	BracketArgumentList,
 
+	// (a, b)
+	TupleExpression,
+
+	// the 'int a' in '(int a, int b)'
+	DeclarationExpression,
+
 	// -----------------------------
 	// Types & Names
 	// -----------------------------
@@ -427,6 +433,12 @@ public enum SyntaxKind : uint
 	// let
 	LetType,
 
+	// (int a, int b)
+	TupleType,
+
+	// the 'int a' in '(int a, int b)'
+	TupleElement,
+
 	// -----------------------------
 	// Statements
 	// -----------------------------
@@ -464,8 +476,11 @@ public enum SyntaxKind : uint
 	// while(condition) { }
 	WhileStatement,
 
-	// for (x : collection) { }
+	// for (int i = 0; i < 10; i++) { }
 	ForStatement,
+
+	// for (x : collection) { }
+	RangedForStatement,
 
 	// if (x == y) { }
 	IfStatement,
@@ -476,8 +491,11 @@ public enum SyntaxKind : uint
 	// else { }
 	ElseClause,
 
-	// x = 1
+	// int x = 1, int x = 1, y = 2;
 	VariableDeclaration,
+
+	// the 'x = 1' in 'int x = 1'
+	VariableDeclarator,
 
 	// unsafe { }
 	UnsafeStatement,

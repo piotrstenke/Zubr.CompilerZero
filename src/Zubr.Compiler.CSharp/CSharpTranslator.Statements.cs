@@ -29,7 +29,8 @@ internal sealed partial class CSharpTranslator
 				LocalDeclarationStatementSyntax l => Local(l),
 				WhileStatementSyntax w => While(w, context),
 				DoStatementSyntax d => Do(d, context),
-				ForStatementSyntax f => ForEach(f, context),
+				ForStatementSyntax f => For(f, context),
+				RangedForStatementSyntax f => ForEach(f, context),
 				ExpressionStatementSyntax expr => Expression(expr),
 				FunctionDeclarationSyntax lf => LocalFunction(lf, context),
 				GotoStatementSyntax g => Goto(g),
@@ -122,25 +123,64 @@ internal sealed partial class CSharpTranslator
 			);
 		}
 
-		public static Sharp.CommonForEachStatementSyntax ForEach(ForStatementSyntax node, TypeContext context)
+		public static Sharp.CommonForEachStatementSyntax ForEach(RangedForStatementSyntax node, TypeContext context)
 		{
-			if (node.Variable is VariableExpressionSyntax expr)
+			if (node.Variables[0] is VariableExpressionSyntax expr)
 			{
-				Sharp.TypeSyntax type = expr.Type is null
-					? SyntaxFactory.IdentifierName(SyntaxFactory.Identifier("var"))
-					: Expressions.Type(expr.Type);
+				if(node.Variables.Count == 1)
+				{
+					Sharp.TypeSyntax elementType = GetElementType(expr);
 
-				return SyntaxFactory.ForEachStatement(
-					type,
-					SyntaxFactory.Identifier(expr.Identifier.Text),
+					return SyntaxFactory.ForEachStatement(
+						elementType,
+						SyntaxFactory.Identifier(expr.Identifier.Text),
+						Expressions.Expression(node.Expression),
+						Statement(node.Statement, context)
+					);
+				}
+				else
+				{
+					Sharp.ExpressionSyntax elementType = SyntaxFactory.TupleExpression(SyntaxFactory.SeparatedList(node.Variables
+						.Cast<VariableExpressionSyntax>()
+						.Select(x => SyntaxFactory.Argument(SyntaxFactory.DeclarationExpression(
+							GetElementType(x),
+							SyntaxFactory.SingleVariableDesignation(SyntaxFactory.Identifier(x.Identifier.Text)))))));
+
+					return SyntaxFactory.ForEachVariableStatement(
+						elementType,
+						SyntaxFactory.InvocationExpression(
+							Expressions.GlobalMemberAccess("System", "Linq", "Enumerable", "Index"),
+							SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(
+								SyntaxFactory.Argument(Expressions.Expression(node.Expression))))),
+						Statement(node.Statement, context)
+					);
+				}
+			}
+			else
+			{
+				return SyntaxFactory.ForEachVariableStatement(
+					Expressions.Expression(node.Variables[0]),
 					Expressions.Expression(node.Expression),
 					Statement(node.Statement, context)
 				);
 			}
 
-			return SyntaxFactory.ForEachVariableStatement(
-				Expressions.Expression(node.Variable),
-				Expressions.Expression(node.Expression),
+			static Sharp.TypeSyntax GetElementType(VariableExpressionSyntax expr)
+			{
+				return expr.Type is null
+					? SyntaxFactory.IdentifierName(SyntaxFactory.Identifier("var"))
+					: Expressions.Type(expr.Type);
+			}
+		}
+
+		public static Sharp.ForStatementSyntax For(ForStatementSyntax node, TypeContext context)
+		{
+			return SyntaxFactory.ForStatement(
+				attributeLists: default,
+				node.Declaration is null ? null : Declarations.Variable(node.Declaration),
+				node.Initializers.IsDefaultOrEmpty ? default : SyntaxFactory.SeparatedList(node.Initializers.Select(Expressions.Expression)),
+				node.Condition is null ? null : Expressions.Expression(node.Condition),
+				node.Incrementors.IsDefaultOrEmpty ? default : SyntaxFactory.SeparatedList(node.Incrementors.Select(Expressions.Expression)),
 				Statement(node.Statement, context)
 			);
 		}

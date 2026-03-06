@@ -3,41 +3,65 @@ using Zubr.Compiler.Text;
 
 namespace Zubr.Compiler.Syntax;
 
-public sealed class ForStatementSyntax : StatementSyntax
+public sealed class ForStatementSyntax : BaseForStatementSyntax
 {
 	public override SyntaxKind Kind => SyntaxKind.ForStatement;
 
-	public Token ForKeyword { get; }
+	public override Token ForKeyword { get; }
 
-	public Token OpenParenToken { get; }
+	public override Token OpenParenToken { get; }
 
-	public ExpressionSyntax Variable { get; }
+	public VariableDeclarationSyntax? Declaration { get; }
 
-	public Token ColonToken { get; }
+	public SeparatedSyntaxList<ExpressionSyntax> Initializers { get; }
 
-	public ExpressionSyntax Expression { get; }
+	public Token FirstSemicolonToken { get; }
 
-	public Token CloseParenToken { get; }
+	public ExpressionSyntax? Condition { get; }
 
-	public StatementSyntax Statement { get; }
+	public Token SecondSemicolonToken { get; }
 
-	internal ForStatementSyntax(SyntaxTree tree, TextSpan span, Token forKeyword, Token openParenToken, ExpressionSyntax variable, Token colonToken, ExpressionSyntax expression, Token closeParenToken, StatementSyntax statement) : base(tree, span)
+	public SeparatedSyntaxList<ExpressionSyntax> Incrementors { get; }
+
+	public override Token CloseParenToken { get; }
+
+	public override StatementSyntax Statement { get; }
+
+	internal ForStatementSyntax(
+		SyntaxTree tree,
+		TextSpan span,
+		Token forKeyword,
+		Token openParenToken,
+		VariableDeclarationSyntax? declaration,
+		SeparatedSyntaxList<ExpressionSyntax> initializers,
+		Token firstSemicolonToken,
+		ExpressionSyntax? condition,
+		Token secondSemicolonToken,
+		SeparatedSyntaxList<ExpressionSyntax> incrementors,
+		Token closeParenToken,
+		StatementSyntax statement
+	) : base(tree, span)
 	{
 		ForKeyword = forKeyword;
 		OpenParenToken = openParenToken;
-		Variable = variable;
-		ColonToken = colonToken;
-		Expression = expression;
+		Declaration = declaration;
+		Initializers = initializers;
+		FirstSemicolonToken = firstSemicolonToken;
+		Condition = condition;
+		SecondSemicolonToken = secondSemicolonToken;
+		Incrementors = incrementors;
 		CloseParenToken = closeParenToken;
 		Statement = statement;
 
-		SetParent(variable);
-		SetParent(expression);
+		SetParentIfNotNull(declaration);
+		SetParent(initializers);
+		SetParentIfNotNull(condition);
+		SetParent(incrementors);
 		SetParent(statement);
 	}
 
 	public override string ToString()
 	{
-		return $"{ForKeyword}{OpenParenToken}{Variable} {ColonToken} {Expression}{CloseParenToken} {Statement}";
+		return $"{ForKeyword} {OpenParenToken}{Declaration}{Initializers}{FirstSemicolonToken} {Condition}{SecondSemicolonToken} {Incrementors}{CloseParenToken} {Statement}";
 	}
 }
