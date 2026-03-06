@@ -1670,7 +1670,7 @@ internal sealed class SourceParser
 
 		if (PeekKind(TokenKind.SemicolonToken))
 		{
-			// class, C-style loop
+			// classic C-style loop
 
 			Token firstSemicolonToken = EatToken();
 
@@ -1743,17 +1743,17 @@ internal sealed class SourceParser
 				variables.Add((VariableWithoutType(), EatToken()));
 				variables.Add((VariableWithoutType(), default));
 			}
-			else
-			{
-				VariablesWithTypes(variables);
-			}
 		}
 		// for((a, b) : collection)
 		else if(PeekKind(TokenKind.OpenParenToken))
 		{
-			variables.Add((ParseExpressionOrDeclaration(), default));
+			if(TryParseTupleExpression() is TupleExpressionSyntax tuple)
+			{
+				variables.Add((tuple, default));
+			}
 		}
-		else
+
+		if(variables.Count == 0)
 		{
 			VariablesWithTypes(variables);
 		}
