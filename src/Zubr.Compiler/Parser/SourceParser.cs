@@ -2709,6 +2709,32 @@ internal sealed class SourceParser
 					return new ArrayTypeSyntax(_tree, span, type, ranks);
 				}
 
+			case TokenKind.BarToken:
+				{
+					List<(TypeSyntax, Token)> list = new()
+					{
+						(type, EatToken())
+					};
+
+					while(true)
+					{
+						type = ParseType();
+
+						if(PeekKind(TokenKind.BarToken))
+						{
+							list.Add((type, EatToken()));
+						}
+						else
+						{
+							list.Add((type, default));
+							break;
+						}
+					}
+
+					SeparatedSyntaxList<TypeSyntax> typeElements = List(list);
+					return new UnionTypeSyntax(_tree, type.Span, typeElements);
+				}
+
 			default:
 				return type;
 		}

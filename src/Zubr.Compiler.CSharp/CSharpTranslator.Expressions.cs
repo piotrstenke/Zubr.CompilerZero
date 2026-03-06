@@ -225,6 +225,7 @@ internal sealed partial class CSharpTranslator
 
 		public static Sharp.TypeSyntax Type(TypeSyntax node)
 		{
+			// TODO: Convert UnionTypeSyntax
 			return node switch
 			{
 				NameSyntax n => Name(n),

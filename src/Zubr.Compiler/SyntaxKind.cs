@@ -439,6 +439,9 @@ public enum SyntaxKind : uint
 	// the 'int a' in '(int a, int b)'
 	TupleElement,
 
+	// int | string
+	UnionType,
+
 	// -----------------------------
 	// Statements
 	// -----------------------------
