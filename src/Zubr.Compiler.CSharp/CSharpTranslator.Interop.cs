@@ -34,6 +34,11 @@ partial class CSharpTranslator
 			return Attribute("zubr", "interop", "csharp", "Invoker");
 		}
 
+		public static Sharp.AttributeListSyntax VarargAttribute()
+		{
+			return Attribute("zubr", "interop", "csharp", "Vararg");
+		}
+
 		public static Sharp.AttributeListSyntax DefaultTypeParameterAttribute(TypeSyntax type)
 		{
 			return AttributeWithArgs([SyntaxFactory.TypeOfExpression(Expressions.Type(type))], "zubr", "interop", "csharp", "DefaultTypeParameter");

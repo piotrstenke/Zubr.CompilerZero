@@ -11,7 +11,7 @@ public sealed class CastDeclarationSyntax : BaseFunctionDeclarationSyntax
 
 	public override TokenList Modifiers { get; }
 
-	public Token Keyword { get; }
+	public Token CastKeyword { get; }
 
 	public TypeSyntax Type { get; }
 
@@ -28,7 +28,7 @@ public sealed class CastDeclarationSyntax : BaseFunctionDeclarationSyntax
 		TextSpan span,
 		SyntaxList<AttributeSyntax> attributes,
 		TokenList modifiers,
-		Token keyword,
+		Token castKeyword,
 		TypeSyntax type,
 		ParameterListSyntax parameterList,
 		BlockSyntax? body,
@@ -38,7 +38,7 @@ public sealed class CastDeclarationSyntax : BaseFunctionDeclarationSyntax
 	{
 		Attributes = attributes;
 		Modifiers = modifiers;
-		Keyword = keyword;
+		CastKeyword = castKeyword;
 		Type = type;
 		ParameterList = parameterList;
 		Body = body;
@@ -56,14 +56,14 @@ public sealed class CastDeclarationSyntax : BaseFunctionDeclarationSyntax
 	{
 		if (Body is not null)
 		{
-			return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{Keyword} {Type}{ParameterList} {Body}";
+			return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{CastKeyword} {Type}{ParameterList} {Body}";
 		}
 
 		if (ExpressionBody is not null)
 		{
-			return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{Keyword} {Type}{ParameterList} {ExpressionBody}{SemicolonToken}";
+			return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{CastKeyword} {Type}{ParameterList} {ExpressionBody}{SemicolonToken}";
 		}
 
-		return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{Keyword} {Type}{ParameterList}{SemicolonToken}";
+		return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{CastKeyword} {Type}{ParameterList}{SemicolonToken}";
 	}
 }

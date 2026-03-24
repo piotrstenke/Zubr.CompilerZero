@@ -708,16 +708,26 @@ internal sealed partial class CSharpTranslator
 
 		public static Sharp.ParameterSyntax Parameter(ParameterSyntax node)
 		{
+			var attributes = Attributes(node.Attributes);
 			CSyntaxTokenList modifiers = GetModifiers(node, node.Modifiers, out _);
+			Sharp.TypeSyntax type = Expressions.Type(node.Type);
+
+			if (node.Variadic is not null)
+			{
+				modifiers = modifiers.Add(SyntaxFactory.Token(CSyntaxKind.ParamsKeyword));
+				attributes = attributes.Add(Interop.VarargAttribute());
+
+				type = SyntaxFactory.ArrayType(type);
+			}
 
 			Sharp.EqualsValueClauseSyntax? defaultClause = node.Default is null
 				? null
 				: SyntaxFactory.EqualsValueClause(Expressions.Expression(node.Default.Value));
 
 			return SyntaxFactory.Parameter(
-				Attributes(node.Attributes),
+				attributes,
 				modifiers,
-				Expressions.Type(node.Type),
+				type,
 				SyntaxFactory.Identifier(node.Identifier.Text),
 				defaultClause
 			);

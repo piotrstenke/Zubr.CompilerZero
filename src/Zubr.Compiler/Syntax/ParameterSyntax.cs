@@ -11,6 +11,8 @@ public sealed class ParameterSyntax : SyntaxNode
 
 	public TokenList Modifiers { get; }
 
+	public VariadicSpecifierSyntax? Variadic { get; }
+
 	public TypeSyntax Type { get; }
 
 	public Token Identifier { get; }
@@ -22,6 +24,7 @@ public sealed class ParameterSyntax : SyntaxNode
 		TextSpan span,
 		SyntaxList<AttributeSyntax> attributes,
 		TokenList modifiers,
+		VariadicSpecifierSyntax? variadic,
 		TypeSyntax type,
 		Token identifier,
 		EqualsValueClauseSyntax? @default
@@ -29,17 +32,19 @@ public sealed class ParameterSyntax : SyntaxNode
 	{
 		Attributes = attributes;
 		Modifiers = modifiers;
-		Identifier = identifier;
+		Variadic = variadic;
 		Type = type;
+		Identifier = identifier;
 		Default = @default;
 
 		SetParent(attributes);
+		SetParentIfNotNull(variadic);
 		SetParent(type);
 		SetParentIfNotNull(@default);
 	}
 
 	public override string ToString()
 	{
-		return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{Type} {Identifier}{(Default is null ? "" : $" {Default}")}";
+		return $"{(Modifiers.Any() ? $"{Modifiers} " : "")}{(Variadic is null ? "" : $"{Variadic} ")}{Type} {Identifier}{(Default is null ? "" : $" {Default}")}";
 	}
 }

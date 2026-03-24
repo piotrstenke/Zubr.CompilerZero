@@ -34,8 +34,28 @@ public sealed class DefaultTypeParameterAttribute(Type type) : Attribute
 
 [Obsolete(Constants.ObsoleteMessage, DiagnosticId = Constants.ObsoleteDiagnosticId)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-[AttributeUsage(AttributeTargets.GenericParameter, AllowMultiple = false, Inherited = true)]
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
 public sealed class ImplDeclarationAttribute(Type type) : Attribute
 {
 	public Type Type { get; } = type;
+}
+
+[Obsolete(Constants.ObsoleteMessage, DiagnosticId = Constants.ObsoleteDiagnosticId)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
+public sealed class ZubrNameAttribute(string name) : Attribute
+{
+	public string Name { get; } = name;
+}
+
+[Obsolete(Constants.ObsoleteMessage, DiagnosticId = Constants.ObsoleteDiagnosticId)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+[AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = true)]
+public sealed class VarargAttribute : Attribute
+{
+	public int? MaxValue { get; }
+
+	public VarargAttribute()
+	{
+	}
 }

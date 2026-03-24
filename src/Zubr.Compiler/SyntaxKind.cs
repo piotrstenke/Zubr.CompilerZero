@@ -116,6 +116,9 @@ public enum SyntaxKind : uint
 	// the 'int a' and 'bool b' in 'foo(int a, bool b)'
 	Parameter,
 
+	// the '...2' in 'int test(...2 int indices) { }'
+	VariadicSpecifier,
+
 	// the '[int a, int b]' in 'pub T [int a, int b]'
 	BracketParameterList,
 
@@ -357,7 +360,7 @@ public enum SyntaxKind : uint
 	// [], [1, 2, 3], [1, a.., 2] etc.
 	CollectionExpression,
 
-	// ..array
+	// ...obj
 	SpreadExpression,
 
 	// a.b
@@ -389,6 +392,9 @@ public enum SyntaxKind : uint
 
 	// the 'int a' in '(int a, int b)'
 	DeclarationExpression,
+
+	// stackalloc int[] { 1, 2, 3 }
+	StackallocExpression,
 
 	// -----------------------------
 	// Types & Names

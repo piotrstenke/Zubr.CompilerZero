@@ -11,6 +11,8 @@ public readonly struct CSharpArray<T>
 
 	public int length => _array.Length;
 
+	public int rank => 1;
+
 	public T this[int index]
 	{
 		get => _array[index];
@@ -25,6 +27,16 @@ public readonly struct CSharpArray<T>
 	public CSharpArray(int length)
 	{
 		_array = new T[length];
+	}
+
+	public T get(int index)
+	{
+		return _array[index];
+	}
+
+	public void set(int index, T value)
+	{
+		_array[index] = value; 
 	}
 
 	public T[] copy()
@@ -49,5 +61,10 @@ public readonly struct CSharpArray<T>
 	public static implicit operator CSharpArray<T>(T[] array)
 	{
 		return new(array);
+	}
+
+	public static implicit operator Array(CSharpArray<T> array)
+	{
+		return array._array;
 	}
 }

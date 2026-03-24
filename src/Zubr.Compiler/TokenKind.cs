@@ -158,6 +158,9 @@ public enum TokenKind : uint
 	// ..
 	DotDotToken,
 
+	// ...
+	DotDotDotToken,
+
 	// ?
 	QuestionToken,
 
@@ -439,6 +442,9 @@ public enum TokenKind : uint
 
 	// string
 	StringKeyword,
+
+	// stackalloc
+	StackallocKeyword,
 
 	// An empty token that is valid but has no representation in the source.
 	SkippedToken,

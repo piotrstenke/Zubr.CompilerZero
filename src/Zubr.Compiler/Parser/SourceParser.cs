@@ -969,6 +969,22 @@ internal sealed class SourceParser
 		SyntaxList<AttributeSyntax> attributes = ParseAttributes();
 		TokenList modifiers = ParseModifiers();
 
+		VariadicSpecifierSyntax? variadic = null;
+
+		if(PeekKind(TokenKind.DotDotDotToken))
+		{
+			Token operatorToken = EatToken();
+			ExpressionSyntax? maxValueExpr = PeekKind(TokenKind.CloseParenToken) || PeekKind(TokenKind.OpenBraceToken)
+				? null
+				: ParseExpression();
+
+			TextSpan variadicSpan = maxValueExpr is null
+				? operatorToken.Span
+				: GetSpan(operatorToken, maxValueExpr);
+
+			variadic = new(_tree, variadicSpan, operatorToken, maxValueExpr);
+		}
+
 		TypeSyntax type = ParseType();
 
 		Token identifier = EatToken(TokenKind.IdentifierToken);
@@ -994,7 +1010,7 @@ internal sealed class SourceParser
 			span = GetSpan(position, identifier);
 		}
 
-		return new(_tree, span, attributes, modifiers, type, identifier, @default);
+		return new(_tree, span, attributes, modifiers, variadic, type, identifier, @default);
 	}
 
 	private TokenList ParseModifiers()
@@ -2134,6 +2150,9 @@ internal sealed class SourceParser
 			case TokenKind.NewKeyword:
 				return ParseNewExpression();
 
+			case TokenKind.StackallocKeyword:
+				return ParseStackallocExpression();
+
 			case TokenKind.FalseKeyword:
 			case TokenKind.TrueKeyword:
 			case TokenKind.NullKeyword:
@@ -2276,6 +2295,21 @@ internal sealed class SourceParser
 		TextSpan span = GetSpan(openBracket, closeBracket);
 
 		return new(_tree, span, openBracket, List(expressions), closeBracket);
+	}
+
+	private StackallocExpressionSyntax ParseStackallocExpression()
+	{
+		Token keyword = EatToken(TokenKind.StackallocKeyword);
+
+		TypeSyntax type = ParseType();
+
+		InitializerExpressionSyntax? initializer = TryParseInitializer();
+
+		TextSpan span = initializer is null
+			? GetSpan(keyword, type)
+			: GetSpan(keyword, initializer);
+
+		return new(_tree, span, keyword, type, initializer);
 	}
 
 	private ExpressionSyntax ParseNewExpression()
@@ -2958,7 +2992,8 @@ internal sealed class SourceParser
 			SyntaxKind.CollectionExpression or
 			SyntaxKind.ElementAccessExpression or
 			SyntaxKind.PointerMemberAccessExpression or
-			SyntaxKind.TupleExpression
+			SyntaxKind.TupleExpression or
+			SyntaxKind.StackallocExpression
 				=> Precedence.Primary,
 
 			SyntaxKind.AddressOfExpression
@@ -2977,7 +3012,8 @@ internal sealed class SourceParser
 			SyntaxKind.PreIncrementExpression or
 			SyntaxKind.PreDecrementExpression or
 			SyntaxKind.AddressOfExpression or
-			SyntaxKind.PointerIndirectionExpression
+			SyntaxKind.PointerIndirectionExpression or
+			SyntaxKind.SpreadExpression
 				=> Precedence.Unary,
 
 			SyntaxKind.RangeExpression

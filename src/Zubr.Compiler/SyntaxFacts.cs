@@ -146,6 +146,7 @@ public static class SyntaxFacts
 			TokenKind.TildeToken => SyntaxKind.BitwiseNotExpression,
 			TokenKind.AmpersandToken => SyntaxKind.AddressOfExpression,
 			TokenKind.AsteriskToken => SyntaxKind.PointerIndirectionExpression,
+			TokenKind.DotDotDotToken => SyntaxKind.SpreadExpression,
 			_ => default
 		};
 	}
@@ -496,6 +497,7 @@ public static class SyntaxFacts
 			"unsafe" =>	TokenKind.UnsafeKeyword,
 			"local" => TokenKind.LocalKeyword,
 			"lock" => TokenKind.LockKeyword,
+			"stackalloc" => TokenKind.StackallocKeyword,
 			_ => TokenKind.None
 		};
 	}

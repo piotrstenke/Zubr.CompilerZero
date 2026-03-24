@@ -41,6 +41,7 @@ internal sealed partial class CSharpTranslator
 				SkippedArraySizeExpressionSyntax => SyntaxFactory.OmittedArraySizeExpression(),
 				TupleExpressionSyntax t => Tuple(t),
 				DeclarationExpressionSyntax d => Declaration(d),
+				StackallocExpressionSyntax s => Stackalloc(s),
 				_ => throw new UnreachableException()
 			};
 		}
@@ -109,6 +110,14 @@ internal sealed partial class CSharpTranslator
 				ArrayType(node.ElementType, node.Ranks),
 				SyntaxFactory.ArgumentList(),
 				Initializer(node.Initializer, CSyntaxKind.ArrayInitializerExpression)
+			);
+		}
+
+		public static Sharp.StackAllocArrayCreationExpressionSyntax Stackalloc(StackallocExpressionSyntax node)
+		{
+			return SyntaxFactory.StackAllocArrayCreationExpression(
+				Type(node.Type),
+				node.Initializer is null ? null : Initializer(node.Initializer, CSyntaxKind.ArrayInitializerExpression)
 			);
 		}
 
@@ -349,24 +358,34 @@ internal sealed partial class CSharpTranslator
 
 		private static Sharp.QualifiedNameSyntax ArrayType(TypeSyntax elementType, SyntaxList<ArrayRankSyntax> ranks)
 		{
-			// TODO: Support multi-dimensional arrays.
+			string identifier = GetIdentifier(ranks, 0);
+
 			Sharp.QualifiedNameSyntax name = SyntaxFactory.QualifiedName(
 				GlobalQualifiedName("zubr", "interop", "csharp"),
 				SyntaxFactory.GenericName(
-					SyntaxFactory.Identifier("CSharpArray"),
+					SyntaxFactory.Identifier(identifier),
 					SyntaxFactory.TypeArgumentList(SyntaxFactory.SingletonSeparatedList(Type(elementType))))
 			);
 
 			for (int i = 1; i < ranks.Count; i++)
 			{
+				identifier = GetIdentifier(ranks, i);
+
 				name = SyntaxFactory.QualifiedName(
 					GlobalQualifiedName("zubr", "interop", "csharp"),
 					SyntaxFactory.GenericName(
-						SyntaxFactory.Identifier("CSharpArray"),
+						SyntaxFactory.Identifier(identifier),
 						SyntaxFactory.TypeArgumentList(SyntaxFactory.SingletonSeparatedList<Sharp.TypeSyntax>(name))));
 			}
 
 			return name;
+
+			static string GetIdentifier(SyntaxList<ArrayRankSyntax> ranks, int i)
+			{
+				return ranks[i].Sizes.Count > 1
+					? "CSharpObjectArray"
+					: "CSharpArray";
+			}
 		}
 
 		internal static Sharp.NameSyntax GlobalQualifiedName(params ReadOnlySpan<string> identifiers)

@@ -346,6 +346,13 @@ internal struct Lexer
 				if (_reader.Peek() == '.')
 				{
 					_reader.Move();
+
+					if(_reader.Peek() == '.')
+					{
+						_reader.Move();
+						return new(TokenKind.DotDotDotToken, "...", _tokenStartPos);
+					}
+
 					return new(TokenKind.DotDotToken, "..", _tokenStartPos);
 				}
 
